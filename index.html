@@ -512,12 +512,15 @@ td.center { text-align: center; }
     </div>
     <div class="modal-body">
       <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#92400e;">
-        <b>ℹ️ Catatan Penting:</b> Koneksi ke UNC path (<code>//server/share/...</code>) hanya bisa dilakukan jika app berjalan di Railway (Node.js server) dan sharing folder sudah di-mount. Di browser langsung, gunakan URL HTTP/HTTPS untuk akses JSON dari server.
+        <b>ℹ️ Cara pakai:</b><br>
+        • <b>GitHub (untuk test):</b> Upload <code>data.json</code> ke repo → klik "Raw" → copy URL, gunakan di sini<br>
+        • <b>Railway (production):</b> App Railway kamu → gunakan <code>https://&lt;app&gt;.railway.app/data.json</code><br>
+        • Data disimpan di path tersebut. Setiap perubahan otomatis sync via POST ke <code>/api/save</code>
       </div>
       <div class="form-group" style="margin-bottom:14px;">
-        <label>Path / URL JSON Data</label>
-        <input type="text" id="conn-path-input" placeholder="cth: //ptmkshare/data/data_integrasi.json atau https://server/api/data" style="font-family:monospace;font-size:12px;">
-        <span style="font-size:11px;color:#9ca3af;margin-top:3px;display:block;">Format: UNC path (\\server\share\file.json) atau HTTP URL</span>
+        <label>URL JSON Data (HTTP/HTTPS)</label>
+        <input type="text" id="conn-path-input" placeholder="https://raw.githubusercontent.com/user/repo/main/data.json" style="font-family:monospace;font-size:12px;">
+        <span style="font-size:11px;color:#9ca3af;margin-top:3px;display:block;">Contoh: https://raw.githubusercontent.com/namamu/repo/main/data.json</span>
       </div>
       <div id="conn-status-msg" style="font-size:12px;padding:8px 12px;border-radius:4px;display:none;margin-bottom:12px;"></div>
       <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px 16px;font-size:12px;">
@@ -527,10 +530,11 @@ td.center { text-align: center; }
       </div>
       <div style="margin-top:14px;font-size:12px;color:#6b7280;line-height:1.7;">
         <b>Cara kerja:</b><br>
-        1. Masukkan path/URL file JSON sharing<br>
-        2. Klik <b>Simpan & Konek</b> → path disimpan ke localStorage<br>
-        3. Setiap buka aplikasi, data otomatis di-load dari path tersebut<br>
-        4. Setiap perubahan data akan disimpan ke JSON sharing (via Railway backend)
+        1. Upload <code>data.json</code> ke GitHub / hosting kamu<br>
+        2. Masukkan URL raw file JSON di atas<br>
+        3. Klik <b>Simpan &amp; Konek</b> → setiap buka app, data langsung di-load dari JSON<br>
+        4. Setiap perubahan otomatis di-sync ke <code>/api/save</code> (Railway)<br>
+        5. Tanpa koneksi → data tetap pakai localStorage lokal
       </div>
     </div>
     <div class="modal-footer">
@@ -828,6 +832,9 @@ async function syncToRemote() {
   if (!jsonPath || !jsonConnected) return;
   if (!jsonPath.startsWith('http://') && !jsonPath.startsWith('https://')) return;
   try {
+    // Determine save endpoint: jika path adalah data.json, POST ke /api/save
+    // Jika Railway, endpoint POST bisa beda dari GET endpoint
+    const saveUrl = jsonPath.replace(/\/data\.json(\?.*)?$/, '/api/save');
     const payload = {
       taexData: state.taexData,
       prismaReservasiData: state.prismaReservasiData,
@@ -838,7 +845,7 @@ async function syncToRemote() {
       prData: state.prData,
       lastUpdated: new Date().toISOString()
     };
-    await fetch(jsonPath, {
+    await fetch(saveUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -892,6 +899,36 @@ function applySort(data, tbl) {
 // ============================================================
 async function init() {
   loadSavedPath();
+
+  // ── Coba load dari JSON remote jika path sudah tersimpan ──
+  if (jsonPath && (jsonPath.startsWith('http://') || jsonPath.startsWith('https://'))) {
+    try {
+      const res = await fetch(jsonPath + (jsonPath.includes('?') ? '&' : '?') + '_t=' + Date.now());
+      if (res.ok) {
+        const remote = await res.json();
+        // Tulis semua data remote ke state langsung (tanpa localStorage)
+        state.taexData             = remote.taexData            || [];
+        state.prismaReservasiData  = remote.prismaReservasiData || [];
+        state.kkData               = remote.kkData              || [];
+        state.kkCode               = remote.kkCode              || null;
+        state.summaryData          = remote.summaryData         || [];
+        state.kumpulanData         = remote.kumpulanData        || [];
+        state.prData               = remote.prData              || [];
+        // Jika taexData kosong dari remote, isi seed default
+        if (!state.taexData.length) state.taexData = TAEX_SEED;
+        updateConnUI(true);
+        toast('✅ Data dimuat dari JSON!', 'ok');
+        renderAll();
+        populateFilters();
+        return; // selesai — tidak perlu localStorage
+      }
+    } catch(e) {
+      console.warn('Gagal load remote JSON, fallback ke localStorage:', e);
+      updateConnUI(false);
+    }
+  }
+
+  // ── Fallback: localStorage ──
   let taex = await S.get('taex-reservasi');
   if (!taex) { taex = TAEX_SEED; await S.set('taex-reservasi', taex); }
   state.taexData = taex;
