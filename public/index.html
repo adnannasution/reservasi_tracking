@@ -641,19 +641,16 @@ td.center { text-align: center; }
       <button class="modal-close" onclick="closeModal('modal-pr')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-row">
-        <div class="form-group">
-          <label>CodeTracking (dari Kertas Kerja)</label>
-          <select id="pr-input-tracking"><option value="">Pilih CodeTracking...</option></select>
-        </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;">
+        <b>Sinkronisasi</b> akan mencocokkan data SAP PR (tab SAP PR) ke Kumpulan Summary berdasarkan <b>Material</b> dan <b>Tracking</b>, lalu mengupdate TA-ex Reservasi &amp; PRISMA Reservasi dengan nomor PR dari SAP.
       </div>
-      <div id="pr-preview-table" style="margin-top:12px;">
-        <p style="font-size:12px; color:#6b7280;">Pilih CodeTracking untuk melihat preview material</p>
+      <div id="pr-preview-table">
+        <p style="font-size:12px; color:#6b7280;">Memuat preview...</p>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-reset" onclick="closeModal('modal-pr')">Batal</button>
-      <button class="btn btn-purple" onclick="submitPR()">🧾 Submit PR</button>
+      <button class="btn btn-purple" onclick="submitPR()">🔄 Jalankan Singkron</button>
     </div>
   </div>
 </div>
@@ -1384,98 +1381,95 @@ async function submitSummary() {
 }
 
 // ============================================================
-// MODAL BUAT PR
+// SINGKRON PR — dari data SAP PR yang sudah diupload
 // ============================================================
-async function openPRModal() {
-  if (!state.kumpulanData.length) { toast('Belum ada data summary untuk dibuat PR', 'err'); return; }
-  const cnt = await apiFetch('/state/pr_counter');
-  state.prCounter = (cnt.value || 0);
-  const codes = [...new Set(state.kumpulanData.map(r=>r.CodeTracking).filter(Boolean))].sort();
-  const sel = document.getElementById('pr-input-tracking');
-  sel.innerHTML = '<option value="">Pilih CodeTracking...</option>';
-  codes.forEach(c => sel.innerHTML+=`<option value="${c}">${c}</option>`);
-  sel.onchange = () => updatePRPreview();
-  document.getElementById('pr-preview-table').innerHTML = '<p style="font-size:12px;color:#6b7280">Pilih CodeTracking untuk melihat preview material</p>';
+function openPRModal() {
+  if (!state.kumpulanData.length) { toast('Belum ada data Kumpulan Summary', 'err'); return; }
+  if (!state.prData.length) { toast('Belum ada data SAP PR. Upload Excel di tab SAP PR terlebih dahulu!', 'err'); return; }
+
+  // Build preview: cocokkan prData ke kumpulanData by Material
+  const matched = [];
+  const unmatched = [];
+  state.kumpulanData.forEach(k => {
+    const prItem = state.prData.find(p => p.Material === k.Material && p.Tracking === k.CodeTracking);
+    if (prItem) matched.push({ ...k, _prNum: prItem.PR, _prItem: prItem.Item, _prQty: prItem.Qty_PR });
+    else unmatched.push(k);
+  });
+
+  let html = '';
+  if (matched.length) {
+    html += `<div style="margin-bottom:8px;font-size:12px;font-weight:600;color:#059669">✅ ${matched.length} material akan disinkron dari SAP PR:</div>`;
+    html += `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;">
+      <thead><tr style="background:#1a56db;color:white;">
+        <th style="padding:6px 10px">Material</th>
+        <th style="padding:6px 10px">Deskripsi</th>
+        <th style="padding:6px 10px">No PR</th>
+        <th style="padding:6px 10px;text-align:right">Qty_PR</th>
+        <th style="padding:6px 10px">Tracking</th>
+      </tr></thead><tbody>`;
+    matched.forEach(r => { html += `<tr style="border-bottom:1px solid #f0f0f0">
+      <td style="padding:5px 10px;font-family:monospace">${r.Material}</td>
+      <td style="padding:5px 10px;max-width:180px;overflow:hidden;text-overflow:ellipsis">${r.Material_Description}</td>
+      <td style="padding:5px 10px;font-family:monospace;color:#1a56db;font-weight:700">${r._prNum||'—'}</td>
+      <td style="padding:5px 10px;text-align:right;font-weight:700">${r._prQty}</td>
+      <td style="padding:5px 10px"><span style="background:#ede9fe;color:#6d28d9;border-radius:3px;padding:1px 7px;font-size:10.5px;font-weight:600">${r.CodeTracking}</span></td>
+    </tr>`; });
+    html += '</tbody></table>';
+  }
+  if (unmatched.length) {
+    html += `<div style="font-size:12px;color:#d97706;font-weight:600">⚠️ ${unmatched.length} material tidak ditemukan di SAP PR (tidak akan diupdate)</div>`;
+  }
+  if (!matched.length) {
+    html = '<div style="font-size:12px;color:#dc2626;font-weight:600">❌ Tidak ada material yang cocok antara Kumpulan Summary dan SAP PR.<br>Pastikan kolom Material dan Tracking sudah sesuai.</div>';
+  }
+
+  document.getElementById('pr-preview-table').innerHTML = html;
   openModal('modal-pr');
 }
 
-function updatePRPreview() {
-  const code = document.getElementById('pr-input-tracking').value;
-  if (!code) { document.getElementById('pr-preview-table').innerHTML='<p style="font-size:12px;color:#6b7280">Pilih CodeTracking untuk melihat preview material</p>'; return; }
-  const items = state.kumpulanData.filter(r=>r.CodeTracking===code);
-  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
-    <thead><tr style="background:#1a56db;color:white;">
-      <th style="padding:6px 10px">Material</th><th style="padding:6px 10px">Deskripsi</th>
-      <th style="padding:6px 10px;text-align:right">Qty_Req</th>
-      <th style="padding:6px 10px;text-align:right">Qty_Stock</th>
-      <th style="padding:6px 10px;text-align:right">Qty_To_PR</th>
-    </tr></thead><tbody>`;
-  items.forEach(r => { html+=`<tr style="border-bottom:1px solid #f0f0f0">
-    <td style="padding:5px 10px;font-family:monospace">${r.Material}</td>
-    <td style="padding:5px 10px;max-width:200px;overflow:hidden;text-overflow:ellipsis">${r.Material_Description}</td>
-    <td style="padding:5px 10px;text-align:right">${r.Qty_Req}</td>
-    <td style="padding:5px 10px;text-align:right;color:#059669">${r.Qty_Stock}</td>
-    <td style="padding:5px 10px;text-align:right;font-weight:700">${r.Qty_To_PR}</td>
-  </tr>`; });
-  html+='</tbody></table>';
-  document.getElementById('pr-preview-table').innerHTML = html;
-}
-
 async function submitPR() {
-  const code = document.getElementById('pr-input-tracking').value;
-  const prNum = 'PR' + String(state.prCounter + 1).padStart(7,'0');
-  if (!code) { toast('Pilih CodeTracking terlebih dahulu', 'err'); return; }
-  const items = state.kumpulanData.filter(r=>r.CodeTracking===code&&(r.Qty_To_PR||0)>0);
-  if (!items.length) { toast('Tidak ada material dengan Qty_To_PR > 0', 'err'); return; }
+  if (!state.prData.length) { toast('Belum ada data SAP PR!', 'err'); return; }
 
-  const newPRItems = items.map((r,i) => ({
-    ID: (state.prData.length + i + 1),
-    Material: r.Material, Material_Description: r.Material_Description,
-    PR: prNum, Item: String((i+1)*10).padStart(5,'0'),
-    Qty_PR: r.Qty_To_PR, Tracking: code,
-  }));
-  state.prData.push(...newPRItems);
-  state.kumpulanData = state.kumpulanData.map(r => {
-    if (r.CodeTracking===code) {
-      const prItem = newPRItems.find(p=>p.Material===r.Material);
-      if (prItem) return {...r, Qty_PR: prItem.Qty_PR, Qty_To_PR: 0};
-    }
-    return r;
+  // Cocokkan prData ke kumpulanData by Material + Tracking
+  let matchCount = 0;
+  state.kumpulanData = state.kumpulanData.map(k => {
+    const prItem = state.prData.find(p => p.Material === k.Material && p.Tracking === k.CodeTracking);
+    if (prItem) { matchCount++; return { ...k, Qty_PR: prItem.Qty_PR, Qty_To_PR: Math.max(0,(k.Qty_Req||0)-(k.Qty_Stock||0)-(prItem.Qty_PR||0)) }; }
+    return k;
   });
 
-  // Update prismaReservasi dengan nomor PR
+  if (!matchCount) { toast('Tidak ada material yang cocok untuk disinkron!', 'err'); return; }
+
+  // Update prismaReservasi dengan nomor PR dari SAP PR
   state.prismaReservasiData = state.prismaReservasiData.map(r => {
-    if (r.CodeKertasKerja === code) {
-      const prItem = newPRItems.find(p=>p.Material===r.Material);
-      if (prItem) return { ...r, PR_Prisma: prNum, Item_Prisma: prItem.Item, Qty_PR_Prisma: Math.max(0,(r.Qty_Reqmts||0)-(r.Qty_StockOnhand||0)) };
-    }
+    const prItem = state.prData.find(p => p.Material === r.Material && p.Tracking === r.CodeKertasKerja);
+    if (prItem) return { ...r, PR_Prisma: prItem.PR, Item_Prisma: prItem.Item, Qty_PR_Prisma: prItem.Qty_PR };
     return r;
   });
-  // Update taex dengan nomor PR
+
+  // Update taex dengan nomor PR dari prismaReservasi
   state.taexData = state.taexData.map(tr => {
     const match = state.prismaReservasiData.find(r => r.Order===tr.Order && r.Material===tr.Material && r.PR_Prisma);
     if (match) return { ...tr, PR: match.PR_Prisma, Item: match.Item_Prisma, Qty_PR: match.Qty_PR_Prisma };
     return tr;
   });
 
-  showLoading('Menyimpan PR ke server...');
-  setSyncStatus('loading', '⏳ Menyimpan PR ke server...');
+  showLoading('Sinkronisasi PR dari SAP PR...');
+  setSyncStatus('loading', '⏳ Sinkronisasi PR ke server...');
   try {
-    await apiFetch('/state/pr_counter', { method:'POST', body:{ value: state.prCounter } });
-    await apiFetch('/pr', { method:'PUT', body: state.prData });
     await apiFetch('/kumpulan', { method:'PUT', body: state.kumpulanData });
     await apiFetch('/prisma', { method:'PUT', body: state.prismaReservasiData });
     await apiFetch('/taex', { method:'PUT', body: state.taexData });
     hideLoading();
     closeModal('modal-pr');
-    setSyncStatus('ok', `✅ PR ${prNum} berhasil dibuat · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast('PR '+prNum+' berhasil dibuat!', 'ok');
+    setSyncStatus('ok', `✅ Singkron PR selesai · ${matchCount} material diupdate · ${new Date().toLocaleTimeString('id-ID')}`);
+    toast(`Singkron PR selesai! ${matchCount} material diupdate.`, 'ok');
     populateFilters();
-    switchApp('pr');
+    renderAll();
   } catch(e) {
     hideLoading();
-    setSyncStatus('err', '❌ Gagal simpan PR: ' + e.message);
-    toast('Gagal simpan PR ke server!', 'err');
+    setSyncStatus('err', '❌ Gagal singkron PR: ' + e.message);
+    toast('Gagal singkron PR ke server!', 'err');
   }
 }
 
