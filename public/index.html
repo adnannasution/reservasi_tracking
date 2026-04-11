@@ -48,12 +48,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #f5f5f5; dis
 
 .body { display: flex; flex: 1; overflow: hidden; }
 
-.sidebar {
-  width: 200px; background: white; border-right: 1px solid #ddd;
-  display: flex; flex-direction: column; flex-shrink: 0;
-  transition: width 0.2s; overflow: hidden;
-}
-.sidebar.collapsed { width: 40px; }
+.sidebar { display: none !important; }
 .sidebar-menu { flex: 1; padding-top: 8px; }
 .menu-item {
   display: flex; align-items: center; gap: 10px;
@@ -213,6 +208,26 @@ td.center { text-align: center; }
 .toast.err { background: #dc2626; }
 .toast.info { background: #1a56db; }
 
+
+/* LOADING OVERLAY */
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: none; align-items: center; justify-content: center;
+  z-index: 9998;
+}
+.loading-overlay.show { display: flex; }
+.loading-spinner {
+  background: white; border-radius: 12px; padding: 32px 48px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.spinner-ring {
+  width: 48px; height: 48px; border: 5px solid #e5e7eb;
+  border-top-color: #1a56db; border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-spinner p { font-size: 13px; font-weight: 600; color: #374151; }
 .empty-state {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 16px; color: #9ca3af;
@@ -446,7 +461,7 @@ td.center { text-align: center; }
     <select id="ks-filterCode"><option value="">Semua</option></select>
     <button class="btn btn-search" onclick="ksApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="ksResetFilter()">Reset</button>
-    <button class="btn btn-purple" onclick="openPRModal()" style="margin-left:8px">🧾 Buat PR</button>
+    <button class="btn btn-purple" onclick="openPRModal()" style="margin-left:8px">🔄 Singkron PR</button>
     <button class="btn btn-teal" onclick="exportKumpulanExcel()" style="margin-left:4px">📤 Export Excel</button>
     <span class="filter-right" id="ks-rowCount"></span>
   </div>
@@ -539,7 +554,7 @@ td.center { text-align: center; }
     </div>
     <div class="modal-body">
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;">
-        <b>Kolom yang didukung:</b> Material, Material_Description, PR, Item, Qty_PR, Tracking
+        <b>Kolom yang didukung:</b> No_PR, Material, Material_Description, PR, Item, Qty_PR, Tracking
       </div>
       <div class="upload-zone" id="sap-upload-zone" onclick="document.getElementById('sap-file-input').click()" ondragover="handleDrag(event,'sap-upload-zone')" ondragleave="handleDragLeave(event,'sap-upload-zone')" ondrop="handleDrop(event,'sap')">
         <input type="file" id="sap-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'sap')">
@@ -622,15 +637,11 @@ td.center { text-align: center; }
 <div class="modal-overlay" id="modal-pr">
   <div class="modal" style="width:720px;">
     <div class="modal-header">
-      <h3>🧾 Buat Purchase Request (PR)</h3>
+      <h3>🔄 Singkron Purchase Request (PR)</h3>
       <button class="modal-close" onclick="closeModal('modal-pr')">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-row">
-        <div class="form-group">
-          <label>Nomor PR (otomatis)</label>
-          <input type="text" id="pr-input-number" readonly style="font-weight:700; color:#1a56db;">
-        </div>
         <div class="form-group">
           <label>CodeTracking (dari Kertas Kerja)</label>
           <select id="pr-input-tracking"><option value="">Pilih CodeTracking...</option></select>
@@ -647,10 +658,31 @@ td.center { text-align: center; }
   </div>
 </div>
 
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div class="spinner-ring"></div>
+    <p id="loading-msg">Memproses...</p>
+  </div>
+</div>
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
+
+// ============================================================
+// LOADING OVERLAY
+// ============================================================
+function showLoading(msg) {
+  msg = msg || 'Memproses...';
+  document.getElementById('loading-msg').textContent = msg;
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('show');
+}
+
 // ============================================================
 // API BASE URL — otomatis detect Railway vs localhost
 // ============================================================
@@ -671,6 +703,7 @@ async function apiFetch(path, opts = {}) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '⚠️ Gagal konek ke server: ' + e.message);
     throw e;
   }
@@ -727,6 +760,7 @@ async function init() {
     renderAll();
     populateFilters();
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Tidak dapat konek ke server. Pastikan Railway app berjalan.');
   }
 }
@@ -1042,9 +1076,9 @@ function downloadTaexTemplate() {
   toast('Template berhasil diunduh!', 'ok');
 }
 function downloadSapTemplate() {
-  const headers = [['Material','Material_Description','PR','Item','Qty_PR','Tracking']];
+  const headers = [['No_PR','Material','Material_Description','PR','Item','Qty_PR','Tracking']];
   const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{wch:16},{wch:45},{wch:14},{wch:8},{wch:10},{wch:18}];
+  ws['!cols'] = [{wch:14},{wch:16},{wch:45},{wch:14},{wch:8},{wch:10},{wch:18}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template SAP PR');
   XLSX.writeFile(wb, 'Template_SAP_PR.xlsx');
@@ -1113,6 +1147,7 @@ async function importTaexData() {
     Delivery_Date: r.Delivery_Date||null,
   }));
 
+  showLoading('Mengimport data TA-ex...');
   setSyncStatus('loading', '⏳ Menyimpan data ke server...');
   try {
     const endpoint = replace ? '/taex/replace' : '/taex/append';
@@ -1122,12 +1157,14 @@ async function importTaexData() {
     } else {
       state.taexData = result.data || [...state.taexData, ...newRows];
     }
+    hideLoading();
     closeModal('modal-taex-upload');
     renderTaex(); populateFilters();
     taexUploadBuffer = [];
     setSyncStatus('ok', `✅ ${newRows.length} baris berhasil disimpan ke server · ${new Date().toLocaleTimeString('id-ID')}`);
     toast(`${newRows.length} baris berhasil diimport ke TA-ex!`, 'ok');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
   }
@@ -1144,11 +1181,13 @@ async function importSapData() {
     ID: maxId + i + 1,
     Material: String(r.Material||r.material||''),
     Material_Description: r.Material_Description||r.Description||'',
-    PR: r.PR||r.pr||null, Item: r.Item||r.item||null,
+    No_PR: r.No_PR||r.no_pr||null,
+    PR: r.PR||r.pr||r.No_PR||r.no_pr||null, Item: r.Item||r.item||null,
     Qty_PR: r.Qty_PR!=null&&r.Qty_PR!==''?parseFloat(r.Qty_PR):null,
     Tracking: r.Tracking||r.tracking||r.CodeTracking||null,
   }));
 
+  showLoading('Mengimport data SAP PR...');
   setSyncStatus('loading', '⏳ Menyimpan data PR ke server...');
   try {
     const endpoint = replace ? '/pr/replace' : '/pr/append';
@@ -1158,11 +1197,13 @@ async function importSapData() {
     } else {
       state.prData = result.data || [...state.prData, ...newRows];
     }
+    hideLoading();
     closeModal('modal-sap-upload');
     renderSAP(); sapUploadBuffer = [];
     setSyncStatus('ok', `✅ Data SAP PR tersimpan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast(`${newRows.length} baris berhasil diimport ke SAP PR!`, 'ok');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
   }
@@ -1191,16 +1232,19 @@ async function submitAddTaex() {
     Qty_Stock: parseFloat(document.getElementById('taex-add-qty-stock').value)||0,
     PR:null, Item:null, Qty_PR:null, PO:null, PO_Date:null, Qty_Deliv:null, Delivery_Date:null,
   };
+  showLoading('Menyimpan data baru...');
   setSyncStatus('loading', '⏳ Menyimpan...');
   try {
     const result = await apiFetch('/taex', { method: 'POST', body: newRow });
     newRow.ID = result.id;
     state.taexData.push(newRow);
+    hideLoading();
     closeModal('modal-add-taex');
     renderTaex(); populateFilters();
     setSyncStatus('ok', `✅ Data berhasil ditambahkan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast(`Data berhasil ditambahkan!`, 'ok');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
   }
@@ -1221,13 +1265,16 @@ async function syncWithTaex() {
     return { ...r, Qty_StockOnhand: null, PR_Prisma: null, Item_Prisma: null, Qty_PR_Prisma: null, CodeKertasKerja: null };
   });
   state.prismaReservasiData = syncedData;
+  showLoading('Sinkronisasi data...');
   setSyncStatus('loading', '⏳ Sinkronisasi ke server...');
   try {
     await apiFetch('/prisma', { method: 'PUT', body: syncedData });
+    hideLoading();
     renderPrismaReservasi(); populateFilters();
     setSyncStatus('ok', `✅ Sinkronisasi selesai · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Sinkronisasi selesai!', 'ok');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal sinkronisasi: ' + e.message);
     toast('Gagal sinkronisasi!', 'err');
   }
@@ -1255,15 +1302,18 @@ async function createKertasKerja() {
   if (!sourceData.length) { toast('Tidak ada data reservasi yang bisa dijadikan Kertas Kerja', 'err'); return; }
   state.kkData = sourceData.map(r => ({...r, CodeKertasKerja: code, Qty_StockOnhand: r.Qty_StockOnhand ?? null}));
   state.kkCode = code;
+  showLoading('Membuat Kertas Kerja...');
   setSyncStatus('loading', '⏳ Menyimpan Kertas Kerja...');
   try {
     await apiFetch('/state/kk_counter', { method:'POST', body:{ value: state.kkCounter } });
     await apiFetch('/state/kk_current', { method:'POST', body:{ value:{ code, data: state.kkData } } });
+    hideLoading();
     closeModal('modal-kk');
     setSyncStatus('ok', `✅ Kertas Kerja ${code} dibuat · ${new Date().toLocaleTimeString('id-ID')}`);
     toast(`Kertas Kerja ${code} berhasil dibuat!`, 'ok');
     switchApp('kertas-kerja');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
   }
@@ -1291,14 +1341,17 @@ async function submitKertasKerja() {
     return r;
   });
 
+  showLoading('Submit Kertas Kerja...');
   setSyncStatus('loading', '⏳ Submit Kertas Kerja...');
   try {
     await apiFetch('/state/summary_current', { method:'POST', body:{ value: state.summaryData } });
     await apiFetch('/prisma', { method:'PUT', body: state.prismaReservasiData });
+    hideLoading();
     setSyncStatus('ok', `✅ Kertas Kerja disubmit · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Kertas Kerja disubmit! Summary dibuat.', 'ok');
     switchApp('summary');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal submit: ' + e.message);
     toast('Gagal submit ke server!', 'err');
   }
@@ -1312,16 +1365,19 @@ async function submitSummary() {
   state.summaryData = [];
   state.kkData = [];
   state.kkCode = null;
+  showLoading('Menyimpan ke Kumpulan Summary...');
   setSyncStatus('loading', '⏳ Menyimpan Summary...');
   try {
     await apiFetch('/kumpulan', { method:'PUT', body: state.kumpulanData });
     await apiFetch('/state/summary_current', { method:'POST', body:{ value: [] } });
     await apiFetch('/state/kk_current', { method:'POST', body:{ value: { code: null, data: [] } } });
     populateFilters();
+    hideLoading();
     setSyncStatus('ok', `✅ Summary tersimpan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Summary tersimpan di Kumpulan Summary!', 'ok');
     switchApp('kumpulan');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
   }
@@ -1333,9 +1389,7 @@ async function submitSummary() {
 async function openPRModal() {
   if (!state.kumpulanData.length) { toast('Belum ada data summary untuk dibuat PR', 'err'); return; }
   const cnt = await apiFetch('/state/pr_counter');
-  state.prCounter = (cnt.value || 0) + 1;
-  const prNum = 'PR' + String(state.prCounter).padStart(7,'0');
-  document.getElementById('pr-input-number').value = prNum;
+  state.prCounter = (cnt.value || 0);
   const codes = [...new Set(state.kumpulanData.map(r=>r.CodeTracking).filter(Boolean))].sort();
   const sel = document.getElementById('pr-input-tracking');
   sel.innerHTML = '<option value="">Pilih CodeTracking...</option>';
@@ -1368,8 +1422,8 @@ function updatePRPreview() {
 }
 
 async function submitPR() {
-  const prNum = document.getElementById('pr-input-number').value;
   const code = document.getElementById('pr-input-tracking').value;
+  const prNum = 'PR' + String(state.prCounter + 1).padStart(7,'0');
   if (!code) { toast('Pilih CodeTracking terlebih dahulu', 'err'); return; }
   const items = state.kumpulanData.filter(r=>r.CodeTracking===code&&(r.Qty_To_PR||0)>0);
   if (!items.length) { toast('Tidak ada material dengan Qty_To_PR > 0', 'err'); return; }
@@ -1404,6 +1458,7 @@ async function submitPR() {
     return tr;
   });
 
+  showLoading('Menyimpan PR ke server...');
   setSyncStatus('loading', '⏳ Menyimpan PR ke server...');
   try {
     await apiFetch('/state/pr_counter', { method:'POST', body:{ value: state.prCounter } });
@@ -1411,12 +1466,14 @@ async function submitPR() {
     await apiFetch('/kumpulan', { method:'PUT', body: state.kumpulanData });
     await apiFetch('/prisma', { method:'PUT', body: state.prismaReservasiData });
     await apiFetch('/taex', { method:'PUT', body: state.taexData });
+    hideLoading();
     closeModal('modal-pr');
     setSyncStatus('ok', `✅ PR ${prNum} berhasil dibuat · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('PR '+prNum+' berhasil dibuat!', 'ok');
     populateFilters();
     switchApp('pr');
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal simpan PR: ' + e.message);
     toast('Gagal simpan PR ke server!', 'err');
   }
@@ -1427,13 +1484,16 @@ async function submitPR() {
 // ============================================================
 async function confirmResetAll() {
   if (!confirm('⚠️ Yakin ingin menghapus SEMUA data?\n\nSemua data akan kembali ke data awal.')) return;
+  showLoading('Mereset semua data...');
   setSyncStatus('loading', '⏳ Mereset semua data...');
   try {
     await apiFetch('/reset', { method: 'POST', body: {} });
+    hideLoading();
     toast('Semua data telah direset!', 'info');
     setSyncStatus('ok', '✅ Reset selesai · Memuat ulang...');
     setTimeout(() => location.reload(), 1500);
   } catch(e) {
+    hideLoading();
     setSyncStatus('err', '❌ Gagal reset: ' + e.message);
     toast('Gagal reset!', 'err');
   }
