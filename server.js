@@ -4,15 +4,15 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // ─────────────────────────────────────────────
 // DATABASE — PostgreSQL
-// Railway otomatis inject DATABASE_URL
+// Set DATABASE_URL di environment variables GCP Cloud Run
 // ─────────────────────────────────────────────
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('railway')
+  ssl: process.env.NODE_ENV === 'production'
     ? { rejectUnauthorized: false }
     : false,
 });
@@ -488,7 +488,8 @@ migrate()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`🚀 PRISMA TA-ex System running on port ${PORT}`);
-      console.log(`🐘 Database: PostgreSQL (Railway)`);
+      console.log(`🐘 Database: PostgreSQL`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   })
   .catch(err => {
