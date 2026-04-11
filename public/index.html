@@ -250,6 +250,81 @@ td.center { text-align: center; }
 }
 .step.done .step-num { background: #059669; border-color: #059669; color: white; font-size: 9px; }
 .step-arrow { color: #d1d5db; font-size: 10px; }
+
+/* ── STICKY FIRST 2 COLUMNS ── */
+table.sticky-col thead th:nth-child(1),
+table.sticky-col tbody td:nth-child(1) {
+  position: sticky; left: 0; z-index: 4; background: #1a56db;
+}
+table.sticky-col tbody td:nth-child(1) { background: white; z-index: 3; }
+table.sticky-col thead th:nth-child(2),
+table.sticky-col tbody td:nth-child(2) {
+  position: sticky; left: 48px; z-index: 4; background: #1a56db;
+}
+table.sticky-col tbody td:nth-child(2) { background: white; z-index: 3; }
+table.sticky-col tbody tr:hover td:nth-child(1),
+table.sticky-col tbody tr:hover td:nth-child(2) { background: #f0f5ff; }
+
+/* ── ROW HIGHLIGHT (sudah ada PR) ── */
+tbody tr.has-pr td { background: #f0fdf4 !important; }
+tbody tr.has-pr:hover td { background: #dcfce7 !important; }
+tbody tr.has-po td { background: #eff6ff !important; }
+tbody tr.has-po:hover td { background: #dbeafe !important; }
+
+/* ── SKELETON LOADING ── */
+.skeleton { animation: shimmer 1.2s infinite linear; background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; border-radius: 3px; display: inline-block; height: 12px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.skeleton-row td { padding: 10px; }
+
+/* ── PAGINATION ── */
+.pagination {
+  display: flex; align-items: center; gap: 6px; justify-content: flex-end;
+  padding: 8px 12px; background: white; border-top: 1px solid #e5e7eb;
+  flex-shrink: 0; font-size: 12px;
+}
+.pg-btn {
+  border: 1px solid #d1d5db; background: white; border-radius: 4px;
+  padding: 3px 9px; cursor: pointer; font-size: 12px; color: #374151;
+  transition: all 0.15s;
+}
+.pg-btn:hover:not(:disabled) { background: #eff6ff; border-color: #1a56db; color: #1a56db; }
+.pg-btn:disabled { opacity: 0.4; cursor: default; }
+.pg-btn.active { background: #1a56db; color: white; border-color: #1a56db; }
+.pg-info { color: #6b7280; font-size: 11px; margin: 0 4px; }
+.pg-size { border: 1px solid #d1d5db; border-radius: 4px; padding: 3px 6px; font-size: 11px; outline: none; }
+
+/* ── TOOLTIP ── */
+.th-wrap { display: flex; align-items: center; gap: 4px; }
+.tooltip-icon { font-size: 10px; opacity: 0.7; cursor: help; position: relative; }
+.tooltip-icon:hover::after {
+  content: attr(data-tip); position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  background: #1f2937; color: white; font-size: 10px; font-weight: 400;
+  padding: 5px 8px; border-radius: 4px; white-space: nowrap; z-index: 999;
+  margin-top: 4px; pointer-events: none; min-width: 120px; text-align: center;
+}
+
+/* ── TAB BADGE COUNTER ── */
+.tab-badge {
+  display: inline-block; background: rgba(255,255,255,0.25); color: white;
+  border-radius: 9px; font-size: 10px; font-weight: 700;
+  padding: 1px 6px; margin-left: 5px; min-width: 18px; text-align: center;
+}
+.tab.active .tab-badge { background: rgba(255,255,255,0.35); }
+
+/* ── EXPORT BUTTONS ── */
+.btn-export { background: #16a34a; color: white; }
+.btn-export:hover { background: #15803d; }
+
+/* ── SEARCH REALTIME indicator ── */
+.search-wrap { position: relative; display: inline-block; }
+.search-wrap input { padding-right: 24px; }
+.search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #9ca3af; font-size: 14px; display: none; }
+.search-wrap input:not(:placeholder-shown) ~ .search-clear { display: block; }
+
+/* ── TABLE WRAP dengan pagination ── */
+.table-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; border: 1px solid #ddd; border-radius: 4px; background: white; }
+.table-container .table-wrap { border: none; border-radius: 0; flex: 1; }
+
 </style>
 </head>
 <body>
@@ -271,12 +346,12 @@ td.center { text-align: center; }
 
 <!-- NAV TABS -->
 <div class="nav-tabs">
-  <div class="tab active" id="tab-taex" onclick="switchApp('taex')">📦 TA-ex Reservasi</div>
-  <div class="tab" id="tab-prisma-reservasi" onclick="switchApp('prisma-reservasi')">📋 PRISMA Reservasi</div>
-  <div class="tab" id="tab-kertas-kerja" onclick="switchApp('kertas-kerja')">📝 Kertas Kerja</div>
-  <div class="tab" id="tab-summary" onclick="switchApp('summary')">📊 Summary</div>
-  <div class="tab" id="tab-kumpulan" onclick="switchApp('kumpulan')">🗂 Kumpulan Summary</div>
-  <div class="tab" id="tab-pr" onclick="switchApp('pr')">🧾 SAP PR</div>
+  <div class="tab active" id="tab-taex" onclick="switchApp('taex')">📦 TA-ex Reservasi<span class="tab-badge" id="badge-taex">0</span></div>
+  <div class="tab" id="tab-prisma-reservasi" onclick="switchApp('prisma-reservasi')">📋 PRISMA Reservasi<span class="tab-badge" id="badge-prisma">0</span></div>
+  <div class="tab" id="tab-kertas-kerja" onclick="switchApp('kertas-kerja')">📝 Kertas Kerja<span class="tab-badge" id="badge-kk">0</span></div>
+  <div class="tab" id="tab-summary" onclick="switchApp('summary')">📊 Summary<span class="tab-badge" id="badge-sum">0</span></div>
+  <div class="tab" id="tab-kumpulan" onclick="switchApp('kumpulan')">🗂 Kumpulan Summary<span class="tab-badge" id="badge-ks">0</span></div>
+  <div class="tab" id="tab-pr" onclick="switchApp('pr')">🧾 SAP PR<span class="tab-badge" id="badge-pr">0</span></div>
 </div>
 
 <!-- BODY -->
@@ -300,7 +375,7 @@ td.center { text-align: center; }
 <div class="page active" id="page-taex">
   <div class="filter-bar">
     <label>Cari:</label>
-    <input type="text" id="taex-search" placeholder="Material, deskripsi, order...">
+    <span class="search-wrap"><input type="text" id="taex-search" placeholder="Material, deskripsi, order..." oninput="debounceRender('taex')"><span class="search-clear" onclick="clearSearch('taex-search','taex')">✕</span></span>
     <label>PR:</label>
     <select id="taex-filterPR"><option value="">Semua</option></select>
     <label>Status PO:</label>
@@ -314,10 +389,12 @@ td.center { text-align: center; }
     <button class="btn btn-success" onclick="openAddTaexModal()" style="margin-left:8px">➕ Tambah Data</button>
     <button class="btn btn-teal" onclick="openTaexUploadModal()" style="margin-left:4px">📥 Upload Excel</button>
     <button class="btn btn-orange" onclick="downloadTaexTemplate()" style="margin-left:4px">📋 Download Template</button>
+    <button class="btn btn-export" onclick="exportTaexExcel()" style="margin-left:4px">📤 Export Excel</button>
     <span class="filter-right" id="taex-rowCount"></span>
   </div>
+  <div class="table-container">
   <div class="table-wrap">
-    <table>
+    <table class="sticky-col">
       <thead><tr>
         <th onclick="taexSort('ID')">ID</th>
         <th onclick="taexSort('Equipment')">Equipment</th>
@@ -326,11 +403,11 @@ td.center { text-align: center; }
         <th onclick="taexSort('Material')">Material</th>
         <th onclick="taexSort('Itm')">Itm</th>
         <th class="no-sort">Material Description</th>
-        <th onclick="taexSort('Qty_Reqmts')">Qty_Reqmts</th>
-        <th onclick="taexSort('Qty_Stock')">Qty_Stock</th>
-        <th onclick="taexSort('PR')">PR</th>
+        <th onclick="taexSort('Qty_Reqmts')"><span class="th-wrap">Qty_Reqmts<span class="tooltip-icon" data-tip="Total kebutuhan material">ⓘ</span></span></th>
+        <th onclick="taexSort('Qty_Stock')"><span class="th-wrap">Qty_Stock<span class="tooltip-icon" data-tip="Stok tersedia di gudang">ⓘ</span></span></th>
+        <th onclick="taexSort('PR')"><span class="th-wrap">PR<span class="tooltip-icon" data-tip="Nomor Purchase Request SAP">ⓘ</span></span></th>
         <th onclick="taexSort('Item')">Item</th>
-        <th onclick="taexSort('Qty_PR')">Qty PR</th>
+        <th onclick="taexSort('Qty_PR')"><span class="th-wrap">Qty PR<span class="tooltip-icon" data-tip="Qty yang sudah di-PR">ⓘ</span></span></th>
         <th onclick="taexSort('PO')">PO</th>
         <th class="no-sort">PO Date</th>
         <th onclick="taexSort('Qty_Deliv')">Qty Deliv</th>
@@ -339,19 +416,22 @@ td.center { text-align: center; }
       <tbody id="taex-tbody"><tr class="loading-row"><td colspan="16">Memuat data dari server...</td></tr></tbody>
     </table>
   </div>
+  <div class="pagination" id="taex-pagination"></div>
+  </div>
 </div>
 
 <!-- ==================== PAGE: PRISMA RESERVASI ==================== -->
 <div class="page" id="page-prisma-reservasi">
   <div class="filter-bar" id="pr-filter-bar" style="display:none">
     <label>Cari:</label>
-    <input type="text" id="pr-search" placeholder="Material, deskripsi...">
+    <span class="search-wrap"><input type="text" id="pr-search" placeholder="Material, deskripsi..." oninput="debounceRender('prisma-reservasi')"><span class="search-clear" onclick="clearSearch('pr-search','prisma-reservasi')">✕</span></span>
     <label>Order:</label>
     <select id="pr-filterOrder"><option value="">Semua</option></select>
     <button class="btn btn-search" onclick="prismaReservasiApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="prismaReservasiResetFilter()">Reset</button>
     <button class="btn btn-purple" onclick="syncWithTaex()" style="margin-left:8px">🔄 Sinkron ke TA-ex</button>
     <button class="btn btn-warning" onclick="openKertasKerjaModal()" style="margin-left:8px">📝 Buat Kertas Kerja</button>
+    <button class="btn btn-export" onclick="exportPrismaExcel()" style="margin-left:4px">📤 Export Excel</button>
     <span class="filter-right" id="pr-rowCount"></span>
   </div>
   <div class="empty-state" id="pr-empty-state">
@@ -360,8 +440,9 @@ td.center { text-align: center; }
     <p>Klik tombol di bawah untuk mengambil data dari TA-ex Reservasi.</p>
     <button class="btn btn-purple" onclick="syncWithTaex()" style="padding:8px 24px;font-size:13px">🔄 Sinkron dari TA-ex Reservasi</button>
   </div>
-  <div class="table-wrap" id="pr-table-wrap" style="display:none">
-    <table>
+  <div class="table-container" id="pr-table-wrap" style="display:none">
+  <div class="table-wrap">
+    <table class="sticky-col">
       <thead><tr>
         <th onclick="prismaReservasiSort('ID')">ID</th>
         <th onclick="prismaReservasiSort('Equipment')">Equipment</th>
@@ -380,6 +461,8 @@ td.center { text-align: center; }
       <tbody id="pr-tbody"></tbody>
     </table>
   </div>
+  <div class="pagination" id="prisma-pagination"></div>
+  </div>
 </div>
 
 <!-- ==================== PAGE: KERTAS KERJA ==================== -->
@@ -393,12 +476,13 @@ td.center { text-align: center; }
   </div>
   <div class="filter-bar">
     <label>Cari:</label>
-    <input type="text" id="kk-search" placeholder="Material, deskripsi...">
+    <span class="search-wrap"><input type="text" id="kk-search" placeholder="Material, deskripsi..." oninput="debounceRender('kertas-kerja')"><span class="search-clear" onclick="clearSearch('kk-search','kertas-kerja')">✕</span></span>
     <button class="btn btn-search" onclick="kkApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="kkResetFilter()">Reset</button>
     <button class="btn btn-success" onclick="submitKertasKerja()" style="margin-left:8px">✅ Submit Kertas Kerja</button>
     <span class="filter-right" id="kk-rowCount"></span>
   </div>
+  <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
@@ -416,6 +500,8 @@ td.center { text-align: center; }
       <tbody id="kk-tbody"><tr class="loading-row"><td colspan="10">Pilih data dari PRISMA Reservasi untuk membuat Kertas Kerja</td></tr></tbody>
     </table>
   </div>
+  <div class="pagination" id="kk-pagination"></div>
+  </div>
 </div>
 
 <!-- ==================== PAGE: SUMMARY ==================== -->
@@ -431,12 +517,13 @@ td.center { text-align: center; }
   </div>
   <div class="filter-bar">
     <label>Cari:</label>
-    <input type="text" id="sum-search" placeholder="Material, deskripsi...">
+    <span class="search-wrap"><input type="text" id="sum-search" placeholder="Material, deskripsi..." oninput="debounceRender('summary')"><span class="search-clear" onclick="clearSearch('sum-search','summary')">✕</span></span>
     <button class="btn btn-search" onclick="summaryApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="summaryResetFilter()">Reset</button>
     <button class="btn btn-success" onclick="submitSummary()" style="margin-left:8px">✅ Submit & Simpan Summary</button>
     <span class="filter-right" id="sum-rowCount"></span>
   </div>
+  <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
@@ -450,13 +537,15 @@ td.center { text-align: center; }
       <tbody id="sum-tbody"><tr class="loading-row"><td colspan="6">Submit Kertas Kerja terlebih dahulu</td></tr></tbody>
     </table>
   </div>
+  <div class="pagination" id="sum-pagination"></div>
+  </div>
 </div>
 
 <!-- ==================== PAGE: KUMPULAN SUMMARY ==================== -->
 <div class="page" id="page-kumpulan">
   <div class="filter-bar">
     <label>Cari:</label>
-    <input type="text" id="ks-search" placeholder="Material, code tracking...">
+    <span class="search-wrap"><input type="text" id="ks-search" placeholder="Material, code tracking..." oninput="debounceRender('kumpulan')"><span class="search-clear" onclick="clearSearch('ks-search','kumpulan')">✕</span></span>
     <label>CodeTracking:</label>
     <select id="ks-filterCode"><option value="">Semua</option></select>
     <button class="btn btn-search" onclick="ksApplyFilter()">Cari</button>
@@ -465,6 +554,7 @@ td.center { text-align: center; }
     <button class="btn btn-teal" onclick="exportKumpulanExcel()" style="margin-left:4px">📤 Export Excel</button>
     <span class="filter-right" id="ks-rowCount"></span>
   </div>
+  <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
@@ -472,12 +562,14 @@ td.center { text-align: center; }
         <th class="no-sort">Material Description</th>
         <th onclick="ksSort('Qty_Req')">Qty_Req</th>
         <th onclick="ksSort('Qty_Stock')">Qty_Stock</th>
-        <th class="no-sort">Qty_PR</th>
-        <th class="no-sort">Qty_To_PR</th>
+        <th class="no-sort"><span class="th-wrap">Qty_PR<span class="tooltip-icon" data-tip="Qty sudah dibuatkan PR">ⓘ</span></span></th>
+        <th class="no-sort"><span class="th-wrap">Qty_To_PR<span class="tooltip-icon" data-tip="Qty yang masih perlu di-PR">ⓘ</span></span></th>
         <th onclick="ksSort('CodeTracking')">CodeTracking</th>
       </tr></thead>
       <tbody id="ks-tbody"><tr class="loading-row"><td colspan="7">Belum ada data summary</td></tr></tbody>
     </table>
+  </div>
+  <div class="pagination" id="ks-pagination"></div>
   </div>
 </div>
 
@@ -485,13 +577,15 @@ td.center { text-align: center; }
 <div class="page" id="page-pr">
   <div class="filter-bar">
     <label>Cari:</label>
-    <input type="text" id="sap-search" placeholder="Material, PR, tracking...">
+    <span class="search-wrap"><input type="text" id="sap-search" placeholder="Material, PR, tracking..." oninput="debounceRender('pr')"><span class="search-clear" onclick="clearSearch('sap-search','pr')">✕</span></span>
     <button class="btn btn-search" onclick="sapApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="sapResetFilter()">Reset</button>
     <button class="btn btn-teal" onclick="openSapUploadModal()" style="margin-left:8px">📥 Upload Excel</button>
     <button class="btn btn-orange" onclick="downloadSapTemplate()" style="margin-left:4px">📋 Download Template</button>
+    <button class="btn btn-export" onclick="exportSapExcel()" style="margin-left:4px">📤 Export Excel</button>
     <span class="filter-right" id="sap-rowCount"></span>
   </div>
+  <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
@@ -505,6 +599,8 @@ td.center { text-align: center; }
       </tr></thead>
       <tbody id="sap-tbody"><tr class="loading-row"><td colspan="7">Belum ada data PR</td></tr></tbody>
     </table>
+  </div>
+  <div class="pagination" id="sap-pagination"></div>
   </div>
 </div>
 
@@ -828,7 +924,7 @@ const badge = (v,cls) => v?`<span class="badge badge-${cls}">${v}</span>`:'<span
 // ============================================================
 let taexFiltered = [];
 function taexSort(key) { setSort('taex',key); renderTaex(); }
-function taexApplyFilter() { renderTaex(); }
+function taexApplyFilter() { resetPg('taex'); renderTaex(); }
 function taexResetFilter() {
   document.getElementById('taex-search').value = '';
   document.getElementById('taex-filterPR').value = '';
@@ -847,10 +943,12 @@ function renderTaex() {
   });
   taexFiltered = applySort(data, 'taex');
   const tbody = document.getElementById('taex-tbody');
-  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="16">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; return; }
-  tbody.innerHTML = taexFiltered.map(r => {
+  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="16">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
+  const pg = paginate(taexFiltered, 'taex');
+  tbody.innerHTML = pg.rows.map(r => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
-    return `<tr>
+    const rowCls = r.PO ? 'has-po' : r.PR ? 'has-pr' : '';
+    return `<tr class="${rowCls}">
       <td class="center mono">${r.ID}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
       <td class="mono">${D(r.Order)}</td>
@@ -870,6 +968,8 @@ function renderTaex() {
     </tr>`;
   }).join('');
   document.getElementById('taex-rowCount').textContent = taexFiltered.length+' dari '+state.taexData.length+' baris';
+  renderPagination('taex-pagination','taex',pg.total,pg.page,pg.totalPages,pg.size,renderTaex);
+  updateBadges();
 }
 
 // ============================================================
@@ -877,7 +977,7 @@ function renderTaex() {
 // ============================================================
 let prFiltered = [];
 function prismaReservasiSort(key) { setSort('pr-res',key); renderPrismaReservasi(); }
-function prismaReservasiApplyFilter() { renderPrismaReservasi(); }
+function prismaReservasiApplyFilter() { resetPg('prisma'); renderPrismaReservasi(); }
 function prismaReservasiResetFilter() { document.getElementById('pr-search').value=''; document.getElementById('pr-filterOrder').value=''; renderPrismaReservasi(); }
 function renderPrismaReservasi() {
   const isEmpty = !state.prismaReservasiData || state.prismaReservasiData.length === 0;
@@ -895,9 +995,11 @@ function renderPrismaReservasi() {
   prFiltered = applySort(data,'pr-res');
   const tbody = document.getElementById('pr-tbody');
   if (!prFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Tidak ada data</td></tr>'; document.getElementById('pr-rowCount').textContent='0 baris'; return; }
-  tbody.innerHTML = prFiltered.map(r => {
+  const pgPr = paginate(prFiltered, 'prisma');
+  tbody.innerHTML = pgPr.rows.map(r => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
-    return `<tr>
+    const rowCls = r.PR_Prisma ? 'has-pr' : '';
+    return `<tr class="${rowCls}">
       <td class="center mono">${r.ID}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
       <td class="mono">${D(r.Order)}</td>
@@ -914,6 +1016,8 @@ function renderPrismaReservasi() {
     </tr>`;
   }).join('');
   document.getElementById('pr-rowCount').textContent = prFiltered.length+' dari '+state.prismaReservasiData.length+' baris';
+  renderPagination('prisma-pagination','prisma',pgPr.total,pgPr.page,pgPr.totalPages,pgPr.size,renderPrismaReservasi);
+  updateBadges();
 }
 
 // ============================================================
@@ -921,7 +1025,7 @@ function renderPrismaReservasi() {
 // ============================================================
 let kkFiltered = [];
 function kkSort(key) { setSort('kk',key); renderKK(); }
-function kkApplyFilter() { renderKK(); }
+function kkApplyFilter() { resetPg('kk'); renderKK(); }
 function kkResetFilter() { document.getElementById('kk-search').value=''; renderKK(); }
 function renderKK() {
   const q = document.getElementById('kk-search').value.toLowerCase();
@@ -931,23 +1035,28 @@ function renderKK() {
   document.getElementById('kk-rows').textContent = state.kkData.length;
   document.getElementById('kk-uniq').textContent = new Set(state.kkData.map(r=>r.Material)).size;
   const tbody = document.getElementById('kk-tbody');
-  if (!kkFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="10">Tidak ada data kertas kerja</td></tr>'; return; }
-  tbody.innerHTML = kkFiltered.map((r) => {
-    const origIdx = state.kkData.findIndex(d=>d.ID===r.ID&&d.Itm===r.Itm);
+  if (!kkFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="10">Tidak ada data kertas kerja</td></tr>'; renderPagination('kk-pagination','kk',0,1,1,100,renderKK); return; }
+  const pgKk = paginate(kkFiltered, 'kk');
+  const kkAllHtml = kkFiltered.map((r,i) => {
+    const origIdx = state.kkData.indexOf(r);
+    const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     return `<tr>
-      <td class="center mono">${r.ID}</td>
+      <td class="center mono">${r.ID||i+1}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
       <td class="mono">${D(r.Order)}</td>
       <td class="mono">${D(r.Material)}</td>
       <td class="center mono">${D(r.Itm)}</td>
       <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
-      <td class="num">${N(r.Qty_Reqmts)}</td>
+      <td class="num"><span class="badge ${qc}">${N(r.Qty_Reqmts)}</span></td>
       <td class="num"><input type="number" class="qty-input" min="0" value="${r.Qty_StockOnhand??''}" placeholder="0" onchange="updateStockOnhand(${origIdx}, this.value)" oninput="this.classList.add('changed')"></td>
       <td><span class="badge badge-purple">${r.CodeKertasKerja||state.kkCode||'—'}</span></td>
       <td class="center"><button onclick="cancelKKRow(${origIdx})" style="background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;border-radius:3px;padding:2px 10px;font-size:11px;cursor:pointer;font-weight:600;" onmouseover="this.style.background='#dc2626';this.style.color='white'" onmouseout="this.style.background='#fee2e2';this.style.color='#dc2626'">Return</button></td>
     </tr>`;
-  }).join('');
+  });
+  document.getElementById('kk-tbody').innerHTML = kkAllHtml.slice((pgKk.page-1)*pgKk.size, pgKk.page*pgKk.size).join('');
   document.getElementById('kk-rowCount').textContent = kkFiltered.length+' baris';
+  renderPagination('kk-pagination','kk',pgKk.total,pgKk.page,pgKk.totalPages,pgKk.size,renderKK);
+  updateBadges();
 }
 function updateStockOnhand(idx, val) { state.kkData[idx].Qty_StockOnhand = val===''?null:parseFloat(val)||0; }
 async function cancelKKRow(idx) {
@@ -962,7 +1071,7 @@ async function cancelKKRow(idx) {
 // ============================================================
 let sumFiltered = [];
 function summarySort(key) { setSort('sum',key); renderSummary(); }
-function summaryApplyFilter() { renderSummary(); }
+function summaryApplyFilter() { resetPg('sum'); renderSummary(); }
 function summaryResetFilter() { document.getElementById('sum-search').value=''; renderSummary(); }
 function renderSummary() {
   const q = document.getElementById('sum-search').value.toLowerCase();
@@ -972,9 +1081,9 @@ function renderSummary() {
   document.getElementById('sum-uniq').textContent = state.summaryData.length;
   document.getElementById('sum-qty-req').textContent = state.summaryData.reduce((a,r)=>a+(r.Qty_Req||0),0);
   document.getElementById('sum-qty-stock').textContent = state.summaryData.reduce((a,r)=>a+(r.Qty_Stock||0),0);
-  const tbody = document.getElementById('sum-tbody');
-  if (!sumFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="6">Belum ada data summary</td></tr>'; return; }
-  tbody.innerHTML = sumFiltered.map(r => `<tr>
+  if (!sumFiltered.length) { document.getElementById('sum-tbody').innerHTML='<tr class="loading-row"><td colspan="6">Belum ada data summary</td></tr>'; renderPagination('sum-pagination','sum',0,1,1,100,renderSummary); return; }
+  const pgSum = paginate(sumFiltered, 'sum');
+  document.getElementById('sum-tbody').innerHTML = pgSum.rows.map(r => `<tr>
     <td class="mono">${D(r.Material)}</td>
     <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
     <td class="num">${N(r.Qty_Req)}</td>
@@ -983,6 +1092,8 @@ function renderSummary() {
     <td><span class="badge badge-purple">${r.CodeTracking||'—'}</span></td>
   </tr>`).join('');
   document.getElementById('sum-rowCount').textContent = sumFiltered.length+' baris';
+  renderPagination('sum-pagination','sum',pgSum.total,pgSum.page,pgSum.totalPages,pgSum.size,renderSummary);
+  updateBadges();
 }
 
 // ============================================================
@@ -990,7 +1101,7 @@ function renderSummary() {
 // ============================================================
 let ksFiltered = [];
 function ksSort(key) { setSort('ks',key); renderKumpulan(); }
-function ksApplyFilter() { renderKumpulan(); }
+function ksApplyFilter() { resetPg('ks'); renderKumpulan(); }
 function ksResetFilter() { document.getElementById('ks-search').value=''; document.getElementById('ks-filterCode').value=''; renderKumpulan(); }
 function renderKumpulan() {
   const q = document.getElementById('ks-search').value.toLowerCase();
@@ -1002,8 +1113,11 @@ function renderKumpulan() {
   });
   ksFiltered = applySort(data,'ks');
   const tbody = document.getElementById('ks-tbody');
-  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="7">Belum ada data summary</td></tr>'; return; }
-  tbody.innerHTML = ksFiltered.map(r => `<tr>
+  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="7">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,renderKumpulan); return; }
+  const pgKs = paginate(ksFiltered, 'ks');
+  tbody.innerHTML = pgKs.rows.map(r => {
+    const rowCls = (r.Qty_PR && r.Qty_PR > 0) ? 'has-pr' : '';
+    return `<tr class="${rowCls}">
     <td class="mono">${D(r.Material)}</td>
     <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
     <td class="num">${N(r.Qty_Req)}</td>
@@ -1011,8 +1125,10 @@ function renderKumpulan() {
     <td class="num">${r.Qty_PR!==null?`<span class="badge badge-blue">${r.Qty_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     <td class="num">${r.Qty_To_PR!==null?`<span class="badge badge-amber">${r.Qty_To_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     <td><span class="badge badge-purple">${r.CodeTracking||'—'}</span></td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   document.getElementById('ks-rowCount').textContent = ksFiltered.length+' dari '+state.kumpulanData.length+' baris';
+  renderPagination('ks-pagination','ks',pgKs.total,pgKs.page,pgKs.totalPages,pgKs.size,renderKumpulan);
+  updateBadges();
 }
 
 // ============================================================
@@ -1020,15 +1136,16 @@ function renderKumpulan() {
 // ============================================================
 let sapFiltered = [];
 function sapSort(key) { setSort('sap',key); renderSAP(); }
-function sapApplyFilter() { renderSAP(); }
+function sapApplyFilter() { resetPg('sap'); renderSAP(); }
 function sapResetFilter() { document.getElementById('sap-search').value=''; renderSAP(); }
 function renderSAP() {
   const q = document.getElementById('sap-search').value.toLowerCase();
   let data = state.prData.filter(r=> !q||Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
   sapFiltered = applySort(data,'sap');
   const tbody = document.getElementById('sap-tbody');
-  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="7">Belum ada data PR</td></tr>'; return; }
-  tbody.innerHTML = sapFiltered.map(r=>`<tr>
+  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="7">Belum ada data PR</td></tr>'; renderPagination('sap-pagination','sap',0,1,1,100,renderSAP); return; }
+  const pgSap = paginate(sapFiltered, 'sap');
+  tbody.innerHTML = pgSap.rows.map(r=>`<tr>
     <td class="center mono">${r.ID}</td>
     <td class="mono">${D(r.Material)}</td>
     <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
@@ -1038,6 +1155,8 @@ function renderSAP() {
     <td><span class="badge badge-purple">${r.Tracking||'—'}</span></td>
   </tr>`).join('');
   document.getElementById('sap-rowCount').textContent = sapFiltered.length+' baris';
+  renderPagination('sap-pagination','sap',pgSap.total,pgSap.page,pgSap.totalPages,pgSap.size,renderSAP);
+  updateBadges();
 }
 
 // ============================================================
@@ -1537,6 +1656,184 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('keydown', e => { if (e.key==='Enter') renderPage(state.currentApp); });
 });
+
+
+// ============================================================
+// PAGINATION ENGINE
+// ============================================================
+const pgState = {};
+const PAGE_SIZES = [50, 100, 200, 500];
+
+function initPg(key) {
+  if (!pgState[key]) pgState[key] = { page: 1, size: 100 };
+}
+function getPg(key) { initPg(key); return pgState[key]; }
+function resetPg(key) { initPg(key); pgState[key].page = 1; }
+
+function paginate(data, key) {
+  const pg = getPg(key);
+  const total = data.length;
+  const totalPages = Math.max(1, Math.ceil(total / pg.size));
+  if (pg.page > totalPages) pg.page = totalPages;
+  const start = (pg.page - 1) * pg.size;
+  return { rows: data.slice(start, start + pg.size), total, totalPages, page: pg.page, size: pg.size, start };
+}
+
+function renderPagination(containerId, key, total, page, totalPages, size, renderFn) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (total === 0) { el.innerHTML = ''; return; }
+
+  const sizeOptions = PAGE_SIZES.map(s =>
+    `<option value="${s}" ${s===size?'selected':''}>${s}</option>`
+  ).join('');
+
+  const maxBtn = 5;
+  let pages = [];
+  if (totalPages <= maxBtn + 2) {
+    for (let i=1; i<=totalPages; i++) pages.push(i);
+  } else {
+    pages = [1];
+    let start = Math.max(2, page-1), end = Math.min(totalPages-1, page+1);
+    if (start > 2) pages.push('...');
+    for (let i=start; i<=end; i++) pages.push(i);
+    if (end < totalPages-1) pages.push('...');
+    pages.push(totalPages);
+  }
+
+  const btnHtml = pages.map(p => p==='...'
+    ? `<span style="padding:3px 4px;color:#9ca3af">…</span>`
+    : `<button class="pg-btn ${p===page?'active':''}" onclick="goPage('${key}',${p})">${p}</button>`
+  ).join('');
+
+  el.innerHTML = `
+    <span class="pg-info">Menampilkan ${(page-1)*size+1}–${Math.min(page*size,total)} dari <b>${total}</b> baris</span>
+    <button class="pg-btn" onclick="goPage('${key}',${page-1})" ${page<=1?'disabled':''}>‹</button>
+    ${btnHtml}
+    <button class="pg-btn" onclick="goPage('${key}',${page+1})" ${page>=totalPages?'disabled':''}>›</button>
+    <select class="pg-size" onchange="changePageSize('${key}',this.value)">
+      <label style="font-size:11px;color:#6b7280">Baris/hal:</label>${sizeOptions}
+    </select>
+  `;
+}
+
+function goPage(key, page) {
+  const pg = getPg(key);
+  pg.page = page;
+  renderPageByKey(key);
+}
+
+function changePageSize(key, size) {
+  const pg = getPg(key);
+  pg.size = parseInt(size);
+  pg.page = 1;
+  renderPageByKey(key);
+}
+
+function renderPageByKey(key) {
+  if (key==='taex') renderTaex();
+  else if (key==='prisma') renderPrismaReservasi();
+  else if (key==='kk') renderKK();
+  else if (key==='sum') renderSummary();
+  else if (key==='ks') renderKumpulan();
+  else if (key==='sap') renderSAP();
+}
+
+// ============================================================
+// DEBOUNCE REALTIME SEARCH
+// ============================================================
+const _debounceTimers = {};
+function debounceRender(app) {
+  clearTimeout(_debounceTimers[app]);
+  _debounceTimers[app] = setTimeout(() => {
+    resetPg(appToKey(app));
+    renderPage(app);
+  }, 280);
+}
+function appToKey(app) {
+  const m = { 'taex':'taex','prisma-reservasi':'prisma','kertas-kerja':'kk','summary':'sum','kumpulan':'ks','pr':'sap' };
+  return m[app] || app;
+}
+function clearSearch(inputId, app) {
+  document.getElementById(inputId).value = '';
+  resetPg(appToKey(app));
+  renderPage(app);
+}
+
+// ============================================================
+// TAB BADGE COUNTER
+// ============================================================
+function updateBadges() {
+  const set = (id, n) => { const el=document.getElementById(id); if(el) el.textContent=n; };
+  set('badge-taex',   state.taexData.length);
+  set('badge-prisma', state.prismaReservasiData.length);
+  set('badge-kk',     state.kkData.length);
+  set('badge-sum',    state.summaryData.length);
+  set('badge-ks',     state.kumpulanData.length);
+  set('badge-pr',     state.prData.length);
+}
+
+// ============================================================
+// SKELETON ROWS
+// ============================================================
+function skeletonRows(tbodyId, cols) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = Array(5).fill(0).map(() =>
+    `<tr class="skeleton-row">${Array(cols).fill(0).map(() =>
+      `<td><span class="skeleton" style="width:${60+Math.random()*40}%"></span></td>`
+    ).join('')}</tr>`
+  ).join('');
+}
+
+// ============================================================
+// EXPORT FUNCTIONS (semua tab)
+// ============================================================
+function exportTaexExcel() {
+  if (!state.taexData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  const ws = XLSX.utils.json_to_sheet(state.taexData.map(r=>({
+    ID:r.ID, Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
+    Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
+    Qty_Reqmts:r.Qty_Reqmts??'', Qty_Stock:r.Qty_Stock??'',
+    PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'',
+    PO:r.PO||'', PO_Date:r.PO_Date||'', Qty_Deliv:r.Qty_Deliv??'', Delivery_Date:r.Delivery_Date||''
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'TA-ex Reservasi');
+  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(wb, `TAex_Reservasi_${ts}.xlsx`);
+  toast('Export TA-ex berhasil!', 'ok');
+}
+
+function exportPrismaExcel() {
+  if (!state.prismaReservasiData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  const ws = XLSX.utils.json_to_sheet(state.prismaReservasiData.map(r=>({
+    ID:r.ID, Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
+    Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
+    Qty_Reqmts:r.Qty_Reqmts??'', Qty_StockOnhand:r.Qty_StockOnhand??'',
+    PR_Prisma:r.PR_Prisma||'', Item_Prisma:r.Item_Prisma||'', Qty_PR_Prisma:r.Qty_PR_Prisma??'',
+    CodeKertasKerja:r.CodeKertasKerja||''
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'PRISMA Reservasi');
+  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(wb, `PRISMA_Reservasi_${ts}.xlsx`);
+  toast('Export PRISMA berhasil!', 'ok');
+}
+
+function exportSapExcel() {
+  if (!state.prData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  const ws = XLSX.utils.json_to_sheet(state.prData.map(r=>({
+    ID:r.ID, Material:r.Material||'', Material_Description:r.Material_Description||'',
+    PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'', Tracking:r.Tracking||''
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'SAP PR');
+  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(wb, `SAP_PR_${ts}.xlsx`);
+  toast('Export SAP PR berhasil!', 'ok');
+}
+
 
 init().then(() => switchApp('taex'));
 </script>
