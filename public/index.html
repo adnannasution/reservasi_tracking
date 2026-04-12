@@ -219,7 +219,7 @@ td.center { text-align: center; }
 .loading-spinner {
   background: white; border-radius: 12px; padding: 32px 48px;
   display: flex; flex-direction: column; align-items: center; gap: 16px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3); min-width: 320px;
 }
 .spinner-ring {
   width: 48px; height: 48px; border: 5px solid #e5e7eb;
@@ -228,6 +228,27 @@ td.center { text-align: center; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-spinner p { font-size: 13px; font-weight: 600; color: #374151; }
+/* PROGRESS BAR */
+.progress-wrap {
+  width: 100%; background: #e5e7eb; border-radius: 99px; height: 8px; overflow: hidden; display: none;
+}
+.progress-bar {
+  height: 100%; background: linear-gradient(90deg,#1a56db,#3b82f6);
+  border-radius: 99px; transition: width 0.3s ease;
+  animation: progress-shine 1.5s infinite;
+  background-size: 200% 100%;
+}
+@keyframes progress-shine {
+  0%{background-position:200% 0} 100%{background-position:-200% 0}
+}
+.progress-label { font-size: 11px; color: #6b7280; display: none; }
+/* COLUMN RESIZE */
+thead th { position: relative; }
+.col-resizer {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 5px;
+  cursor: col-resize; z-index: 10; user-select: none;
+}
+.col-resizer:hover, .col-resizer.active { background: rgba(255,255,255,0.5); }
 .empty-state {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 16px; color: #9ca3af;
@@ -757,6 +778,10 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
   <div class="loading-spinner">
     <div class="spinner-ring"></div>
     <p id="loading-msg">Memproses...</p>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <p class="progress-label" id="progress-label"></p>
   </div>
 </div>
 <!-- TOAST -->
@@ -765,15 +790,94 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
 <script>
 
 // ============================================================
-// LOADING OVERLAY
+// LOADING OVERLAY + PROGRESS BAR
 // ============================================================
-function showLoading(msg) {
+let _progressInterval = null;
+
+function showLoading(msg, withProgress) {
   msg = msg || 'Memproses...';
   document.getElementById('loading-msg').textContent = msg;
   document.getElementById('loading-overlay').classList.add('show');
+  const wrap = document.getElementById('progress-wrap');
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  if (withProgress) {
+    wrap.style.display = 'block';
+    label.style.display = 'block';
+    bar.style.width = '0%';
+    label.textContent = '0%';
+    clearInterval(_progressInterval);
+    let pct = 0;
+    _progressInterval = setInterval(() => {
+      pct = Math.min(pct + Math.random() * 8, 90);
+      bar.style.width = pct + '%';
+      label.textContent = Math.round(pct) + '%';
+    }, 300);
+  } else {
+    wrap.style.display = 'none';
+    label.style.display = 'none';
+  }
+}
+function setProgress(pct, msg) {
+  clearInterval(_progressInterval);
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  bar.style.width = pct + '%';
+  label.textContent = (msg || '') + ' ' + Math.round(pct) + '%';
 }
 function hideLoading() {
-  document.getElementById('loading-overlay').classList.remove('show');
+  clearInterval(_progressInterval);
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  bar.style.width = '100%';
+  label.textContent = '100% ✓';
+  setTimeout(() => {
+    document.getElementById('loading-overlay').classList.remove('show');
+    document.getElementById('progress-wrap').style.display = 'none';
+    label.style.display = 'none';
+    bar.style.width = '0%';
+  }, 350);
+}
+
+// ============================================================
+// COLUMN RESIZE
+// ============================================================
+function makeResizable(table) {
+  if (!table) return;
+  const ths = table.querySelectorAll('thead th');
+  ths.forEach(th => {
+    if (th.querySelector('.col-resizer')) return;
+    const resizer = document.createElement('div');
+    resizer.className = 'col-resizer';
+    th.appendChild(resizer);
+    let startX, startW;
+    resizer.addEventListener('mousedown', e => {
+      startX = e.pageX;
+      startW = th.offsetWidth;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      const onMove = ev => {
+        const w = Math.max(40, startW + ev.pageX - startX);
+        th.style.minWidth = w + 'px';
+        th.style.width = w + 'px';
+      };
+      const onUp = () => {
+        resizer.classList.remove('active');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+}
+function initAllResizable() {
+  document.querySelectorAll('table').forEach(t => makeResizable(t));
 }
 
 // ============================================================
@@ -1263,7 +1367,7 @@ async function importTaexData() {
     Delivery_Date: r.Delivery_Date||null,
   }));
 
-  showLoading('Mengimport data TA-ex...');
+  showLoading('Mengimport data TA-ex...', true);
   setSyncStatus('loading', '⏳ Menyimpan data ke server...');
   try {
     const endpoint = replace ? '/taex/replace' : '/taex/append';
@@ -1303,7 +1407,7 @@ async function importSapData() {
     Tracking: r.Tracking||r.tracking||r.CodeTracking||null,
   }));
 
-  showLoading('Mengimport data SAP PR...');
+  showLoading('Mengimport data SAP PR...', true);
   setSyncStatus('loading', '⏳ Menyimpan data PR ke server...');
   try {
     const endpoint = replace ? '/pr/replace' : '/pr/append';
@@ -1381,7 +1485,7 @@ async function syncWithTaex() {
     return { ...r, Qty_StockOnhand: null, PR_Prisma: null, Item_Prisma: null, Qty_PR_Prisma: null, CodeKertasKerja: null };
   });
   state.prismaReservasiData = syncedData;
-  showLoading('Sinkronisasi data...');
+  showLoading('Sinkronisasi data...', true);
   setSyncStatus('loading', '⏳ Sinkronisasi ke server...');
   try {
     await apiFetch('/prisma', { method: 'PUT', body: syncedData });
@@ -1481,7 +1585,7 @@ async function submitSummary() {
   state.summaryData = [];
   state.kkData = [];
   state.kkCode = null;
-  showLoading('Menyimpan ke Kumpulan Summary...');
+  showLoading('Menyimpan ke Kumpulan Summary...', true);
   setSyncStatus('loading', '⏳ Menyimpan Summary...');
   try {
     await apiFetch('/kumpulan', { method:'PUT', body: state.kumpulanData });
@@ -1573,7 +1677,7 @@ async function submitPR() {
     return tr;
   });
 
-  showLoading('Sinkronisasi PR dari SAP PR...');
+  showLoading('Sinkronisasi PR dari SAP PR...', true);
   setSyncStatus('loading', '⏳ Sinkronisasi PR ke server...');
   try {
     await apiFetch('/kumpulan', { method:'PUT', body: state.kumpulanData });
@@ -1835,7 +1939,7 @@ function exportSapExcel() {
 }
 
 
-init().then(() => switchApp('taex'));
+init().then(() => { switchApp('taex'); initAllResizable(); });
 </script>
 </body>
 </html>
