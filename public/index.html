@@ -789,7 +789,7 @@ const API = window.location.hostname === 'localhost' || window.location.hostname
 async function apiFetch(path, opts = {}) {
   try {
     const res = await fetch(API + path, {
-      headers: { 'Content-Type': 'application/json', ...opts.headers },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': 'Xz5jX1R1bqheB0AcVuM8W7jJlUzJGAIK', ...opts.headers },
       ...opts,
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
