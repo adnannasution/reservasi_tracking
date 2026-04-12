@@ -12,7 +12,9 @@ const PORT = process.env.PORT || 8080;
 // ─────────────────────────────────────────────
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: false,
+  // ssl: false untuk Unix socket (Cloud SQL via socket)
+  // ssl: { rejectUnauthorized: false } untuk koneksi TCP
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
 async function query(text, params) {
@@ -40,22 +42,9 @@ async function withTransaction(fn) {
 }
 
 // ─────────────────────────────────────────────
-// SEED DATA
+// SEED DATA — kosongkan jika tidak perlu data default
 // ─────────────────────────────────────────────
-const SEED_DATA = [
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"I090912197",itm:"0006",material_description:"BOLT,STUD,A193,B7,5/8IN,105MM,2NUT",qty_reqmts:16,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"J200750428",itm:"0007",material_description:"GASKET,SPW,316L,GRAP,8IN,300,OR,316L,CS",qty_reqmts:4,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"J200750428",itm:"0008",material_description:"GASKET,SPW,316L,GRAP,8IN,300,OR,316L,CS",qty_reqmts:4,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"J200750095",itm:"0009",material_description:"GASKET,SW,HP/IR:304,OR:CS,GRPD,3IN,300",qty_reqmts:4,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"J200750095",itm:"0010",material_description:"GASKET,SW,HP/IR:304,OR:CS,GRPD,3IN,300",qty_reqmts:4,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"J200750146",itm:"0011",material_description:"GASKET,SW,HP/IR:SS304,OR:CS,GRA,300,2IN",qty_reqmts:4,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"J200750146",itm:"0012",material_description:"GASKET,SW,HP/IR:SS304,OR:CS,GRA,300,2IN",qty_reqmts:4,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-H-1/00",order:"8302345979",revision:"RU21025",material:"J200750510",itm:"0013",material_description:"GASKET,SW,SS304,GRPD,OR:CS,300,6IN",qty_reqmts:8,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-E-5/01",order:"8302345980",revision:"RU21026",material:"J200750510",itm:"0014",material_description:"GASKET,SW,SS304,GRPD,OR:CS,300,6IN",qty_reqmts:8,qty_stock:0,pr:null,item:null,qty_pr:null,po:"4500987654",po_date:"2025-03-10",qty_deliv:4,delivery_date:"2025-04-01"},
-  {equipment:"701-E-5/01",order:"8302345980",revision:"RU21026",material:"B100440012",itm:"0015",material_description:"BOLT,HEX,A193,B7,1IN,UNC,165MM,2NUT,2WASHER",qty_reqmts:24,qty_stock:12,pr:null,item:null,qty_pr:null,po:"4500987655",po_date:"2025-03-12",qty_deliv:12,delivery_date:"2025-04-05"},
-  {equipment:"701-E-5/01",order:"8302345980",revision:"RU21026",material:"I090912198",itm:"0016",material_description:"VALVE,GATE,SS316,2IN,300LB,BW",qty_reqmts:2,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-  {equipment:"701-T-3/00",order:"8302345981",revision:"RU21027",material:"K300150001",itm:"0001",material_description:"PACKING,GRAPHITE,ROPE,12MM",qty_reqmts:10,qty_stock:0,pr:null,item:null,qty_pr:null,po:null,po_date:null,qty_deliv:null,delivery_date:null},
-];
+const SEED_DATA = [];
 
 // ─────────────────────────────────────────────
 // AUTO MIGRATE
@@ -151,21 +140,23 @@ async function migrate() {
   await query(`CREATE INDEX IF NOT EXISTS idx_sap_pr          ON sap_pr(pr)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_kumpulan_code   ON kumpulan_summary(code_tracking)`);
 
-  // Seed jika kosong
-  const { rows } = await query('SELECT COUNT(*) as c FROM taex_reservasi');
-  if (parseInt(rows[0].c) === 0) {
-    console.log('🌱 Seeding default data...');
-    await withTransaction(async (client) => {
-      for (const r of SEED_DATA) {
-        await client.query(
-          `INSERT INTO taex_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-          [r.equipment,r.order,r.revision,r.material,r.itm,r.material_description,
-           r.qty_reqmts,r.qty_stock,r.pr,r.item,r.qty_pr,r.po,r.po_date,r.qty_deliv,r.delivery_date]
-        );
-      }
-    });
-    console.log(`✅ Seeded ${SEED_DATA.length} rows`);
+  // Seed jika kosong dan ada data
+  if (SEED_DATA.length > 0) {
+    const { rows } = await query('SELECT COUNT(*) as c FROM taex_reservasi');
+    if (parseInt(rows[0].c) === 0) {
+      console.log('🌱 Seeding default data...');
+      await withTransaction(async (client) => {
+        for (const r of SEED_DATA) {
+          await client.query(
+            `INSERT INTO taex_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+            [r.equipment,r.order,r.revision,r.material,r.itm,r.material_description,
+             r.qty_reqmts,r.qty_stock,r.pr,r.item,r.qty_pr,r.po,r.po_date,r.qty_deliv,r.delivery_date]
+          );
+        }
+      });
+      console.log(`✅ Seeded ${SEED_DATA.length} rows`);
+    }
   }
   console.log('✅ Migration complete');
 }
@@ -261,26 +252,56 @@ async function bulkReplacePR(client, rows) {
 }
 
 // ─────────────────────────────────────────────
+// SECURITY — API KEY MIDDLEWARE
+// Set API_KEY di environment variables Cloud Run
+// ─────────────────────────────────────────────
+const API_KEY = process.env.API_KEY || null;
+
+function requireApiKey(req, res, next) {
+  // Jika API_KEY tidak diset di env, lewati (backward compatible)
+  if (!API_KEY) return next();
+
+  const key = req.headers['x-api-key'] || req.query.api_key;
+  if (!key || key !== API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: API key tidak valid' });
+  }
+  next();
+}
+
+// ─────────────────────────────────────────────
 // MIDDLEWARE
 // ─────────────────────────────────────────────
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+
+// CORS — batasi hanya dari domain sendiri
+// Set ALLOWED_ORIGIN di env, contoh: https://namadomain.com
+// Jika tidak diset, izinkan semua (untuk development)
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
+app.use(cors({
+  origin: ALLOWED_ORIGIN,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'x-api-key'],
+}));
+
+// Kurangi limit payload dari 50mb ke 10mb
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────────────────────────────────────────
 // ROUTES
 // ─────────────────────────────────────────────
 
-// Health
+// Health — tidak perlu auth (untuk monitoring)
 app.get('/api/health', async (req, res) => {
   try {
     await query('SELECT 1');
     res.json({ status: 'ok', db: 'postgresql', time: new Date().toISOString() });
-  } catch(e) { res.status(500).json({ status: 'error', error: e.message }); }
+  } catch(e) {
+    res.status(500).json({ status: 'error', error: 'Database connection failed' });
+  }
 });
 
-// Load all
-app.get('/api/data', async (req, res) => {
+// Load all — dilindungi API key
+app.get('/api/data', requireApiKey, async (req, res) => {
   try {
     const [taex, prisma, kumpulan, pr, kkCurrent, kkCounter, prCounter, summaryData] = await Promise.all([
       query('SELECT * FROM taex_reservasi ORDER BY id'),
@@ -304,15 +325,15 @@ app.get('/api/data', async (req, res) => {
       prCounter:           prCounter || 0,
       lastUpdated:         new Date().toISOString(),
     });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal memuat data' }); }
 });
 
 // ── TAEX ──
-app.get('/api/taex', async (req, res) => {
+app.get('/api/taex', requireApiKey, async (req, res) => {
   try { const { rows } = await query('SELECT * FROM taex_reservasi ORDER BY id'); res.json(rows.map(mapTaex)); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  catch(e) { res.status(500).json({ error: 'Gagal memuat data taex' }); }
 });
-app.post('/api/taex', async (req, res) => {
+app.post('/api/taex', requireApiKey, async (req, res) => {
   try {
     const r = req.body;
     const { rows } = await query(
@@ -323,17 +344,17 @@ app.post('/api/taex', async (req, res) => {
        r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null]
     );
     res.json({ ok: true, id: rows[0].id });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal menyimpan data' }); }
 });
-app.post('/api/taex/replace', async (req, res) => {
+app.post('/api/taex/replace', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
     await withTransaction(async (c) => bulkReplaceTaex(c, rows));
     res.json({ ok: true, count: rows.length });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal replace data' }); }
 });
-app.post('/api/taex/append', async (req, res) => {
+app.post('/api/taex/append', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
@@ -350,59 +371,59 @@ app.post('/api/taex/append', async (req, res) => {
     });
     const { rows: all } = await query('SELECT * FROM taex_reservasi ORDER BY id');
     res.json({ ok: true, count: rows.length, data: all.map(mapTaex) });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal append data' }); }
 });
-app.put('/api/taex', async (req, res) => {
+app.put('/api/taex', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
     await withTransaction(async (c) => bulkReplaceTaex(c, rows));
     res.json({ ok: true });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data' }); }
 });
 
 // ── PRISMA ──
-app.get('/api/prisma', async (req, res) => {
+app.get('/api/prisma', requireApiKey, async (req, res) => {
   try { const { rows } = await query('SELECT * FROM prisma_reservasi ORDER BY id'); res.json(rows.map(mapPrisma)); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  catch(e) { res.status(500).json({ error: 'Gagal memuat data prisma' }); }
 });
-app.put('/api/prisma', async (req, res) => {
+app.put('/api/prisma', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
     await withTransaction(async (c) => bulkReplacePrisma(c, rows));
     res.json({ ok: true });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data prisma' }); }
 });
 
 // ── KUMPULAN ──
-app.get('/api/kumpulan', async (req, res) => {
+app.get('/api/kumpulan', requireApiKey, async (req, res) => {
   try { const { rows } = await query('SELECT * FROM kumpulan_summary ORDER BY id'); res.json(rows.map(mapKumpulan)); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  catch(e) { res.status(500).json({ error: 'Gagal memuat data kumpulan' }); }
 });
-app.put('/api/kumpulan', async (req, res) => {
+app.put('/api/kumpulan', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
     await withTransaction(async (c) => bulkReplaceKumpulan(c, rows));
     res.json({ ok: true });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data kumpulan' }); }
 });
 
 // ── SAP PR ──
-app.get('/api/pr', async (req, res) => {
+app.get('/api/pr', requireApiKey, async (req, res) => {
   try { const { rows } = await query('SELECT * FROM sap_pr ORDER BY id'); res.json(rows.map(mapSAP)); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  catch(e) { res.status(500).json({ error: 'Gagal memuat data SAP PR' }); }
 });
-app.post('/api/pr/replace', async (req, res) => {
+app.post('/api/pr/replace', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
     await withTransaction(async (c) => bulkReplacePR(c, rows));
     res.json({ ok: true, count: rows.length });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal replace data SAP PR' }); }
 });
-app.post('/api/pr/append', async (req, res) => {
+app.post('/api/pr/append', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
@@ -416,29 +437,29 @@ app.post('/api/pr/append', async (req, res) => {
     });
     const { rows: all } = await query('SELECT * FROM sap_pr ORDER BY id');
     res.json({ ok: true, count: rows.length, data: all.map(mapSAP) });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal append data SAP PR' }); }
 });
-app.put('/api/pr', async (req, res) => {
+app.put('/api/pr', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
     await withTransaction(async (c) => bulkReplacePR(c, rows));
     res.json({ ok: true });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data SAP PR' }); }
 });
 
 // ── APP STATE ──
-app.get('/api/state/:key', async (req, res) => {
+app.get('/api/state/:key', requireApiKey, async (req, res) => {
   try { res.json({ key: req.params.key, value: await getState(req.params.key) }); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  catch(e) { res.status(500).json({ error: 'Gagal memuat state' }); }
 });
-app.post('/api/state/:key', async (req, res) => {
+app.post('/api/state/:key', requireApiKey, async (req, res) => {
   try { await setState(req.params.key, req.body.value); res.json({ ok: true }); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  catch(e) { res.status(500).json({ error: 'Gagal menyimpan state' }); }
 });
 
-// ── RESET ALL ──
-app.post('/api/reset', async (req, res) => {
+// ── RESET ALL — dilindungi API key ──
+app.post('/api/reset', requireApiKey, async (req, res) => {
   try {
     await withTransaction(async (client) => {
       await client.query('DELETE FROM taex_reservasi');
@@ -453,11 +474,11 @@ app.post('/api/reset', async (req, res) => {
     });
     await migrate();
     res.json({ ok: true });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal reset data' }); }
 });
 
 // ── BULK SAVE ──
-app.post('/api/save', async (req, res) => {
+app.post('/api/save', requireApiKey, async (req, res) => {
   try {
     const { taexData, prismaReservasiData, kumpulanData, prData, kkData, kkCode, summaryData, kkCounter, prCounter } = req.body;
     await withTransaction(async (client) => {
@@ -471,9 +492,9 @@ app.post('/api/save', async (req, res) => {
     if (kkCounter !== undefined)   await setState('kk_counter', kkCounter);
     if (prCounter !== undefined)   await setState('pr_counter', prCounter);
     res.json({ ok: true, savedAt: new Date().toISOString() });
-  } catch(e) { console.error(e); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal menyimpan data' }); }
 });
- 
+
 // ── SERVE SPA ──
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -487,6 +508,7 @@ migrate()
     app.listen(PORT, () => {
       console.log(`🚀 PRISMA TA-ex System running on port ${PORT}`);
       console.log(`🐘 Database: PostgreSQL`);
+      console.log(`🔐 API Key: ${API_KEY ? 'AKTIF' : 'TIDAK AKTIF (set API_KEY di env)'}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   })
