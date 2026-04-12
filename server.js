@@ -2,6 +2,9 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
+const { Storage } = require('@google-cloud/storage');
+const multer = require('multer');
+const XLSX = require('xlsx');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -12,8 +15,8 @@ const PORT = process.env.PORT || 8080;
 // ─────────────────────────────────────────────
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // ssl: false untuk Unix socket (Cloud SQL via socket)
-  // ssl: { rejectUnauthorized: false } untuk koneksi TCP
+  // ssl: false  → untuk Unix socket (Cloud SQL via socket) ✅
+  // ssl: true   → set DB_SSL=true di env jika koneksi TCP
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
@@ -42,7 +45,7 @@ async function withTransaction(fn) {
 }
 
 // ─────────────────────────────────────────────
-// SEED DATA — kosongkan jika tidak perlu data default
+// SEED DATA — kosong, tidak ada data default
 // ─────────────────────────────────────────────
 const SEED_DATA = [];
 
@@ -140,7 +143,7 @@ async function migrate() {
   await query(`CREATE INDEX IF NOT EXISTS idx_sap_pr          ON sap_pr(pr)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_kumpulan_code   ON kumpulan_summary(code_tracking)`);
 
-  // Seed jika kosong dan ada data
+  // Seed hanya jika SEED_DATA tidak kosong
   if (SEED_DATA.length > 0) {
     const { rows } = await query('SELECT COUNT(*) as c FROM taex_reservasi');
     if (parseInt(rows[0].c) === 0) {
@@ -237,7 +240,8 @@ async function bulkReplaceKumpulan(client, rows) {
     await client.query(
       `INSERT INTO kumpulan_summary (material,material_description,qty_req,qty_stock,qty_pr,qty_to_pr,code_tracking)
        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [r.Material||null,r.Material_Description||null,r.Qty_Req||0,r.Qty_Stock||0,r.Qty_PR??null,r.Qty_To_PR??null,r.CodeTracking||null]
+      [r.Material||null,r.Material_Description||null,r.Qty_Req||0,r.Qty_Stock||0,
+       r.Qty_PR??null,r.Qty_To_PR??null,r.CodeTracking||null]
     );
   }
 }
@@ -252,15 +256,102 @@ async function bulkReplacePR(client, rows) {
 }
 
 // ─────────────────────────────────────────────
+// GOOGLE CLOUD STORAGE + MULTER
+// Set GCS_BUCKET di environment variables Cloud Run
+// ─────────────────────────────────────────────
+const gcsStorage = new Storage();
+const BUCKET = process.env.GCS_BUCKET || 'reservasi-tracking-uploads';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // max 50MB
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Hanya file Excel (.xlsx/.xls) yang diizinkan'));
+  },
+});
+
+// Simpan file ke GCS sebagai backup
+async function uploadToGCS(buffer, originalname) {
+  try {
+    const bucket = gcsStorage.bucket(BUCKET);
+    const filename = `uploads/${Date.now()}_${originalname}`;
+    const file = bucket.file(filename);
+    await file.save(buffer, {
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    console.log(`📁 File disimpan ke GCS: ${filename}`);
+    return filename;
+  } catch (e) {
+    console.warn('⚠️ GCS upload gagal (tidak kritis):', e.message);
+    return null;
+  }
+}
+
+// Proses Excel per batch 500 baris — hemat memory
+async function processExcelBatch(buffer, type) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+
+  if (rows.length === 0) throw new Error('File Excel kosong atau format tidak sesuai');
+
+  const BATCH_SIZE = 500;
+  let total = 0;
+
+  await withTransaction(async (client) => {
+    if (type === 'taex')   await client.query('DELETE FROM taex_reservasi');
+    if (type === 'prisma') await client.query('DELETE FROM prisma_reservasi');
+    if (type === 'pr')     await client.query('DELETE FROM sap_pr');
+
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+      const batch = rows.slice(i, i + BATCH_SIZE);
+      for (const r of batch) {
+        if (type === 'taex') {
+          await client.query(
+            `INSERT INTO taex_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+            [r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+             r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
+             r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null]
+          );
+        }
+        if (type === 'prisma') {
+          await client.query(
+            `INSERT INTO prisma_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock_onhand,pr_prisma,item_prisma,qty_pr_prisma,code_kertas_kerja)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+            [r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+             r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_StockOnhand??null,
+             r.PR_Prisma||null,r.Item_Prisma||null,r.Qty_PR_Prisma??null,r.CodeKertasKerja||null]
+          );
+        }
+        if (type === 'pr') {
+          await client.query(
+            `INSERT INTO sap_pr (material,material_description,pr,item,qty_pr,tracking) VALUES ($1,$2,$3,$4,$5,$6)`,
+            [r.Material||null,r.Material_Description||null,r.PR||null,r.Item||null,r.Qty_PR??null,r.Tracking||null]
+          );
+        }
+      }
+      total += batch.length;
+      console.log(`✅ Batch ${type}: ${total}/${rows.length} baris`);
+    }
+  });
+
+  return { total, rowCount: rows.length };
+}
+
+// ─────────────────────────────────────────────
 // SECURITY — API KEY MIDDLEWARE
 // Set API_KEY di environment variables Cloud Run
 // ─────────────────────────────────────────────
 const API_KEY = process.env.API_KEY || null;
 
 function requireApiKey(req, res, next) {
-  // Jika API_KEY tidak diset di env, lewati (backward compatible)
   if (!API_KEY) return next();
-
   const key = req.headers['x-api-key'] || req.query.api_key;
   if (!key || key !== API_KEY) {
     return res.status(401).json({ error: 'Unauthorized: API key tidak valid' });
@@ -271,10 +362,6 @@ function requireApiKey(req, res, next) {
 // ─────────────────────────────────────────────
 // MIDDLEWARE
 // ─────────────────────────────────────────────
-
-// CORS — batasi hanya dari domain sendiri
-// Set ALLOWED_ORIGIN di env, contoh: https://namadomain.com
-// Jika tidak diset, izinkan semua (untuk development)
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 app.use(cors({
   origin: ALLOWED_ORIGIN,
@@ -282,15 +369,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-api-key'],
 }));
 
-// Kurangi limit payload dari 50mb ke 10mb
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────────────────────────────────────────
 // ROUTES
 // ─────────────────────────────────────────────
 
-// Health — tidak perlu auth (untuk monitoring)
+// Health — tanpa auth (untuk monitoring GCP)
 app.get('/api/health', async (req, res) => {
   try {
     await query('SELECT 1');
@@ -300,7 +386,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Load all — dilindungi API key
+// Load all data
 app.get('/api/data', requireApiKey, async (req, res) => {
   try {
     const [taex, prisma, kumpulan, pr, kkCurrent, kkCounter, prCounter, summaryData] = await Promise.all([
@@ -381,6 +467,15 @@ app.put('/api/taex', requireApiKey, async (req, res) => {
     res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data' }); }
 });
+// Upload Excel TA-ex via GCS
+app.post('/api/taex/upload', requireApiKey, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
+    const gcsPath = await uploadToGCS(req.file.buffer, req.file.originalname);
+    const result = await processExcelBatch(req.file.buffer, 'taex');
+    res.json({ ok: true, ...result, gcsPath });
+  } catch(e) { console.error(e); res.status(500).json({ error: e.message || 'Gagal upload file taex' }); }
+});
 
 // ── PRISMA ──
 app.get('/api/prisma', requireApiKey, async (req, res) => {
@@ -394,6 +489,15 @@ app.put('/api/prisma', requireApiKey, async (req, res) => {
     await withTransaction(async (c) => bulkReplacePrisma(c, rows));
     res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data prisma' }); }
+});
+// Upload Excel PRISMA via GCS
+app.post('/api/prisma/upload', requireApiKey, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
+    const gcsPath = await uploadToGCS(req.file.buffer, req.file.originalname);
+    const result = await processExcelBatch(req.file.buffer, 'prisma');
+    res.json({ ok: true, ...result, gcsPath });
+  } catch(e) { console.error(e); res.status(500).json({ error: e.message || 'Gagal upload file prisma' }); }
 });
 
 // ── KUMPULAN ──
@@ -447,6 +551,15 @@ app.put('/api/pr', requireApiKey, async (req, res) => {
     res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data SAP PR' }); }
 });
+// Upload Excel SAP PR via GCS
+app.post('/api/pr/upload', requireApiKey, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
+    const gcsPath = await uploadToGCS(req.file.buffer, req.file.originalname);
+    const result = await processExcelBatch(req.file.buffer, 'pr');
+    res.json({ ok: true, ...result, gcsPath });
+  } catch(e) { console.error(e); res.status(500).json({ error: e.message || 'Gagal upload file SAP PR' }); }
+});
 
 // ── APP STATE ──
 app.get('/api/state/:key', requireApiKey, async (req, res) => {
@@ -458,7 +571,7 @@ app.post('/api/state/:key', requireApiKey, async (req, res) => {
   catch(e) { res.status(500).json({ error: 'Gagal menyimpan state' }); }
 });
 
-// ── RESET ALL — dilindungi API key ──
+// ── RESET ALL ──
 app.post('/api/reset', requireApiKey, async (req, res) => {
   try {
     await withTransaction(async (client) => {
@@ -501,14 +614,16 @@ app.get('*', (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// START — migrate dulu baru listen
+// START
 // ─────────────────────────────────────────────
 migrate()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`🚀 PRISMA TA-ex System running on port ${PORT}`);
       console.log(`🐘 Database: PostgreSQL`);
-      console.log(`🔐 API Key: ${API_KEY ? 'AKTIF' : 'TIDAK AKTIF (set API_KEY di env)'}`);
+      console.log(`🪣 GCS Bucket: ${BUCKET}`);
+      console.log(`🔐 API Key: ${API_KEY ? 'AKTIF ✅' : 'TIDAK AKTIF ⚠️  (set API_KEY di env)'}`);
+      console.log(`🌍 CORS Origin: ${ALLOWED_ORIGIN}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   })
