@@ -1672,8 +1672,17 @@ async function submitPR() {
 
   // Update taex dengan nomor PR dari prismaReservasi
   state.taexData = state.taexData.map(tr => {
-    const match = state.prismaReservasiData.find(r => r.Order===tr.Order && r.Material===tr.Material && r.PR_Prisma);
-    if (match) return { ...tr, PR: match.PR_Prisma, Item: match.Item_Prisma, Qty_PR: match.Qty_PR_Prisma };
+    const matchingRows = state.prismaReservasiData.filter(r => r.Order===tr.Order && r.Material===tr.Material && r.PR_Prisma);
+    const match = matchingRows.find(r => r.Itm === tr.Itm) || matchingRows[0];
+  
+    if (match) return { 
+  ...tr, 
+  PR: match.PR_Prisma, 
+  Item: match.Item_Prisma, 
+  Qty_PR: match.Qty_PR_Prisma,
+  Qty_Stock: match.Qty_StockOnhand !== null ? match.Qty_StockOnhand : tr.Qty_Stock,
+};
+    
     return tr;
   });
 
