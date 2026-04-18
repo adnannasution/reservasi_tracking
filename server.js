@@ -58,6 +58,7 @@ async function migrate() {
   await query(`
     CREATE TABLE IF NOT EXISTS taex_reservasi (
       id                   SERIAL PRIMARY KEY,
+      plant                TEXT,
       equipment            TEXT,
       "order"              TEXT,
       revision             TEXT,
@@ -95,6 +96,7 @@ async function migrate() {
 
   // ALTER TABLE untuk migrasi DB yang sudah ada (aman jika kolom sudah ada)
   const newCols = [
+    `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS plant TEXT`,
     `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS sloc TEXT`,
     `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS del TEXT`,
     `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS fis TEXT`,
@@ -309,7 +311,7 @@ async function migrate() {
 // ─────────────────────────────────────────────
 const n = v => v !== null && v !== undefined ? Number(v) : null;
 const mapTaex = r => ({
-  ID: r.id, Equipment: r.equipment, Order: r.order, Revision: r.revision,
+  ID: r.id, Plant: r.plant, Equipment: r.equipment, Order: r.order, Revision: r.revision,
   Material: r.material, Itm: r.itm, Material_Description: r.material_description,
   Qty_Reqmts: n(r.qty_reqmts), Qty_Stock: n(r.qty_stock),
   PR: r.pr, Item: r.item, Qty_PR: n(r.qty_pr),
@@ -382,9 +384,9 @@ async function bulkReplaceTaex(client, rows) {
   await client.query('DELETE FROM taex_reservasi');
   for (const r of rows) {
     await client.query(
-      `INSERT INTO taex_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)`,
-      [r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
+      [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
        r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
        r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
        r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
@@ -509,9 +511,9 @@ async function processExcelBatch(buffer, type) {
       for (const r of batch) {
         if (type === 'taex') {
           await client.query(
-            `INSERT INTO taex_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)`,
-            [r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+            `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
+            [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
              r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
              r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
              r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
@@ -646,9 +648,9 @@ app.post('/api/taex', requireApiKey, async (req, res) => {
   try {
     const r = req.body;
     const { rows } = await query(
-      `INSERT INTO taex_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30) RETURNING id`,
-      [r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31) RETURNING id`,
+      [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
        r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
        r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
        r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
@@ -674,9 +676,9 @@ app.post('/api/taex/append', requireApiKey, async (req, res) => {
     await withTransaction(async (client) => {
       for (const r of rows) {
         await client.query(
-          `INSERT INTO taex_reservasi (equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)`,
-          [r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+          `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
+          [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
            r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
            r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
            r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
