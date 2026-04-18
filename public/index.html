@@ -346,6 +346,53 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
 .table-container { display: flex; flex-direction: column; flex: 1; overflow: hidden; border: 1px solid #ddd; border-radius: 4px; background: white; }
 .table-container .table-wrap { border: none; border-radius: 0; flex: 1; }
 
+
+/* ── TRACKING ── */
+.trk-card {
+  border-radius: 8px; padding: 10px 16px; min-width: 110px;
+  display: flex; flex-direction: column; gap: 2px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.trk-card-val { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.trk-card-lbl { font-size: 10px; opacity: 0.85; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+
+/* expand/collapse rows */
+.trk-expand-btn {
+  width: 22px; height: 22px; border-radius: 4px; border: 1px solid #d1d5db;
+  background: white; cursor: pointer; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; color: #374151;
+  transition: all 0.15s; flex-shrink: 0; margin: auto;
+}
+.trk-expand-btn:hover { background: #eff6ff; border-color: #1a56db; color: #1a56db; }
+.trk-expand-btn.open { background: #1a56db; border-color: #1a56db; color: white; }
+
+/* level 1 — order row */
+tr.trk-l1 { background: #f8faff; }
+tr.trk-l1:hover td { background: #eff6ff !important; }
+tr.trk-l1 td { font-weight: 600; border-bottom: 1px solid #e5e7eb; }
+
+/* level 2 — material row */
+tr.trk-l2 td { background: #fff; padding-left: 8px; border-bottom: 1px solid #f3f4f6; }
+tr.trk-l2:hover td { background: #f0f5ff !important; }
+tr.trk-l2 td:first-child { border-left: 3px solid #bfdbfe; }
+
+/* level 3 — PO detail row */
+tr.trk-l3 td { background: #f9fafb; font-size: 11px; color: #6b7280; border-bottom: 1px solid #f3f4f6; }
+tr.trk-l3:hover td { background: #f0fdf4 !important; }
+tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
+
+/* progress bar in table */
+.trk-progress-wrap { width: 100%; background: #e5e7eb; border-radius: 99px; height: 8px; overflow: hidden; }
+.trk-progress-bar  { height: 100%; border-radius: 99px; transition: width 0.3s; }
+
+/* status badge */
+.trk-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.trk-s-noPR     { background: #fee2e2; color: #dc2626; }
+.trk-s-prCreated { background: #fef3c7; color: #d97706; }
+.trk-s-poCreated { background: #dbeafe; color: #1d4ed8; }
+.trk-s-partial  { background: #ffedd5; color: #ea580c; }
+.trk-s-complete { background: #d1fae5; color: #059669; }
+
 </style>
 </head>
 <body>
@@ -373,6 +420,9 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
   <div class="tab" id="tab-summary" onclick="switchApp('summary')">📊 Summary<span class="tab-badge" id="badge-sum">0</span></div>
   <div class="tab" id="tab-kumpulan" onclick="switchApp('kumpulan')">🗂 Kumpulan Summary<span class="tab-badge" id="badge-ks">0</span></div>
   <div class="tab" id="tab-pr" onclick="switchApp('pr')">🧾 SAP PR<span class="tab-badge" id="badge-pr">0</span></div>
+  <div class="tab" id="tab-order" onclick="switchApp('order')">📋 Order<span class="tab-badge" id="badge-order">0</span></div>
+  <div class="tab" id="tab-po" onclick="switchApp('po')">🛒 PO<span class="tab-badge" id="badge-po">0</span></div>
+  <div class="tab" id="tab-tracking" onclick="switchApp('tracking')">🔍 Tracking<span class="tab-badge" id="badge-tracking">0</span></div>
 </div>
 
 <!-- BODY -->
@@ -433,8 +483,23 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
         <th class="no-sort">PO Date</th>
         <th onclick="taexSort('Qty_Deliv')">Qty Deliv</th>
         <th class="no-sort">Delivery Date</th>
+        <th class="no-sort">SLoc</th>
+        <th class="no-sort">Del</th>
+        <th class="no-sort">FIs</th>
+        <th class="no-sort">Ict</th>
+        <th class="no-sort">PG</th>
+        <th class="no-sort">Recipient</th>
+        <th class="no-sort">Unloading Point</th>
+        <th class="no-sort">Reqmts Date</th>
+        <th onclick="taexSort('Qty_f_avail_check')"><span class="th-wrap">Qty Avail<span class="tooltip-icon" data-tip="Qty tersedia untuk avail check">ⓘ</span></span></th>
+        <th onclick="taexSort('Qty_Withdrawn')"><span class="th-wrap">Qty Withdrawn<span class="tooltip-icon" data-tip="Qty yang sudah diambil/withdrawn">ⓘ</span></span></th>
+        <th class="no-sort">UoM</th>
+        <th class="no-sort">GL Acct</th>
+        <th onclick="taexSort('Res_Price')">Res Price</th>
+        <th onclick="taexSort('Res_per')">Res Per</th>
+        <th class="no-sort">Res Curr</th>
       </tr></thead>
-      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="16">Memuat data dari server...</td></tr></tbody>
+      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="31">Memuat data dari server...</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="taex-pagination"></div>
@@ -466,18 +531,28 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
     <table>
       <thead><tr>
         <th onclick="prismaReservasiSort('ID')">ID</th>
+        <th class="no-sort">Plant</th>
         <th onclick="prismaReservasiSort('Equipment')">Equipment</th>
-        <th onclick="prismaReservasiSort('Order')">Order</th>
         <th onclick="prismaReservasiSort('Revision')">Revision</th>
-        <th onclick="prismaReservasiSort('Material')">Material</th>
+        <th onclick="prismaReservasiSort('Order')">Order</th>
+        <th onclick="prismaReservasiSort('Reservno')">Reservno</th>
         <th onclick="prismaReservasiSort('Itm')">Itm</th>
+        <th onclick="prismaReservasiSort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
-        <th onclick="prismaReservasiSort('Qty_Reqmts')">Qty_Reqmts</th>
-        <th class="no-sort">Qty Stock Onhand</th>
-        <th class="no-sort">PR</th>
+        <th class="no-sort">Del</th>
+        <th class="no-sort">FIs</th>
+        <th class="no-sort">Ict</th>
+        <th class="no-sort">PG</th>
+        <th class="no-sort">Recipient</th>
+        <th class="no-sort">Unloading Point</th>
+        <th class="no-sort">Reqmts Date</th>
+        <th onclick="prismaReservasiSort('Qty_Reqmts')"><span class="th-wrap">Reqmts_Qty<span class="tooltip-icon" data-tip="Total kebutuhan material">ⓘ</span></span></th>
+        <th class="no-sort">UoM</th>
+        <th class="no-sort">Purchreq</th>
         <th class="no-sort">Item</th>
-        <th class="no-sort">Qty dari PR</th>
-        <th class="no-sort">CodeKertasKerja</th>
+        <th class="no-sort"><span class="th-wrap">Qty dari PR<span class="tooltip-icon" data-tip="Qty yang sudah di-PR">ⓘ</span></span></th>
+        <th class="no-sort"><span class="th-wrap">Qty Stock Onhand<span class="tooltip-icon" data-tip="Qty stok fisik tersedia">ⓘ</span></span></th>
+        <th class="no-sort">Code Kertas Kerja</th>
       </tr></thead>
       <tbody id="pr-tbody"></tbody>
     </table>
@@ -507,18 +582,20 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th onclick="kkSort('ID')">ID</th>
+        <th class="no-sort">Plant</th>
         <th onclick="kkSort('Equipment')">Equipment</th>
+        <th onclick="kkSort('Revision')">Revision</th>
         <th onclick="kkSort('Order')">Order</th>
-        <th onclick="kkSort('Material')">Material</th>
+        <th onclick="kkSort('Reservno')">Reservno</th>
         <th onclick="kkSort('Itm')">Itm</th>
+        <th onclick="kkSort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
-        <th onclick="kkSort('Qty_Reqmts')">Qty_Reqmts</th>
+        <th onclick="kkSort('Qty_Reqmts')">Reqmts_Qty</th>
         <th class="no-sort">Qty Stock Onhand</th>
-        <th class="no-sort">CodeKertasKerja</th>
+        <th class="no-sort">Code Kertas Kerja</th>
         <th class="no-sort">Aksi</th>
       </tr></thead>
-      <tbody id="kk-tbody"><tr class="loading-row"><td colspan="10">Pilih data dari PRISMA Reservasi untuk membuat Kertas Kerja</td></tr></tbody>
+      <tbody id="kk-tbody"><tr class="loading-row"><td colspan="12">Pilih data dari PRISMA Reservasi untuk membuat Kertas Kerja</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="kk-pagination"></div>
@@ -548,14 +625,20 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
   <div class="table-wrap">
     <table>
       <thead><tr>
+        <th class="no-sort">Plant</th>
+        <th onclick="summarySort('Equipment')">Equipment</th>
+        <th onclick="summarySort('Revision')">Revision</th>
+        <th onclick="summarySort('Order')">Order</th>
+        <th onclick="summarySort('Reservno')">Reservno</th>
+        <th onclick="summarySort('Itm')">Itm</th>
         <th onclick="summarySort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
-        <th onclick="summarySort('Qty_Req')">Qty_Req</th>
-        <th onclick="summarySort('Qty_Stock')">Qty_Stock</th>
-        <th class="no-sort">Qty_To_PR</th>
-        <th onclick="summarySort('CodeTracking')">CodeTracking</th>
+        <th onclick="summarySort('Qty_Req')">Qty Req</th>
+        <th onclick="summarySort('Qty_Stock')">Qty Stock</th>
+        <th class="no-sort">Qty to PR</th>
+        <th onclick="summarySort('CodeTracking')">Code Tracking</th>
       </tr></thead>
-      <tbody id="sum-tbody"><tr class="loading-row"><td colspan="6">Submit Kertas Kerja terlebih dahulu</td></tr></tbody>
+      <tbody id="sum-tbody"><tr class="loading-row"><td colspan="12">Submit Kertas Kerja terlebih dahulu</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="sum-pagination"></div>
@@ -579,15 +662,21 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
   <div class="table-wrap">
     <table>
       <thead><tr>
+        <th class="no-sort">Plant</th>
+        <th onclick="ksSort('Equipment')">Equipment</th>
+        <th onclick="ksSort('Revision')">Revision</th>
+        <th onclick="ksSort('Order')">Order</th>
+        <th onclick="ksSort('Reservno')">Reservno</th>
+        <th onclick="ksSort('Itm')">Itm</th>
         <th onclick="ksSort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
-        <th onclick="ksSort('Qty_Req')">Qty_Req</th>
-        <th onclick="ksSort('Qty_Stock')">Qty_Stock</th>
+        <th onclick="ksSort('Qty_Req')">Qty Req</th>
+        <th onclick="ksSort('Qty_Stock')">Qty Stock</th>
         <th class="no-sort"><span class="th-wrap">Qty_PR<span class="tooltip-icon" data-tip="Qty sudah dibuatkan PR">ⓘ</span></span></th>
-        <th class="no-sort"><span class="th-wrap">Qty_To_PR<span class="tooltip-icon" data-tip="Qty yang masih perlu di-PR">ⓘ</span></span></th>
-        <th onclick="ksSort('CodeTracking')">CodeTracking</th>
+        <th class="no-sort"><span class="th-wrap">Qty to PR<span class="tooltip-icon" data-tip="Qty yang masih perlu di-PR">ⓘ</span></span></th>
+        <th onclick="ksSort('CodeTracking')">Code Tracking</th>
       </tr></thead>
-      <tbody id="ks-tbody"><tr class="loading-row"><td colspan="7">Belum ada data summary</td></tr></tbody>
+      <tbody id="ks-tbody"><tr class="loading-row"><td colspan="13">Belum ada data summary</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="ks-pagination"></div>
@@ -611,22 +700,249 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
     <table>
       <thead><tr>
         <th onclick="sapSort('ID')">ID</th>
+        <th class="no-sort">Plant</th>
+        <th onclick="sapSort('PR')">Purchreq</th>
+        <th onclick="sapSort('Item')">Item</th>
         <th onclick="sapSort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
-        <th onclick="sapSort('PR')">PR</th>
-        <th onclick="sapSort('Item')">Item</th>
-        <th class="no-sort" style="text-align:right">Qty_PR</th>
+        <th class="no-sort">D</th>
+        <th class="no-sort">R</th>
+        <th class="no-sort">PGr</th>
+        <th onclick="sapSort('TrackingNo')">TrackingNo</th>
+        <th class="no-sort" style="text-align:right"><span class="th-wrap">Qty Purchreq<span class="tooltip-icon" data-tip="Qty pada Purchase Request">ⓘ</span></span></th>
+        <th class="no-sort">Un</th>
+        <th class="no-sort">Reqdate</th>
+        <th class="no-sort" style="text-align:right">Valn Price</th>
+        <th class="no-sort">PR Curr</th>
+        <th class="no-sort" style="text-align:right">PR Per</th>
+        <th class="no-sort">Release Date</th>
         <th onclick="sapSort('Tracking')">Tracking</th>
       </tr></thead>
-      <tbody id="sap-tbody"><tr class="loading-row"><td colspan="7">Belum ada data PR</td></tr></tbody>
+      <tbody id="sap-tbody"><tr class="loading-row"><td colspan="18">Belum ada data PR</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="sap-pagination"></div>
   </div>
 </div>
 
+<!-- ==================== PAGE: ORDER ==================== -->
+<div class="page" id="page-order">
+  <div class="filter-bar">
+    <label>Cari:</label>
+    <span class="search-wrap"><input type="text" id="order-search" placeholder="Order, deskripsi, equipment..." oninput="debounceRender('order')"><span class="search-clear" onclick="clearSearch('order-search','order')">✕</span></span>
+    <button class="btn btn-search" onclick="orderApplyFilter()">Cari</button>
+    <button class="btn btn-reset" onclick="orderResetFilter()">Reset</button>
+    <button class="btn btn-teal" onclick="openOrderUploadModal()" style="margin-left:8px">📥 Upload Excel</button>
+    <button class="btn btn-orange" onclick="downloadOrderTemplate()" style="margin-left:4px">📋 Download Template</button>
+    <button class="btn btn-export" onclick="exportOrderExcel()" style="margin-left:4px">📤 Export Excel</button>
+    <span class="filter-right" id="order-rowCount"></span>
+  </div>
+  <div class="table-container">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th class="no-sort">Plant</th>
+        <th onclick="orderSort('Order')">Order</th>
+        <th onclick="orderSort('Superior_Order')">Superior Order</th>
+        <th onclick="orderSort('Notification')">Notification</th>
+        <th class="no-sort">Created On</th>
+        <th class="no-sort">Description</th>
+        <th onclick="orderSort('Revision')">Revision</th>
+        <th onclick="orderSort('Equipment')">Equipment</th>
+        <th class="no-sort">System Status</th>
+        <th class="no-sort">User Status</th>
+        <th class="no-sort">Funct Location</th>
+        <th class="no-sort">Location</th>
+        <th class="no-sort">WBS Ord Header</th>
+        <th class="no-sort">Cost Center</th>
+        <th onclick="orderSort('Total_Plan_Cost')" style="text-align:right">Total Plan Cost</th>
+        <th onclick="orderSort('Total_Act_Cost')" style="text-align:right">Total Act Cost</th>
+        <th class="no-sort">Planner Group</th>
+        <th class="no-sort">Main WorkCtr</th>
+        <th class="no-sort">Entry By</th>
+        <th class="no-sort">Changed By</th>
+        <th class="no-sort">Basic Start Date</th>
+        <th class="no-sort">Basic Finish Date</th>
+        <th class="no-sort">Actual Release</th>
+      </tr></thead>
+      <tbody id="order-tbody"><tr class="loading-row"><td colspan="23">Belum ada data Order. Upload Excel untuk memulai.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="order-pagination"></div>
+  </div>
+
+</div>
+
+<!-- ==================== PAGE: PO ==================== -->
+<div class="page" id="page-po">
+  <div class="filter-bar">
+    <label>Cari:</label>
+    <span class="search-wrap"><input type="text" id="po-search" placeholder="PO, Purchreq, material..." oninput="debounceRender('po')"><span class="search-clear" onclick="clearSearch('po-search','po')">✕</span></span>
+    <button class="btn btn-search" onclick="poApplyFilter()">Cari</button>
+    <button class="btn btn-reset" onclick="poResetFilter()">Reset</button>
+    <button class="btn btn-teal" onclick="openPoUploadModal()" style="margin-left:8px">📥 Upload Excel</button>
+    <button class="btn btn-orange" onclick="downloadPoTemplate()" style="margin-left:4px">📋 Download Template</button>
+    <button class="btn btn-export" onclick="exportPoExcel()" style="margin-left:4px">📤 Export Excel</button>
+    <span class="filter-right" id="po-rowCount"></span>
+  </div>
+  <div class="table-container">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th class="no-sort">Plnt</th>
+        <th onclick="poSort('Purchreq')">Purchreq</th>
+        <th onclick="poSort('Item')">Item</th>
+        <th onclick="poSort('Material')">Material</th>
+        <th class="no-sort">Short Text</th>
+        <th onclick="poSort('PO')">PO</th>
+        <th onclick="poSort('PO_Item')">PO_Item</th>
+        <th class="no-sort">D</th>
+        <th class="no-sort">DCI</th>
+        <th class="no-sort">PGr</th>
+        <th class="no-sort">Doc. Date</th>
+        <th class="no-sort" style="text-align:right">PO Quantity</th>
+        <th class="no-sort" style="text-align:right">Qty Delivered</th>
+        <th class="no-sort">Deliv. Date</th>
+        <th class="no-sort">OUn</th>
+        <th class="no-sort" style="text-align:right">Net Price</th>
+        <th class="no-sort">Crcy</th>
+        <th class="no-sort" style="text-align:right">Per</th>
+      </tr></thead>
+      <tbody id="po-tbody"><tr class="loading-row"><td colspan="18">Belum ada data PO. Upload Excel untuk memulai.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="po-pagination"></div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: TRACKING ==================== -->
+<div class="page" id="page-tracking">
+
+  <!-- SUMMARY CARDS -->
+  <div id="tracking-cards" style="display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;">
+    <div class="trk-card" style="background:#1a56db;color:white;">
+      <div class="trk-card-val" id="trk-total-order">0</div>
+      <div class="trk-card-lbl">Total Order</div>
+    </div>
+    <div class="trk-card" style="background:#6d28d9;color:white;">
+      <div class="trk-card-val" id="trk-total-material">0</div>
+      <div class="trk-card-lbl">Total Material</div>
+    </div>
+    <div class="trk-card" style="background:#0891b2;color:white;">
+      <div class="trk-card-val" id="trk-total-pr">0</div>
+      <div class="trk-card-lbl">Sudah PR</div>
+    </div>
+    <div class="trk-card" style="background:#059669;color:white;">
+      <div class="trk-card-val" id="trk-total-po">0</div>
+      <div class="trk-card-lbl">Sudah PO</div>
+    </div>
+    <div class="trk-card" style="background:#d97706;color:white;">
+      <div class="trk-card-val" id="trk-total-partial">0</div>
+      <div class="trk-card-lbl">Partial Delivery</div>
+    </div>
+    <div class="trk-card" style="background:#16a34a;color:white;">
+      <div class="trk-card-val" id="trk-total-complete">0</div>
+      <div class="trk-card-lbl">Complete</div>
+    </div>
+    <div class="trk-card" style="background:#dc2626;color:white;">
+      <div class="trk-card-val" id="trk-total-noPR">0</div>
+      <div class="trk-card-lbl">Belum PR</div>
+    </div>
+    <div class="trk-card" style="background:#374151;color:white;min-width:160px;">
+      <div class="trk-card-val" id="trk-total-nilai" style="font-size:14px;">Rp 0</div>
+      <div class="trk-card-lbl">Total Nilai PO</div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <label>Cari:</label>
+    <span class="search-wrap">
+      <input type="text" id="trk-search" placeholder="Order, material, PR, PO..." oninput="debounceRender('tracking')">
+      <span class="search-clear" onclick="clearSearch('trk-search','tracking')">✕</span>
+    </span>
+    <label>Status:</label>
+    <select id="trk-filterStatus" onchange="trkApplyFilter()">
+      <option value="">Semua</option>
+      <option value="no-pr">🔴 Belum PR</option>
+      <option value="pr-created">🟡 PR Created</option>
+      <option value="po-created">🔵 PO Created</option>
+      <option value="partial">🟠 Partial Delivery</option>
+      <option value="complete">✅ Complete</option>
+    </select>
+    <label>Plant:</label>
+    <select id="trk-filterPlant" onchange="trkApplyFilter()">
+      <option value="">Semua</option>
+    </select>
+    <button class="btn btn-search" onclick="trkApplyFilter()">Cari</button>
+    <button class="btn btn-reset" onclick="trkResetFilter()">Reset</button>
+    <button class="btn btn-export" onclick="exportTrackingExcel()" style="margin-left:8px">📤 Export Excel</button>
+    <span class="filter-right" id="trk-rowCount"></span>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-container">
+    <div class="table-wrap">
+      <table id="trk-table">
+        <thead><tr>
+          <th class="no-sort" style="width:32px"></th>
+          <th onclick="trkSort('Order')">Order</th>
+          <th class="no-sort">Equipment</th>
+          <th class="no-sort">Description</th>
+          <th class="no-sort">Plant</th>
+          <th class="no-sort" style="text-align:right">Total Item</th>
+          <th class="no-sort" style="text-align:right">Sudah PR</th>
+          <th class="no-sort" style="text-align:right">Sudah PO</th>
+          <th class="no-sort" style="text-align:right">Delivered</th>
+          <th class="no-sort" style="text-align:right">Nilai PO</th>
+          <th class="no-sort" style="min-width:120px">Progress</th>
+          <th class="no-sort">Status</th>
+        </tr></thead>
+        <tbody id="trk-tbody">
+          <tr class="loading-row"><td colspan="12">Memuat data tracking...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="trk-pagination"></div>
+  </div>
+</div>
+
 </div><!-- /pages -->
 </div><!-- /body -->
+
+<!-- MODAL: UPLOAD PO -->
+<div class="modal-overlay" id="modal-po-upload">
+  <div class="modal" style="width:680px;">
+    <div class="modal-header" style="background:#059669;">
+      <h3>📥 Upload Excel PO</h3>
+      <button class="modal-close" onclick="closeModal('modal-po-upload')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#14532d;">
+        <b>Kolom yang didukung:</b> Plnt, Purchreq, Item, Material, Short_Text, PO, PO_Item, D, DCI, PGr, Doc_Date, PO_Quantity, Qty_Delivered, Deliv_Date, OUn, Net_Price, Crcy, Per
+      </div>
+      <div class="upload-zone" id="po-upload-zone" onclick="document.getElementById('po-file-input').click()" ondragover="handleDrag(event,'po-upload-zone')" ondragleave="handleDragLeave(event,'po-upload-zone')" ondrop="handleDrop(event,'po')">
+        <input type="file" id="po-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'po')">
+        <div class="upload-icon">🛒</div>
+        <p>Klik atau seret file Excel / CSV ke sini</p>
+        <span>.xlsx, .xls, .csv</span>
+      </div>
+      <div id="po-upload-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:6px;">
+          <span id="po-preview-info" style="font-size:12px;color:#374151;font-weight:600;"></span>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" id="po-replace-check"> Ganti semua data (replace)
+          </label>
+        </div>
+        <div class="preview-wrap" id="po-preview-table"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-reset" onclick="closeModal('modal-po-upload')">Batal</button>
+      <button class="btn btn-success" id="po-import-btn" onclick="importPoData()" style="display:none">✅ Import Data</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: UPLOAD TAEX -->
 <div class="modal-overlay" id="modal-taex-upload">
@@ -696,6 +1012,40 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
   </div>
 </div>
 
+<!-- MODAL: UPLOAD ORDER -->
+<div class="modal-overlay" id="modal-order-upload">
+  <div class="modal" style="width:680px;">
+    <div class="modal-header" style="background:#7c3aed;">
+      <h3>📥 Upload Excel Order</h3>
+      <button class="modal-close" onclick="closeModal('modal-order-upload')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#4c1d95;">
+        <b>Kolom yang didukung:</b> Plant, Order, Superior_Order, Notification, Created_On, Description, Revision, Equipment, System_Status, User_Status, FunctLocation, Location, WBS_Ord_header, CostCenter, Total_Plan_Cost, Total_Act_Cost, Planner_Group, MainWorkCtr, Entry_by, Changed_by, Basic_start_date, Basic_finish_date, Actual_Release
+      </div>
+      <div class="upload-zone" id="order-upload-zone" onclick="document.getElementById('order-file-input').click()" ondragover="handleDrag(event,'order-upload-zone')" ondragleave="handleDragLeave(event,'order-upload-zone')" ondrop="handleDrop(event,'order')">
+        <input type="file" id="order-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'order')">
+        <div class="upload-icon">📋</div>
+        <p>Klik atau seret file Excel / CSV ke sini</p>
+        <span>.xlsx, .xls, .csv</span>
+      </div>
+      <div id="order-upload-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:6px;">
+          <span id="order-preview-info" style="font-size:12px;color:#374151;font-weight:600;"></span>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" id="order-replace-check"> Ganti semua data (replace)
+          </label>
+        </div>
+        <div class="preview-wrap" id="order-preview-table"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-reset" onclick="closeModal('modal-order-upload')">Batal</button>
+      <button class="btn btn-purple" id="order-import-btn" onclick="importOrderData()" style="display:none">✅ Import Data</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: TAMBAH DATA TA-EX -->
 <div class="modal-overlay" id="modal-add-taex">
   <div class="modal" style="width:700px;">
@@ -737,11 +1087,11 @@ tbody tr.has-po:hover td { background: #dbeafe !important; }
           <input type="text" id="kk-input-code" readonly style="font-weight:700; color:#7c3aed;">
         </div>
         <div class="form-group">
-          <label>Order Filter (opsional)</label>
-          <select id="kk-input-order"><option value="">Semua Order</option></select>
+          <label>PG (Planner Group) Filter (opsional)</label>
+          <select id="kk-input-order"><option value="">Semua PG</option></select>
         </div>
       </div>
-      <p style="font-size:12px; color:#6b7280; margin-top:4px;">Kertas kerja akan dibuat dari data PRISMA Reservasi.</p>
+      <p style="font-size:12px; color:#6b7280; margin-top:4px;">Kertas kerja akan dibuat dari data PRISMA Reservasi, difilter berdasarkan <b>Planner Group (PG)</b>.</p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-reset" onclick="closeModal('modal-kk')">Batal</button>
@@ -918,7 +1268,7 @@ function setSyncStatus(type, msg) {
 // ============================================================
 let state = {
   taexData: [], prismaReservasiData: [], kkData: [], kkCode: null,
-  summaryData: [], kumpulanData: [], prData: [], currentApp: 'taex',
+  summaryData: [], kumpulanData: [], prData: [], orderData: [], poData: [], currentApp: 'taex',
   kkCounter: 0, prCounter: 0,
 };
 const sortState = {};
@@ -953,6 +1303,8 @@ async function init() {
     state.prData              = data.prData              || [];
     state.kkCounter           = data.kkCounter           || 0;
     state.prCounter           = data.prCounter           || 0;
+    state.orderData           = data.orderData           || [];
+    state.poData              = data.poData              || [];
     setSyncStatus('ok', `✅ Terhubung ke server · ${state.taexData.length} baris TA-ex · Terakhir sync: ${new Date().toLocaleTimeString('id-ID')}`);
     renderAll();
     populateFilters();
@@ -972,6 +1324,8 @@ const SIDEBAR_MENUS = {
   'summary':           [{icon:'📋', label:'Reservasi'},{icon:'📊', label:'Summary', active:true}],
   'kumpulan':          [{icon:'📊', label:'Summary'},{icon:'🗂', label:'Kumpulan Summary', active:true}],
   'pr':                [{icon:'🗂', label:'Kumpulan Summary'},{icon:'🧾', label:'SAP PR', active:true}],
+  'order':             [{icon:'📋', label:'Order', active:true}],
+  'tracking':          [{icon:'🔍', label:'Tracking', active:true}],
 };
 const HEADER_TITLES = {
   'taex':             ['TA-ex', 'Material Reservation'],
@@ -980,6 +1334,9 @@ const HEADER_TITLES = {
   'summary':          ['Prisma', 'Summary Material'],
   'kumpulan':         ['Prisma', 'Generate PR · Kumpulan Summary'],
   'pr':               ['SAP · PR', 'Purchase Request'],
+  'order':            ['Order', 'Work Order Management'],
+  'po':               ['PO', 'Purchase Order'],
+  'tracking':         ['Tracking', 'End-to-End Procurement Tracking'],
 };
 
 function switchApp(app) {
@@ -997,7 +1354,7 @@ function switchApp(app) {
   renderPage(app);
 }
 
-function renderAll() { renderTaex(); renderPrismaReservasi(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); }
+function renderAll() { renderTaex(); renderPrismaReservasi(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); }
 function renderPage(app) {
   if (app==='taex') renderTaex();
   else if (app==='prisma-reservasi') renderPrismaReservasi();
@@ -1005,6 +1362,9 @@ function renderPage(app) {
   else if (app==='summary') renderSummary();
   else if (app==='kumpulan') renderKumpulan();
   else if (app==='pr') renderSAP();
+  else if (app==='order') renderOrder();
+  else if (app==='po') renderPo();
+  else if (app==='tracking') renderTracking();
 }
 
 function populateFilters() {
@@ -1047,7 +1407,7 @@ function renderTaex() {
   });
   taexFiltered = applySort(data, 'taex');
   const tbody = document.getElementById('taex-tbody');
-  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="16">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
+  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="31">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
   const pg = paginate(taexFiltered, 'taex');
   tbody.innerHTML = pg.rows.map(r => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
@@ -1069,6 +1429,21 @@ function renderTaex() {
       <td class="mono">${D(r.PO_Date)}</td>
       <td class="num">${N(r.Qty_Deliv)}</td>
       <td class="mono">${D(r.Delivery_Date)}</td>
+      <td class="mono">${D(r.SLoc)}</td>
+      <td class="center mono">${D(r.Del)}</td>
+      <td class="center mono">${D(r.FIs)}</td>
+      <td class="center mono">${D(r.Ict)}</td>
+      <td class="mono">${D(r.PG)}</td>
+      <td>${D(r.Recipient)}</td>
+      <td>${D(r.Unloading_point)}</td>
+      <td class="mono">${D(r.Reqmts_Date)}</td>
+      <td class="num">${N(r.Qty_f_avail_check)}</td>
+      <td class="num">${N(r.Qty_Withdrawn)}</td>
+      <td class="center">${D(r.UoM)}</td>
+      <td class="mono">${D(r.GL_Acct)}</td>
+      <td class="num">${N(r.Res_Price)}</td>
+      <td class="num">${N(r.Res_per)}</td>
+      <td class="mono">${D(r.Res_Curr)}</td>
     </tr>`;
   }).join('');
   document.getElementById('taex-rowCount').textContent = taexFiltered.length+' dari '+state.taexData.length+' baris';
@@ -1098,24 +1473,34 @@ function renderPrismaReservasi() {
   });
   prFiltered = applySort(data,'pr-res');
   const tbody = document.getElementById('pr-tbody');
-  if (!prFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Tidak ada data</td></tr>'; document.getElementById('pr-rowCount').textContent='0 baris'; return; }
+  if (!prFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="23">Tidak ada data</td></tr>'; document.getElementById('pr-rowCount').textContent='0 baris'; return; }
   const pgPr = paginate(prFiltered, 'prisma');
   tbody.innerHTML = pgPr.rows.map(r => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     const rowCls = r.PR_Prisma ? 'has-pr' : '';
     return `<tr class="${rowCls}">
       <td class="center mono">${r.ID}</td>
+      <td class="mono">${D(r.Plant)}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
-      <td class="mono">${D(r.Order)}</td>
       <td class="mono">${D(r.Revision)}</td>
-      <td class="mono">${D(r.Material)}</td>
+      <td class="mono">${D(r.Order)}</td>
+      <td class="mono">${D(r.Reservno)}</td>
       <td class="center mono">${D(r.Itm)}</td>
+      <td class="mono">${D(r.Material)}</td>
       <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
+      <td class="center mono">${D(r.Del)}</td>
+      <td class="center mono">${D(r.FIs)}</td>
+      <td class="center mono">${D(r.Ict)}</td>
+      <td class="mono">${D(r.PG)}</td>
+      <td>${D(r.Recipient)}</td>
+      <td>${D(r.Unloading_point)}</td>
+      <td class="mono">${D(r.Reqmts_Date)}</td>
       <td class="num"><span class="badge ${qc}">${N(r.Qty_Reqmts)}</span></td>
-      <td class="num">${r.Qty_StockOnhand!==null?`<span style="color:#059669;font-weight:600">${r.Qty_StockOnhand}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
+      <td class="center">${D(r.UoM)}</td>
       <td>${badge(r.PR_Prisma,'blue')}</td>
       <td class="center mono">${D(r.Item_Prisma)}</td>
       <td class="num">${r.Qty_PR_Prisma!==null?`<span class="badge badge-green">${r.Qty_PR_Prisma}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
+      <td class="num">${r.Qty_StockOnhand!==null?`<span style="color:#059669;font-weight:600">${r.Qty_StockOnhand}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td>${r.CodeKertasKerja?`<span class="badge badge-purple">${r.CodeKertasKerja}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     </tr>`;
   }).join('');
@@ -1139,17 +1524,19 @@ function renderKK() {
   document.getElementById('kk-rows').textContent = state.kkData.length;
   document.getElementById('kk-uniq').textContent = new Set(state.kkData.map(r=>r.Material)).size;
   const tbody = document.getElementById('kk-tbody');
-  if (!kkFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="10">Tidak ada data kertas kerja</td></tr>'; renderPagination('kk-pagination','kk',0,1,1,100,renderKK); return; }
+  if (!kkFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="12">Tidak ada data kertas kerja</td></tr>'; renderPagination('kk-pagination','kk',0,1,1,100,renderKK); return; }
   const pgKk = paginate(kkFiltered, 'kk');
   const kkAllHtml = kkFiltered.map((r,i) => {
     const origIdx = state.kkData.indexOf(r);
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     return `<tr>
-      <td class="center mono">${r.ID||i+1}</td>
+      <td class="mono">${D(r.Plant)}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
+      <td class="mono">${D(r.Revision)}</td>
       <td class="mono">${D(r.Order)}</td>
-      <td class="mono">${D(r.Material)}</td>
+      <td class="mono">${D(r.Reservno)}</td>
       <td class="center mono">${D(r.Itm)}</td>
+      <td class="mono">${D(r.Material)}</td>
       <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
       <td class="num"><span class="badge ${qc}">${N(r.Qty_Reqmts)}</span></td>
       <td class="num"><input type="number" class="qty-input" min="0" value="${r.Qty_StockOnhand??''}" placeholder="0" onchange="updateStockOnhand(${origIdx}, this.value)" oninput="this.classList.add('changed')"></td>
@@ -1185,11 +1572,17 @@ function renderSummary() {
   document.getElementById('sum-uniq').textContent = state.summaryData.length;
   document.getElementById('sum-qty-req').textContent = state.summaryData.reduce((a,r)=>a+(r.Qty_Req||0),0);
   document.getElementById('sum-qty-stock').textContent = state.summaryData.reduce((a,r)=>a+(r.Qty_Stock||0),0);
-  if (!sumFiltered.length) { document.getElementById('sum-tbody').innerHTML='<tr class="loading-row"><td colspan="6">Belum ada data summary</td></tr>'; renderPagination('sum-pagination','sum',0,1,1,100,renderSummary); return; }
+  if (!sumFiltered.length) { document.getElementById('sum-tbody').innerHTML='<tr class="loading-row"><td colspan="12">Belum ada data summary</td></tr>'; renderPagination('sum-pagination','sum',0,1,1,100,renderSummary); return; }
   const pgSum = paginate(sumFiltered, 'sum');
   document.getElementById('sum-tbody').innerHTML = pgSum.rows.map(r => `<tr>
+    <td class="mono">${D(r.Plant)}</td>
+    <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
+    <td class="mono">${D(r.Revision)}</td>
+    <td class="mono">${D(r.Order)}</td>
+    <td class="mono">${D(r.Reservno)}</td>
+    <td class="center mono">${D(r.Itm)}</td>
     <td class="mono">${D(r.Material)}</td>
-    <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
+    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
     <td class="num">${N(r.Qty_Req)}</td>
     <td class="num" style="color:#059669;font-weight:600">${N(r.Qty_Stock)}</td>
     <td class="num">${r.Qty_To_PR!==null?`<span class="badge badge-amber">${r.Qty_To_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
@@ -1210,27 +1603,38 @@ function ksResetFilter() { document.getElementById('ks-search').value=''; docume
 function renderKumpulan() {
   const q = document.getElementById('ks-search').value.toLowerCase();
   const code = document.getElementById('ks-filterCode').value;
-  let data = state.kumpulanData.filter(r=>{
-    const mq = !q||Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q));
-    const mc = !code||r.CodeTracking===code;
-    return mq&&mc;
+  // Build lookup map: Material → Qty_PR dari kumpulanData
+  const qprMap = {};
+  state.kumpulanData.forEach(k => { if (k.Material) qprMap[k.Material] = k.Qty_PR; });
+  // Gunakan summaryData sebagai sumber baris (sama dengan tab Summary)
+  let data = state.summaryData.filter(r => {
+    const mq = !q || Object.values(r).some(v => v && String(v).toLowerCase().includes(q));
+    const mc = !code || r.CodeTracking === code;
+    return mq && mc;
   });
-  ksFiltered = applySort(data,'ks');
+  ksFiltered = applySort(data, 'ks');
   const tbody = document.getElementById('ks-tbody');
-  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="7">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,renderKumpulan); return; }
+  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,renderKumpulan); return; }
   const pgKs = paginate(ksFiltered, 'ks');
   tbody.innerHTML = pgKs.rows.map(r => {
-    const rowCls = (r.Qty_PR && r.Qty_PR > 0) ? 'has-pr' : '';
+    const qtyPR = qprMap[r.Material] ?? null;
+    const rowCls = (qtyPR && qtyPR > 0) ? 'has-pr' : '';
     return `<tr class="${rowCls}">
+    <td class="mono">${D(r.Plant)}</td>
+    <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
+    <td class="mono">${D(r.Revision)}</td>
+    <td class="mono">${D(r.Order)}</td>
+    <td class="mono">${D(r.Reservno)}</td>
+    <td class="center mono">${D(r.Itm)}</td>
     <td class="mono">${D(r.Material)}</td>
     <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
     <td class="num">${N(r.Qty_Req)}</td>
-    <td class="num" style="color:#059669">${N(r.Qty_Stock)}</td>
-    <td class="num">${r.Qty_PR!==null?`<span class="badge badge-blue">${r.Qty_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
+    <td class="num" style="color:#059669;font-weight:600">${N(r.Qty_Stock)}</td>
+    <td class="num">${qtyPR!==null?`<span class="badge badge-blue">${qtyPR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     <td class="num">${r.Qty_To_PR!==null?`<span class="badge badge-amber">${r.Qty_To_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     <td><span class="badge badge-purple">${r.CodeTracking||'—'}</span></td>
   </tr>`;}).join('');
-  document.getElementById('ks-rowCount').textContent = ksFiltered.length+' dari '+state.kumpulanData.length+' baris';
+  document.getElementById('ks-rowCount').textContent = ksFiltered.length+' dari '+state.summaryData.length+' baris';
   renderPagination('ks-pagination','ks',pgKs.total,pgKs.page,pgKs.totalPages,pgKs.size,renderKumpulan);
   updateBadges();
 }
@@ -1247,15 +1651,26 @@ function renderSAP() {
   let data = state.prData.filter(r=> !q||Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
   sapFiltered = applySort(data,'sap');
   const tbody = document.getElementById('sap-tbody');
-  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="7">Belum ada data PR</td></tr>'; renderPagination('sap-pagination','sap',0,1,1,100,renderSAP); return; }
+  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="18">Belum ada data PR</td></tr>'; renderPagination('sap-pagination','sap',0,1,1,100,renderSAP); return; }
   const pgSap = paginate(sapFiltered, 'sap');
   tbody.innerHTML = pgSap.rows.map(r=>`<tr>
     <td class="center mono">${r.ID}</td>
-    <td class="mono">${D(r.Material)}</td>
-    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
+    <td class="mono">${D(r.Plant)}</td>
     <td>${badge(r.PR,'blue')}</td>
     <td class="center mono">${D(r.Item)}</td>
+    <td class="mono">${D(r.Material)}</td>
+    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
+    <td class="center mono">${D(r.D)}</td>
+    <td class="center mono">${D(r.R)}</td>
+    <td class="mono">${D(r.PGr)}</td>
+    <td class="mono">${D(r.TrackingNo)}</td>
     <td class="num"><span class="badge badge-green">${N(r.Qty_PR)}</span></td>
+    <td class="center">${D(r.Un)}</td>
+    <td class="mono">${D(r.Req_Date)}</td>
+    <td class="num">${N(r.Valn_price)}</td>
+    <td class="mono">${D(r.PR_Curr)}</td>
+    <td class="num">${N(r.PR_Per)}</td>
+    <td class="mono">${D(r.Release_Date)}</td>
     <td><span class="badge badge-purple">${r.Tracking||'—'}</span></td>
   </tr>`).join('');
   document.getElementById('sap-rowCount').textContent = sapFiltered.length+' baris';
@@ -1287,18 +1702,18 @@ function exportKumpulanExcel() {
 // DOWNLOAD TEMPLATES
 // ============================================================
 function downloadTaexTemplate() {
-  const headers = [['Equipment','Order','Revision','Material','Itm','Material_Description','Qty_Reqmts','Qty_Stock','PR','Item','Qty_PR','PO','PO_Date','Qty_Deliv','Delivery_Date']];
+  const headers = [['Equipment','Order','Revision','Material','Itm','Material_Description','Qty_Reqmts','Qty_Stock','PR','Item','Qty_PR','PO','PO_Date','Qty_Deliv','Delivery_Date','SLoc','Del','FIs','Ict','PG','Recipient','Unloading_point','Reqmts_Date','Qty_f_avail_check','Qty_Withdrawn','UoM','GL_Acct','Res_Price','Res_per','Res_Curr']];
   const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{wch:14},{wch:14},{wch:10},{wch:14},{wch:6},{wch:45},{wch:12},{wch:12},{wch:14},{wch:8},{wch:8},{wch:14},{wch:12},{wch:10},{wch:14}];
+  ws['!cols'] = [{wch:14},{wch:14},{wch:10},{wch:14},{wch:6},{wch:45},{wch:12},{wch:12},{wch:14},{wch:8},{wch:8},{wch:14},{wch:12},{wch:10},{wch:14},{wch:8},{wch:6},{wch:6},{wch:6},{wch:8},{wch:18},{wch:18},{wch:14},{wch:14},{wch:14},{wch:8},{wch:14},{wch:12},{wch:10},{wch:10}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template TA-ex');
   XLSX.writeFile(wb, 'Template_TAex_Reservasi.xlsx');
   toast('Template berhasil diunduh!', 'ok');
 }
 function downloadSapTemplate() {
-  const headers = [['No_PR','Material','Material_Description','PR','Item','Qty_PR','Tracking']];
+  const headers = [['Plant','Purchreq','Item','Material','Material_Description','D','R','PGr','TrackingNo','Qty_PR','Un','Req_Date','Valn_price','PR_Curr','PR_Per','Release_Date','Tracking']];
   const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{wch:14},{wch:16},{wch:45},{wch:14},{wch:8},{wch:10},{wch:18}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:8},{wch:16},{wch:45},{wch:5},{wch:5},{wch:8},{wch:14},{wch:12},{wch:6},{wch:12},{wch:14},{wch:10},{wch:8},{wch:14},{wch:18}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template SAP PR');
   XLSX.writeFile(wb, 'Template_SAP_PR.xlsx');
@@ -1313,7 +1728,8 @@ function handleDrag(e, zoneId) { e.preventDefault(); document.getElementById(zon
 function handleDragLeave(e, zoneId) { document.getElementById(zoneId).classList.remove('drag'); }
 function handleDrop(e, type) {
   e.preventDefault();
-  document.getElementById(type==='taex'?'taex-upload-zone':'sap-upload-zone').classList.remove('drag');
+  const zoneMap = { taex:'taex-upload-zone', sap:'sap-upload-zone', order:'order-upload-zone', po:'po-upload-zone' };
+  document.getElementById(zoneMap[type]||'taex-upload-zone').classList.remove('drag');
   const file = e.dataTransfer.files[0];
   if (file) processUploadFile(file, type);
 }
@@ -1331,6 +1747,8 @@ function processUploadFile(file, type) {
       const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
       if (!rows.length) { toast('File kosong atau format tidak dikenali', 'err'); return; }
       if (type === 'taex') { taexUploadBuffer = rows; showUploadPreview('taex', rows); }
+      else if (type === 'order') { orderUploadBuffer = rows; showUploadPreview('order', rows); }
+      else if (type === 'po') { poUploadBuffer = rows; showUploadPreview('po', rows); }
       else { sapUploadBuffer = rows; showUploadPreview('sap', rows); }
     } catch(err) { toast('Gagal membaca file: ' + err.message, 'err'); }
   };
@@ -1354,17 +1772,89 @@ async function importTaexData() {
   if (!taexUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
   const replace = document.getElementById('taex-replace-check').checked;
   const maxId = replace ? 0 : state.taexData.reduce((m,r)=>Math.max(m,r.ID||0),0);
+
+  // Helper: ambil nilai dari baris r dengan banyak kemungkinan nama kolom
+  const col = (r, ...keys) => { for (const k of keys) { if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k]; } return null; };
+  const num = (r, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || 0 : null; };
+  const numDef = (r, def, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || def : def; };
+
   const newRows = taexUploadBuffer.map((r, i) => ({
     ID: maxId + i + 1,
-    Equipment: r.Equipment||r.equipment||'', Order: String(r.Order||r.order||''),
-    Revision: r.Revision||r.revision||null, Material: String(r.Material||r.material||''),
-    Itm: r.Itm||r.itm||null, Material_Description: r.Material_Description||r.Description||'',
-    Qty_Reqmts: parseFloat(r.Qty_Reqmts||0)||0, Qty_Stock: parseFloat(r.Qty_Stock||0)||0,
-    PR: r.PR||null, Item: r.Item||null,
-    Qty_PR: r.Qty_PR!=null&&r.Qty_PR!==''?parseFloat(r.Qty_PR):null,
-    PO: r.PO||null, PO_Date: r.PO_Date||null,
-    Qty_Deliv: r.Qty_Deliv!=null&&r.Qty_Deliv!==''?parseFloat(r.Qty_Deliv):null,
-    Delivery_Date: r.Delivery_Date||null,
+
+    // Identitas utama
+    Equipment:            col(r, 'Equipment', 'equipment') || '',
+    Order:                String(col(r, 'Order', 'order', 'ORDER') || ''),
+    Revision:             col(r, 'Revision', 'revision'),
+    Material:             String(col(r, 'Material', 'material', 'MATERIAL') || ''),
+    Itm:                  col(r, 'Itm', 'itm', 'ITM', 'Item_No', 'LineItem'),
+
+    // Deskripsi — SAP export pakai "Short Text"
+    Material_Description: col(r, 'Material_Description', 'Material_description',
+                               'material_description', 'Short Text', 'Short_Text',
+                               'ShortText', 'Description', 'description', 'Deskripsi') || '',
+
+    // Qty kebutuhan — SAP export pakai "Qty Requested" atau "Reqmts_Qty"
+    Qty_Reqmts: numDef(r, 0, 'Qty_Reqmts', 'qty_reqmts', 'Reqmts_Qty', 'Reqmts Qty',
+                             'Qty Requested', 'Qty_Requested', 'QtyRequested', 'Quantity'),
+
+    // Qty stok — SAP export pakai "Qty_Reserved" (nilainya 0 dari query)
+    Qty_Stock:  numDef(r, 0, 'Qty_Stock', 'qty_stock', 'Qty_Reserved', 'Qty Reserved',
+                             'QtyReserved', 'Stock'),
+
+    // PR — SAP export pakai "PurchReq"
+    PR:   col(r, 'PR', 'PurchReq', 'Purchreq', 'purchreq', 'PurchaseReq', 'Purchase_Req'),
+    Item: col(r, 'Item', 'item', 'PR_Item'),
+
+    // Qty PR — SAP export pakai "Qty_PurchReq" atau "Qty Requested"
+    Qty_PR: num(r, 'Qty_PR', 'qty_pr', 'Qty_PurchReq', 'Qty PurchReq',
+                    'QtyPurchReq', 'Qty Requested', 'Qty_Requested'),
+
+    // PO
+    PO:           col(r, 'PO', 'po'),
+    PO_Date:      col(r, 'PO_Date', 'PO Date', 'PO_date', 'PODate'),
+    Qty_Deliv:    num(r, 'Qty_Deliv', 'qty_deliv', 'Qty Deliv', 'QtyDeliv', 'Qty_Delivered'),
+    Delivery_Date:col(r, 'Delivery_Date', 'Delivery Date', 'DeliveryDate', 'Deliv_Date'),
+
+    // Del — SAP export pakai kolom "D" (satu huruf)
+    Del: col(r, 'Del', 'del', 'D'),
+
+    // FIs, Ict — SAP export pakai "ICt"
+    FIs: col(r, 'FIs', 'fis', 'FIS', 'Fis'),
+    Ict: col(r, 'Ict', 'ict', 'ICT', 'ICt'),
+
+    // PG & PGr
+    PG:  col(r, 'PG', 'pg'),
+    PGr: col(r, 'PGr', 'pgr', 'PGR'),
+
+    // Lokasi & tujuan
+    SLoc:            col(r, 'SLoc', 'sloc', 'SLOC', 'Sloc'),
+    Recipient:       col(r, 'Recipient', 'recipient'),
+    Unloading_point: col(r, 'Unloading_point', 'Unloading_Point', 'Unloading Point',
+                             'UnloadingPoint', 'unloading_point'),
+
+    // Tanggal kebutuhan — SAP export pakai "ReqDate" atau "PR_date"
+    Reqmts_Date: col(r, 'Reqmts_Date', 'reqmts_date', 'ReqDate', 'Req_Date',
+                        'PR_date', 'PRDate', 'Request_Date'),
+
+    // Qty availability & withdrawn
+    Qty_f_avail_check: num(r, 'Qty_f_avail_check', 'Qty f avail check',
+                               'Qty_f_Avail_Check', 'QtyFAvailCheck'),
+    Qty_Withdrawn:     num(r, 'Qty_Withdrawn', 'Qty Withdrawn', 'QtyWithdrawn', 'qty_withdrawn'),
+
+    // UoM — SAP export pakai "Un"
+    UoM: col(r, 'UoM', 'uom', 'UOM', 'Un', 'Unit', 'unit'),
+
+    // GL Account — SAP export pakai "G/L Acct"
+    GL_Acct: col(r, 'GL_Acct', 'gl_acct', 'G/L Acct', 'GL Acct', 'GLAcct',
+                    'G_L_Acct', 'GlAcct'),
+
+    // Harga — SAP export pakai "Valn Price" atau "Price"
+    Res_Price: num(r, 'Res_Price', 'res_price', 'Valn Price', 'Valn_Price',
+                      'Valn_price', 'ValPrice', 'Price', 'price'),
+    Res_per:   num(r, 'Res_per', 'res_per', 'Per', 'per', 'ResPer'),
+
+    // Mata uang — SAP export pakai "Crcy"
+    Res_Curr: col(r, 'Res_Curr', 'res_curr', 'Crcy', 'crcy', 'Currency', 'Curr'),
   }));
 
   showLoading('Mengimport data TA-ex...', true);
@@ -1397,14 +1887,59 @@ async function importSapData() {
   if (!sapUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
   const replace = document.getElementById('sap-replace-check').checked;
   const maxId = replace ? 0 : state.prData.reduce((m,r)=>Math.max(m,r.ID||0),0);
+
+  // Helper: ambil nilai dari baris r dengan banyak kemungkinan nama kolom
+  const col = (r, ...keys) => { for (const k of keys) { if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k]; } return null; };
+  const num = (r, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || null : null; };
+
   const newRows = sapUploadBuffer.map((r, i) => ({
     ID: maxId + i + 1,
-    Material: String(r.Material||r.material||''),
-    Material_Description: r.Material_Description||r.Description||'',
-    No_PR: r.No_PR||r.no_pr||null,
-    PR: r.PR||r.pr||r.No_PR||r.no_pr||null, Item: r.Item||r.item||null,
-    Qty_PR: r.Qty_PR!=null&&r.Qty_PR!==''?parseFloat(r.Qty_PR):null,
-    Tracking: r.Tracking||r.tracking||r.CodeTracking||null,
+
+    Plant: col(r, 'Plant', 'plant', 'Plnt', 'plnt'),
+
+    // PR — SAP export pakai "PurchReq"
+    PR: col(r, 'PR', 'PurchReq', 'Purchreq', 'purchreq', 'No_PR', 'pr', 'PurchaseReq'),
+
+    Item: col(r, 'Item', 'item', 'PR_Item'),
+
+    Material: String(col(r, 'Material', 'material', 'MATERIAL') || ''),
+
+    // Deskripsi — SAP export pakai "Short Text"
+    Material_Description: col(r, 'Material_Description', 'Material_description',
+                               'material_description', 'Short Text', 'Short_Text',
+                               'ShortText', 'Description', 'description') || '',
+
+    // D & R — SAP export pakai "D" dan "R" langsung
+    D: col(r, 'D', 'Del', 'del'),
+    R: col(r, 'R', 'r'),
+
+    PGr: col(r, 'PGr', 'pgr', 'PGR'),
+
+    TrackingNo: col(r, 'TrackingNo', 'Tracking_No', 'Tracking No', 'trackingno'),
+
+    // Qty PR — SAP export pakai "Qty Requested" atau "Qty_Purchreq"
+    Qty_PR: num(r, 'Qty_PR', 'qty_pr', 'Qty_Purchreq', 'Qty_PurchReq',
+                    'Qty PurchReq', 'Qty Requested', 'Qty_Requested', 'QtyPurchreq'),
+
+    // UoM — SAP export pakai "Un"
+    Un: col(r, 'Un', 'UoM', 'uom', 'UOM', 'Unit', 'unit'),
+
+    // Tanggal — SAP export pakai "ReqDate"
+    Req_Date: col(r, 'Req_Date', 'ReqDate', 'Reqdate', 'req_date', 'PR_date', 'Request_Date'),
+
+    // Harga — SAP export pakai "Valn Price"
+    Valn_price: num(r, 'Valn_price', 'Valn Price', 'Valn_Price', 'ValPrice', 'valn_price'),
+
+    // Mata uang — SAP export pakai "Crcy" atau "Curr"
+    PR_Curr: col(r, 'PR_Curr', 'pr_curr', 'Crcy', 'crcy', 'Curr', 'Currency', 'Curr'),
+
+    // Per — SAP export pakai "Per"
+    PR_Per: num(r, 'PR_Per', 'pr_per', 'Per', 'per'),
+
+    Release_Date: col(r, 'Release_Date', 'Release Date', 'ReleaseDate', 'release_date'),
+
+    Tracking: col(r, 'Tracking', 'tracking', 'CodeTracking', 'Code_Tracking',
+                     'TrackingNo', 'Tracking_No'),
   }));
 
   showLoading('Mengimport data SAP PR...', true);
@@ -1476,13 +2011,53 @@ async function submitAddTaex() {
 async function syncWithTaex() {
   const taex = state.taexData;
   if (!taex || taex.length === 0) { toast('Data TA-ex kosong!', 'err'); return; }
+
+  // ── FILTER: blokir baris yang mengandung 'x'/'X' di Del atau FIs ──
+  // ── FILTER: Ict WAJIB 'L' (case-insensitive tidak berlaku — harus huruf L besar) ──
+  const hasX = v => v && String(v).trim().toUpperCase() === 'X';
+  const isIctL = v => v && String(v).trim() === 'L';
+
+  const eligible = taex.filter(r => {
+    if (hasX(r.Del) || hasX(r.FIs)) return false; // rule 1: Del atau FIs ada X → skip
+    if (!isIctL(r.Ict)) return false;              // rule 2: Ict bukan 'L' → skip
+    return true;
+  });
+
+  const skippedX   = taex.filter(r => hasX(r.Del) || hasX(r.FIs)).length;
+  const skippedIct = taex.filter(r => !hasX(r.Del) && !hasX(r.FIs) && !isIctL(r.Ict)).length;
+
+  if (!eligible.length) {
+    toast(`Tidak ada data yang memenuhi syarat (Del/FIs bukan X dan Ict=L)`, 'err');
+    return;
+  }
+
   const existingMap = {};
   state.prismaReservasiData.forEach(r => { existingMap[`${r.Order}-${r.Material}-${r.Itm}`] = r; });
-  const syncedData = taex.map(r => {
+  const syncedData = eligible.map(r => {
     const key = `${r.Order}-${r.Material}-${r.Itm}`;
     const existing = existingMap[key];
-    if (existing) return { ...existing, Qty_Reqmts: r.Qty_Reqmts, Equipment: r.Equipment, Revision: r.Revision, Material_Description: r.Material_Description };
-    return { ...r, Qty_StockOnhand: null, PR_Prisma: null, Item_Prisma: null, Qty_PR_Prisma: null, CodeKertasKerja: null };
+    if (existing) return {
+      ...existing,
+      Qty_Reqmts: r.Qty_Reqmts, Equipment: r.Equipment, Revision: r.Revision,
+      Material_Description: r.Material_Description,
+      Del: r.Del ?? existing.Del, FIs: r.FIs ?? existing.FIs,
+      Ict: r.Ict ?? existing.Ict, PG: r.PG ?? existing.PG,
+      Recipient: r.Recipient ?? existing.Recipient,
+      Unloading_point: r.Unloading_point ?? existing.Unloading_point,
+      Reqmts_Date: r.Reqmts_Date ?? existing.Reqmts_Date,
+      UoM: r.UoM ?? existing.UoM,
+    };
+    return {
+      Plant: r.Plant||null, Equipment: r.Equipment, Revision: r.Revision,
+      Order: r.Order, Reservno: null, Itm: r.Itm,
+      Material: r.Material, Material_Description: r.Material_Description,
+      Del: r.Del||null, FIs: r.FIs||null, Ict: r.Ict||null, PG: r.PG||null,
+      Recipient: r.Recipient||null, Unloading_point: r.Unloading_point||null,
+      Reqmts_Date: r.Reqmts_Date||null,
+      Qty_Reqmts: r.Qty_Reqmts, UoM: r.UoM||null,
+      PR_Prisma: null, Item_Prisma: null, Qty_PR_Prisma: null,
+      Qty_StockOnhand: null, CodeKertasKerja: null,
+    };
   });
   state.prismaReservasiData = syncedData;
   showLoading('Sinkronisasi data...', true);
@@ -1491,8 +2066,13 @@ async function syncWithTaex() {
     await apiFetch('/prisma', { method: 'PUT', body: syncedData });
     hideLoading();
     renderPrismaReservasi(); populateFilters();
-    setSyncStatus('ok', `✅ Sinkronisasi selesai · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast('Sinkronisasi selesai!', 'ok');
+    let msg = `✅ Sinkronisasi selesai · ${eligible.length} baris`;
+    if (skippedX > 0)   msg += ` · ${skippedX} diskip (Del/FIs=X)`;
+    if (skippedIct > 0) msg += ` · ${skippedIct} diskip (Ict≠L)`;
+    setSyncStatus('ok', msg + ` · ${new Date().toLocaleTimeString('id-ID')}`);
+    let toastMsg = `Sinkronisasi selesai! ${eligible.length} baris ditarik.`;
+    if (skippedX + skippedIct > 0) toastMsg += ` (${skippedX+skippedIct} baris diskip)`;
+    toast(toastMsg, 'ok');
   } catch(e) {
     hideLoading();
     setSyncStatus('err', '❌ Gagal sinkronisasi: ' + e.message);
@@ -1503,29 +2083,41 @@ async function syncWithTaex() {
 // ============================================================
 // KERTAS KERJA MODAL & CREATE
 // ============================================================
+function generateKKCode() {
+  // 10 karakter: huruf besar + angka, tanpa tanda baca
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 10; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 async function openKertasKerjaModal() {
-  const cnt = await apiFetch('/state/kk_counter');
-  state.kkCounter = (cnt.value || 0) + 1;
-  const year = new Date().getFullYear();
-  document.getElementById('kk-input-code').value = 'KK-' + String(state.kkCounter).padStart(3,'0') + '-' + year;
-  const orders = [...new Set(state.prismaReservasiData.map(r=>r.Order).filter(Boolean))].sort();
+  // Generate kode 10 digit alphanumeric, pastikan unik dari kumpulanData
+  const existingCodes = new Set([
+    ...state.kumpulanData.map(r => r.CodeTracking),
+    ...state.summaryData.map(r => r.CodeTracking),
+  ].filter(Boolean));
+  let code = generateKKCode();
+  while (existingCodes.has(code)) code = generateKKCode(); // regenerate jika tabrakan
+  document.getElementById('kk-input-code').value = code;
+
+  const pgs = [...new Set(state.prismaReservasiData.map(r=>r.PG).filter(Boolean))].sort();
   const sel = document.getElementById('kk-input-order');
-  sel.innerHTML = '<option value="">Semua Order</option>';
-  orders.forEach(o => sel.innerHTML+=`<option value="${o}">${o}</option>`);
+  sel.innerHTML = '<option value="">Semua PG</option>';
+  pgs.forEach(pg => sel.innerHTML+=`<option value="${pg}">${pg}</option>`);
   openModal('modal-kk');
 }
 
 async function createKertasKerja() {
   const code = document.getElementById('kk-input-code').value;
-  const orderFilter = document.getElementById('kk-input-order').value;
-  let sourceData = state.prismaReservasiData.filter(r => !orderFilter || r.Order === orderFilter);
+  const pgFilter = document.getElementById('kk-input-order').value; // filter by PG
+  let sourceData = state.prismaReservasiData.filter(r => !pgFilter || r.PG === pgFilter);
   if (!sourceData.length) { toast('Tidak ada data reservasi yang bisa dijadikan Kertas Kerja', 'err'); return; }
   state.kkData = sourceData.map(r => ({...r, CodeKertasKerja: code, Qty_StockOnhand: r.Qty_StockOnhand ?? null}));
   state.kkCode = code;
   showLoading('Membuat Kertas Kerja...');
   setSyncStatus('loading', '⏳ Menyimpan Kertas Kerja...');
   try {
-    await apiFetch('/state/kk_counter', { method:'POST', body:{ value: state.kkCounter } });
     await apiFetch('/state/kk_current', { method:'POST', body:{ value:{ code, data: state.kkData } } });
     hideLoading();
     closeModal('modal-kk');
@@ -1545,7 +2137,12 @@ async function submitKertasKerja() {
   state.kkData.forEach(r => {
     const key = r.Material;
     if (!summaryMap[key]) {
-      summaryMap[key] = { Material: r.Material, Material_Description: r.Material_Description, Qty_Req: 0, Qty_Stock: 0, Qty_To_PR: 0, CodeTracking: state.kkCode };
+      summaryMap[key] = {
+        Plant: r.Plant||null, Equipment: r.Equipment||null, Revision: r.Revision||null,
+        Order: r.Order||null, Reservno: r.Reservno||null, Itm: r.Itm||null,
+        Material: r.Material, Material_Description: r.Material_Description,
+        Qty_Req: 0, Qty_Stock: 0, Qty_To_PR: 0, CodeTracking: state.kkCode
+      };
     }
     summaryMap[key].Qty_Req += r.Qty_Reqmts || 0;
     summaryMap[key].Qty_Stock += r.Qty_StockOnhand || 0;
@@ -1765,7 +2362,7 @@ function openSapUploadModal() {
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target===o) o.classList.remove('show'); });
 });
-['taex-search','pr-search','kk-search','sum-search','ks-search','sap-search'].forEach(id => {
+['taex-search','pr-search','kk-search','sum-search','ks-search','sap-search','order-search'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('keydown', e => { if (e.key==='Enter') renderPage(state.currentApp); });
 });
@@ -1850,6 +2447,7 @@ function renderPageByKey(key) {
   else if (key==='sum') renderSummary();
   else if (key==='ks') renderKumpulan();
   else if (key==='sap') renderSAP();
+  else if (key==='order') renderOrder();
 }
 
 // ============================================================
@@ -1864,7 +2462,7 @@ function debounceRender(app) {
   }, 280);
 }
 function appToKey(app) {
-  const m = { 'taex':'taex','prisma-reservasi':'prisma','kertas-kerja':'kk','summary':'sum','kumpulan':'ks','pr':'sap' };
+  const m = { 'taex':'taex','prisma-reservasi':'prisma','kertas-kerja':'kk','summary':'sum','kumpulan':'ks','pr':'sap','order':'order','po':'po','tracking':'trk' };
   return m[app] || app;
 }
 function clearSearch(inputId, app) {
@@ -1882,8 +2480,11 @@ function updateBadges() {
   set('badge-prisma', state.prismaReservasiData.length);
   set('badge-kk',     state.kkData.length);
   set('badge-sum',    state.summaryData.length);
-  set('badge-ks',     state.kumpulanData.length);
+  set('badge-ks',     state.summaryData.length);
   set('badge-pr',     state.prData.length);
+  set('badge-order',  state.orderData.length);
+  set('badge-po',     state.poData.length);
+  set('badge-tracking', state.taexData.length);
 }
 
 // ============================================================
@@ -1909,7 +2510,13 @@ function exportTaexExcel() {
     Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
     Qty_Reqmts:r.Qty_Reqmts??'', Qty_Stock:r.Qty_Stock??'',
     PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'',
-    PO:r.PO||'', PO_Date:r.PO_Date||'', Qty_Deliv:r.Qty_Deliv??'', Delivery_Date:r.Delivery_Date||''
+    PO:r.PO||'', PO_Date:r.PO_Date||'', Qty_Deliv:r.Qty_Deliv??'', Delivery_Date:r.Delivery_Date||'',
+    SLoc:r.SLoc||'', Del:r.Del||'', FIs:r.FIs||'', Ict:r.Ict||'', PG:r.PG||'',
+    Recipient:r.Recipient||'', Unloading_point:r.Unloading_point||'',
+    Reqmts_Date:r.Reqmts_Date||'',
+    Qty_f_avail_check:r.Qty_f_avail_check??'', Qty_Withdrawn:r.Qty_Withdrawn??'',
+    UoM:r.UoM||'', GL_Acct:r.GL_Acct||'',
+    Res_Price:r.Res_Price??'', Res_per:r.Res_per??'', Res_Curr:r.Res_Curr||''
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'TA-ex Reservasi');
@@ -1921,11 +2528,16 @@ function exportTaexExcel() {
 function exportPrismaExcel() {
   if (!state.prismaReservasiData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
   const ws = XLSX.utils.json_to_sheet(state.prismaReservasiData.map(r=>({
-    ID:r.ID, Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
-    Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
-    Qty_Reqmts:r.Qty_Reqmts??'', Qty_StockOnhand:r.Qty_StockOnhand??'',
-    PR_Prisma:r.PR_Prisma||'', Item_Prisma:r.Item_Prisma||'', Qty_PR_Prisma:r.Qty_PR_Prisma??'',
-    CodeKertasKerja:r.CodeKertasKerja||''
+    Plant:r.Plant||'', Equipment:r.Equipment||'', Revision:r.Revision||'',
+    Order:r.Order||'', Reservno:r.Reservno||'', Itm:r.Itm||'',
+    Material:r.Material||'', Material_Description:r.Material_Description||'',
+    Del:r.Del||'', FIs:r.FIs||'', Ict:r.Ict||'', PG:r.PG||'',
+    Recipient:r.Recipient||'', Unloading_point:r.Unloading_point||'',
+    Reqmts_Date:r.Reqmts_Date||'', Reqmts_Qty:r.Qty_Reqmts??'', UoM:r.UoM||'',
+    Purchreq:r.PR_Prisma||'', Item:r.Item_Prisma||'',
+    Qty_Dari_PR:r.Qty_PR_Prisma??'',
+    Qty_StockOnhand:r.Qty_StockOnhand??'',
+    Code_Kertas_Kerja:r.CodeKertasKerja||''
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'PRISMA Reservasi');
@@ -1937,8 +2549,13 @@ function exportPrismaExcel() {
 function exportSapExcel() {
   if (!state.prData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
   const ws = XLSX.utils.json_to_sheet(state.prData.map(r=>({
-    ID:r.ID, Material:r.Material||'', Material_Description:r.Material_Description||'',
-    PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'', Tracking:r.Tracking||''
+    Plant:r.Plant||'',
+    Purchreq:r.PR||'', Item:r.Item||'',
+    Material:r.Material||'', Material_Description:r.Material_Description||'',
+    D:r.D||'', R:r.R||'', PGr:r.PGr||'', TrackingNo:r.TrackingNo||'',
+    Qty_Purchreq:r.Qty_PR??'', Un:r.Un||'', Reqdate:r.Req_Date||'',
+    Valn_price:r.Valn_price??'', PR_Curr:r.PR_Curr||'', PR_Per:r.PR_Per??'',
+    Release_Date:r.Release_Date||'', Tracking:r.Tracking||''
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'SAP PR');
@@ -1947,6 +2564,676 @@ function exportSapExcel() {
   toast('Export SAP PR berhasil!', 'ok');
 }
 
+
+// ============================================================
+// ORDER
+// ============================================================
+let orderFiltered = [];
+let orderUploadBuffer = [];
+
+function orderSort(key) { setSort('order',key); renderOrder(); }
+function orderApplyFilter() { resetPg('order'); renderOrder(); }
+function orderResetFilter() { document.getElementById('order-search').value=''; renderOrder(); }
+
+function renderOrder() {
+  const q = document.getElementById('order-search').value.toLowerCase();
+  let data = state.orderData.filter(r => !q || Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
+  orderFiltered = applySort(data,'order');
+  const tbody = document.getElementById('order-tbody');
+  if (!orderFiltered.length) {
+    tbody.innerHTML='<tr class="loading-row"><td colspan="23">Belum ada data Order. Upload Excel untuk memulai.</td></tr>';
+    document.getElementById('order-rowCount').textContent='0 baris';
+    renderPagination('order-pagination','order',0,1,1,100,renderOrder);
+    return;
+  }
+  const pg = paginate(orderFiltered, 'order');
+  tbody.innerHTML = pg.rows.map(r => `<tr>
+    <td class="mono">${D(r.Plant)}</td>
+    <td class="mono" style="color:#1a56db;font-weight:600">${D(r.Order)}</td>
+    <td class="mono">${D(r.Superior_Order)}</td>
+    <td class="mono">${D(r.Notification)}</td>
+    <td class="mono">${D(r.Created_On)}</td>
+    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Description)}</td>
+    <td class="mono">${D(r.Revision)}</td>
+    <td class="mono">${D(r.Equipment)}</td>
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${D(r.System_Status)}</td>
+    <td class="mono">${D(r.User_Status)}</td>
+    <td class="mono">${D(r.FunctLocation)}</td>
+    <td class="mono">${D(r.Location)}</td>
+    <td class="mono">${D(r.WBS_Ord_header)}</td>
+    <td class="mono">${D(r.CostCenter)}</td>
+    <td class="num">${N(r.Total_Plan_Cost)}</td>
+    <td class="num">${N(r.Total_Act_Cost)}</td>
+    <td class="mono">${D(r.Planner_Group)}</td>
+    <td class="mono">${D(r.MainWorkCtr)}</td>
+    <td class="mono">${D(r.Entry_by)}</td>
+    <td class="mono">${D(r.Changed_by)}</td>
+    <td class="mono">${D(r.Basic_start_date)}</td>
+    <td class="mono">${D(r.Basic_finish_date)}</td>
+    <td class="mono">${D(r.Actual_Release)}</td>
+  </tr>`).join('');
+  document.getElementById('order-rowCount').textContent = orderFiltered.length+' dari '+state.orderData.length+' baris';
+  renderPagination('order-pagination','order',pg.total,pg.page,pg.totalPages,pg.size,renderOrder);
+  updateBadges();
+}
+
+function openOrderUploadModal() {
+  document.getElementById('order-upload-preview').style.display = 'none';
+  document.getElementById('order-import-btn').style.display = 'none';
+  document.getElementById('order-file-input').value = '';
+  orderUploadBuffer = [];
+  openModal('modal-order-upload');
+}
+
+function importOrderData() {
+  if (!orderUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
+  const replace = document.getElementById('order-replace-check').checked;
+  const maxId = replace ? 0 : state.orderData.reduce((m,r)=>Math.max(m,r.ID||0),0);
+  const newRows = orderUploadBuffer.map((r, i) => ({
+    ID: maxId + i + 1,
+    Plant: r.Plant||null,
+    Order: String(r.Order||''),
+    Superior_Order: r.Superior_Order||null,
+    Notification: r.Notification||null,
+    Created_On: r.Created_On||null,
+    Description: r.Description||null,
+    Revision: r.Revision||null,
+    Equipment: r.Equipment||null,
+    System_Status: r.System_Status||null,
+    User_Status: r.User_Status!=null?String(r.User_Status):null,
+    FunctLocation: r.FunctLocation||null,
+    Location: r.Location||null,
+    WBS_Ord_header: r.WBS_Ord_header||null,
+    CostCenter: r.CostCenter||null,
+    Total_Plan_Cost: r.Total_Plan_Cost!=null&&r.Total_Plan_Cost!==''?parseFloat(r.Total_Plan_Cost):null,
+    Total_Act_Cost: r.Total_Act_Cost!=null&&r.Total_Act_Cost!==''?parseFloat(r.Total_Act_Cost):null,
+    Planner_Group: r.Planner_Group||null,
+    MainWorkCtr: r.MainWorkCtr||null,
+    Entry_by: r.Entry_by||null,
+    Changed_by: r.Changed_by||null,
+    Basic_start_date: r.Basic_start_date||null,
+    Basic_finish_date: r.Basic_finish_date||null,
+    Actual_Release: r.Actual_Release||null,
+  }));
+  if (replace) state.orderData = newRows;
+  else state.orderData = [...state.orderData, ...newRows];
+  closeModal('modal-order-upload');
+  renderOrder();
+  orderUploadBuffer = [];
+  toast(`${newRows.length} baris berhasil diimport ke Order!`, 'ok');
+}
+
+function downloadOrderTemplate() {
+  const headers = [['Plant','Order','Superior_Order','Notification','Created_On','Description','Revision','Equipment','System_Status','User_Status','FunctLocation','Location','WBS_Ord_header','CostCenter','Total_Plan_Cost','Total_Act_Cost','Planner_Group','MainWorkCtr','Entry_by','Changed_by','Basic_start_date','Basic_finish_date','Actual_Release']];
+  const ws = XLSX.utils.aoa_to_sheet(headers);
+  ws['!cols'] = [{wch:8},{wch:14},{wch:14},{wch:14},{wch:12},{wch:40},{wch:10},{wch:16},{wch:30},{wch:8},{wch:18},{wch:12},{wch:18},{wch:12},{wch:16},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template Order');
+  XLSX.writeFile(wb, 'Template_Order.xlsx');
+  toast('Template berhasil diunduh!', 'ok');
+}
+
+function exportOrderExcel() {
+  if (!state.orderData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  const ws = XLSX.utils.json_to_sheet(state.orderData.map(r=>({
+    Plant:r.Plant||'', Order:r.Order||'', Superior_Order:r.Superior_Order||'',
+    Notification:r.Notification||'', Created_On:r.Created_On||'', Description:r.Description||'',
+    Revision:r.Revision||'', Equipment:r.Equipment||'',
+    System_Status:r.System_Status||'', User_Status:r.User_Status||'',
+    FunctLocation:r.FunctLocation||'', Location:r.Location||'',
+    WBS_Ord_header:r.WBS_Ord_header||'', CostCenter:r.CostCenter||'',
+    Total_Plan_Cost:r.Total_Plan_Cost??'', Total_Act_Cost:r.Total_Act_Cost??'',
+    Planner_Group:r.Planner_Group||'', MainWorkCtr:r.MainWorkCtr||'',
+    Entry_by:r.Entry_by||'', Changed_by:r.Changed_by||'',
+    Basic_start_date:r.Basic_start_date||'', Basic_finish_date:r.Basic_finish_date||'',
+    Actual_Release:r.Actual_Release||''
+  })));
+  ws['!cols'] = [{wch:8},{wch:14},{wch:14},{wch:14},{wch:12},{wch:40},{wch:10},{wch:16},{wch:30},{wch:8},{wch:18},{wch:12},{wch:18},{wch:12},{wch:16},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Order');
+  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(wb, `Order_${ts}.xlsx`);
+  toast('Export Order berhasil!', 'ok');
+}
+
+// ============================================================
+// PO (PURCHASE ORDER)
+// ============================================================
+let poFiltered = [];
+let poUploadBuffer = [];
+
+function poSort(key) { setSort('po',key); renderPo(); }
+function poApplyFilter() { resetPg('po'); renderPo(); }
+function poResetFilter() { document.getElementById('po-search').value=''; renderPo(); }
+
+function renderPo() {
+  const q = document.getElementById('po-search').value.toLowerCase();
+  let data = state.poData.filter(r => !q || Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
+  poFiltered = applySort(data,'po');
+  const tbody = document.getElementById('po-tbody');
+  if (!poFiltered.length) {
+    tbody.innerHTML='<tr class="loading-row"><td colspan="18">Belum ada data PO. Upload Excel untuk memulai.</td></tr>';
+    document.getElementById('po-rowCount').textContent='0 baris';
+    renderPagination('po-pagination','po',0,1,1,100,renderPo);
+    return;
+  }
+  const pg = paginate(poFiltered, 'po');
+  tbody.innerHTML = pg.rows.map(r => `<tr>
+    <td class="mono">${D(r.Plnt)}</td>
+    <td class="mono" style="color:#1a56db;font-weight:600">${D(r.Purchreq)}</td>
+    <td class="mono">${D(r.Item)}</td>
+    <td class="mono">${D(r.Material)}</td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${D(r.Short_Text)}</td>
+    <td class="mono" style="color:#059669;font-weight:600">${D(r.PO)}</td>
+    <td class="mono">${D(r.PO_Item)}</td>
+    <td class="mono">${D(r.D)}</td>
+    <td class="mono">${D(r.DCI)}</td>
+    <td class="mono">${D(r.PGr)}</td>
+    <td class="mono">${D(r.Doc_Date)}</td>
+    <td class="num">${N(r.PO_Quantity)}</td>
+    <td class="num">${N(r.Qty_Delivered)}</td>
+    <td class="mono">${D(r.Deliv_Date)}</td>
+    <td class="mono">${D(r.OUn)}</td>
+    <td class="num">${N(r.Net_Price)}</td>
+    <td class="mono">${D(r.Crcy)}</td>
+    <td class="num">${N(r.Per)}</td>
+  </tr>`).join('');
+  document.getElementById('po-rowCount').textContent = poFiltered.length+' dari '+state.poData.length+' baris';
+  renderPagination('po-pagination','po',pg.total,pg.page,pg.totalPages,pg.size,renderPo);
+  updateBadges();
+}
+
+function openPoUploadModal() {
+  document.getElementById('po-upload-preview').style.display = 'none';
+  document.getElementById('po-import-btn').style.display = 'none';
+  document.getElementById('po-file-input').value = '';
+  poUploadBuffer = [];
+  openModal('modal-po-upload');
+}
+
+async function importPoData() {
+  if (!poUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
+  const replace = document.getElementById('po-replace-check').checked;
+  const maxId = replace ? 0 : state.poData.reduce((m,r)=>Math.max(m,r.ID||0),0);
+
+  // Helper: ambil nilai dari baris r dengan banyak kemungkinan nama kolom
+  const col = (r, ...keys) => { for (const k of keys) { if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k]; } return null; };
+  const num = (r, ...keys) => { const v = col(r, ...keys); if (v === null) return null; const s = String(v).replace(/\./g,'').replace(',','.'); return parseFloat(s) || null; };
+
+  const newRows = poUploadBuffer.map((r, i) => ({
+    ID: maxId + i + 1,
+
+    Plnt: col(r, 'Plnt', 'Plant', 'plnt', 'plant'),
+
+    // PurchReq — SAP export pakai "PurchReq"
+    Purchreq: String(col(r, 'Purchreq', 'PurchReq', 'purchreq', 'PR', 'PurchaseReq') || ''),
+
+    Item: col(r, 'Item', 'item'),
+
+    Material: col(r, 'Material', 'material', 'MATERIAL'),
+
+    // Deskripsi — SAP export pakai "Short Text"
+    Short_Text: col(r, 'Short_Text', 'Short Text', 'ShortText',
+                       'Material_Description', 'Material_description', 'Description'),
+
+    PO: String(col(r, 'PO', 'po') || ''),
+
+    // PO Item — SAP export pakai "Item1"
+    PO_Item: col(r, 'PO_Item', 'Item1', 'PO Item', 'POItem', 'po_item'),
+
+    D: col(r, 'D', 'Del', 'del'),
+
+    // DCI — SAP export pakai "DCI"
+    DCI: col(r, 'DCI', 'dci', 'Dci'),
+
+    PGr: col(r, 'PGr', 'pgr', 'PGR'),
+
+    // Tanggal PO — SAP export pakai "PO Date"
+    Doc_Date: col(r, 'Doc_Date', 'PO_Date', 'PO Date', 'PODate',
+                     'Doc. Date', 'DocDate', 'doc_date'),
+
+    // Qty PO — SAP export pakai "Ordered"
+    PO_Quantity: num(r, 'PO_Quantity', 'Ordered', 'PO Quantity', 'PO_Qty',
+                        'POQuantity', 'Qty_PO', 'po_quantity'),
+
+    // Qty terkirim — SAP export pakai "Qty Delivered"
+    Qty_Delivered: num(r, 'Qty_Delivered', 'Qty Delivered', 'QtyDelivered',
+                          'qty_delivered', 'Qty_Deliv', 'Qty Deliv'),
+
+    // Tanggal kirim — SAP export pakai "DelivDate"
+    Deliv_Date: col(r, 'Deliv_Date', 'DelivDate', 'Deliv. Date',
+                       'Delivery_Date', 'DeliveryDate', 'deliv_date'),
+
+    OUn: col(r, 'OUn', 'oun', 'OUN', 'Un', 'UoM', 'Unit'),
+
+    // Harga — SAP export pakai "Net Price"
+    Net_Price: num(r, 'Net_Price', 'Net Price', 'NetPrice', 'net_price', 'Net_price'),
+
+    // Mata uang — SAP export pakai "Crcy"
+    Crcy: col(r, 'Crcy', 'crcy', 'PO_Curr', 'Currency', 'Curr'),
+
+    // Per — SAP export pakai "Per"
+    Per: num(r, 'Per', 'PO_Per', 'per'),
+  }));
+
+  showLoading('Mengimport data PO...', true);
+  setSyncStatus('loading', '⏳ Menyimpan data PO ke server...');
+  try {
+    const endpoint = replace ? '/po/replace' : '/po/append';
+    const result = await apiFetch(endpoint, { method: 'POST', body: newRows });
+    if (replace) {
+      state.poData = newRows;
+    } else {
+      state.poData = result.data || [...state.poData, ...newRows];
+    }
+    hideLoading();
+    closeModal('modal-po-upload');
+    renderPo(); poUploadBuffer = [];
+    setSyncStatus('ok', `✅ Data PO tersimpan · ${new Date().toLocaleTimeString('id-ID')}`);
+    toast(`${newRows.length} baris berhasil diimport ke PO!`, 'ok');
+  } catch(e) {
+    hideLoading();
+    setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
+    toast('Gagal simpan ke server!', 'err');
+  }
+}
+
+function downloadPoTemplate() {
+  const headers = [['Plnt','Purchreq','Item','Material','Short_Text','PO','PO_Item','D','DCI','PGr','Doc_Date','PO_Quantity','Qty_Delivered','Deliv_Date','OUn','Net_Price','Crcy','Per']];
+  const ws = XLSX.utils.aoa_to_sheet(headers);
+  ws['!cols'] = [{wch:8},{wch:14},{wch:8},{wch:14},{wch:40},{wch:14},{wch:8},{wch:6},{wch:6},{wch:6},{wch:12},{wch:14},{wch:14},{wch:12},{wch:6},{wch:18},{wch:6},{wch:6}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template PO');
+  XLSX.writeFile(wb, 'Template_PO.xlsx');
+  toast('Template berhasil diunduh!', 'ok');
+}
+
+function exportPoExcel() {
+  if (!state.poData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  const ws = XLSX.utils.json_to_sheet(state.poData.map(r=>({
+    Plnt:r.Plnt||'', Purchreq:r.Purchreq||'', Item:r.Item||'',
+    Material:r.Material||'', Short_Text:r.Short_Text||'',
+    PO:r.PO||'', PO_Item:r.PO_Item||'',
+    D:r.D||'', DCI:r.DCI||'', PGr:r.PGr||'',
+    Doc_Date:r.Doc_Date||'',
+    PO_Quantity:r.PO_Quantity??'', Qty_Delivered:r.Qty_Delivered??'',
+    Deliv_Date:r.Deliv_Date||'', OUn:r.OUn||'',
+    Net_Price:r.Net_Price??'', Crcy:r.Crcy||'', Per:r.Per??''
+  })));
+  ws['!cols'] = [{wch:8},{wch:14},{wch:8},{wch:14},{wch:40},{wch:14},{wch:8},{wch:6},{wch:6},{wch:6},{wch:12},{wch:14},{wch:14},{wch:12},{wch:6},{wch:18},{wch:6},{wch:6}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'PO');
+  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(wb, `PO_${ts}.xlsx`);
+  toast('Export PO berhasil!', 'ok');
+}
+
+
+// ============================================================
+// TRACKING — End-to-End Procurement Tracking
+// ============================================================
+let trkFiltered = [];
+let trkExpanded = {}; // { orderId: bool } level1 expand state
+let trkExpandedL2 = {}; // { orderId_material: bool } level2 expand state
+
+function trkSort(key) { setSort('trk', key); renderTracking(); }
+function trkApplyFilter() { resetPg('trk'); renderTracking(); }
+function trkResetFilter() {
+  document.getElementById('trk-search').value = '';
+  document.getElementById('trk-filterStatus').value = '';
+  document.getElementById('trk-filterPlant').value = '';
+  renderTracking();
+}
+
+// ── STATUS LOGIC ──
+function calcItemStatus(item) {
+  const qtyDeliv = item.Qty_Delivered ?? 0;
+  const qtyPO    = item.PO_Quantity   ?? 0;
+  const hasPR    = !!(item.PR);
+  const hasPO    = !!(item.PO);
+  if (!hasPR)              return 'no-pr';
+  if (!hasPO)              return 'pr-created';
+  if (qtyDeliv <= 0)       return 'po-created';
+  if (qtyDeliv < qtyPO)   return 'partial';
+  return 'complete';
+}
+
+function statusLabel(s) {
+  const map = {
+    'no-pr':      ['🔴', 'Belum PR',        'trk-s-noPR'],
+    'pr-created': ['🟡', 'PR Created',       'trk-s-prCreated'],
+    'po-created': ['🔵', 'PO Created',       'trk-s-poCreated'],
+    'partial':    ['🟠', 'Partial Delivery', 'trk-s-partial'],
+    'complete':   ['✅', 'Complete',          'trk-s-complete'],
+  };
+  const [ico, lbl, cls] = map[s] || ['❓','Unknown','badge-blue'];
+  return `<span class="trk-status ${cls}">${ico} ${lbl}</span>`;
+}
+
+function progressColor(pct) {
+  if (pct >= 100) return '#16a34a';
+  if (pct >= 50)  return '#f59e0b';
+  if (pct > 0)    return '#ea580c';
+  return '#e5e7eb';
+}
+
+function fmtRp(v) {
+  if (!v) return '—';
+  return 'Rp ' + Number(v).toLocaleString('id-ID');
+}
+
+// ── BUILD TRACKING DATA ──
+// Join: taexData (base) → orderData (by Order) → prData (by PR=Purchreq) → poData (by Purchreq)
+function buildTrackingData() {
+  // Map: Order → orderData row
+  const orderMap = {};
+  state.orderData.forEach(o => { if (o.Order) orderMap[String(o.Order)] = o; });
+
+  // Map: Purchreq → prData row
+  const prMap = {};
+  state.prData.forEach(p => { if (p.PR) prMap[String(p.PR)] = p; });
+
+  // Map: Purchreq → poData row(s) — bisa 1 PR punya banyak PO item
+  const poMap = {};
+  state.poData.forEach(p => {
+    if (p.Purchreq) {
+      const k = String(p.Purchreq);
+      if (!poMap[k]) poMap[k] = [];
+      poMap[k].push(p);
+    }
+  });
+
+  // Build per-taex-row enriched record
+  const rows = state.taexData.map(t => {
+    const orderKey = String(t.Order || '');
+    const prKey    = String(t.PR    || '');
+    const ord = orderMap[orderKey] || {};
+    const pr  = prMap[prKey]       || {};
+    const pos = poMap[prKey]       || [];
+    const po  = pos[0]             || {}; // main PO row (first match)
+
+    // Aggregate qty_delivered across all PO items for this PR
+    const totalDelivered = pos.reduce((s, p) => s + (p.Qty_Delivered || 0), 0);
+    const totalPOQty     = pos.reduce((s, p) => s + (p.PO_Quantity   || 0), 0);
+    const totalNetPrice  = pos.reduce((s, p) => s + (p.Net_Price     || 0), 0);
+
+    const enriched = {
+      // from TA-ex
+      Plant:               t.Plant || ord.Plant || '',
+      Order:               orderKey,
+      Equipment:           t.Equipment || ord.Equipment || '',
+      Description:         ord.Description || '',
+      Material:            t.Material || '',
+      Material_Description: t.Material_Description || '',
+      Qty_Reqmts:          t.Qty_Reqmts,
+      // from PR
+      PR:                  t.PR || '',
+      Qty_PR:              pr.Qty_PR ?? t.Qty_PR ?? null,
+      PR_Item:             t.Item || '',
+      Req_Date:            pr.Req_Date || '',
+      // from PO
+      PO:                  po.PO || '',
+      PO_Item:             po.PO_Item || '',
+      PO_Quantity:         totalPOQty || po.PO_Quantity || null,
+      Qty_Delivered:       totalDelivered || null,
+      Deliv_Date:          po.Deliv_Date || '',
+      Net_Price:           totalNetPrice || po.Net_Price || null,
+      Crcy:                po.Crcy || '',
+      Doc_Date:            po.Doc_Date || '',
+      // raw PO rows for L3 drill-down
+      _poRows: pos,
+      // computed
+      _status: null,
+    };
+    enriched._status = calcItemStatus(enriched);
+    return enriched;
+  });
+
+  return rows;
+}
+
+// ── GROUP BY ORDER ──
+function groupByOrder(rows) {
+  const groups = {};
+  const order  = [];
+  rows.forEach(r => {
+    const k = r.Order || '(No Order)';
+    if (!groups[k]) { groups[k] = []; order.push(k); }
+    groups[k].push(r);
+  });
+  return order.map(k => {
+    const items = groups[k];
+    const first = items[0];
+    const totalPO    = items.filter(i => i.PO).length;
+    const totalPR    = items.filter(i => i.PR).length;
+    const totalDeliv = items.filter(i => (i.Qty_Delivered || 0) > 0).length;
+    const complete   = items.filter(i => i._status === 'complete').length;
+    const totalNilai = items.reduce((s, i) => s + (i.Net_Price || 0), 0);
+    const pct        = items.length ? Math.round((complete / items.length) * 100) : 0;
+    // order-level status = worst-case
+    const statusPriority = ['no-pr','pr-created','po-created','partial','complete'];
+    const worstStatus = statusPriority.find(s => items.some(i => i._status === s)) || 'complete';
+    return {
+      _key:        k,
+      Order:       k,
+      Plant:       first.Plant,
+      Equipment:   first.Equipment,
+      Description: first.Description,
+      totalItems:  items.length,
+      totalPR,
+      totalPO,
+      totalDeliv,
+      totalNilai,
+      pct,
+      _status:     worstStatus,
+      _items:      items,
+    };
+  });
+}
+
+// ── RENDER ──
+function renderTracking() {
+  const q      = (document.getElementById('trk-search').value || '').toLowerCase();
+  const fStat  = document.getElementById('trk-filterStatus').value;
+  const fPlant = document.getElementById('trk-filterPlant').value;
+
+  const allRows = buildTrackingData();
+
+  // Populate plant filter
+  const plantSel = document.getElementById('trk-filterPlant');
+  const curPlant = plantSel.value;
+  const plants   = [...new Set(allRows.map(r => r.Plant).filter(Boolean))].sort();
+  plantSel.innerHTML = '<option value="">Semua</option>' + plants.map(p => `<option value="${p}" ${p===curPlant?'selected':''}>${p}</option>`).join('');
+
+  // Filter items
+  let filtered = allRows.filter(r => {
+    const mq = !q || Object.values(r).some(v => v && String(v).toLowerCase().includes(q));
+    const ms = !fStat  || r._status === fStat;
+    const mp = !fPlant || r.Plant   === fPlant;
+    return mq && ms && mp;
+  });
+
+  // Update summary cards
+  updateTrackingCards(allRows);
+
+  // Group by Order
+  const groups = groupByOrder(filtered);
+  trkFiltered  = applySort(groups, 'trk');
+
+  const tbody = document.getElementById('trk-tbody');
+  if (!trkFiltered.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="12">Tidak ada data tracking. Pastikan data TA-ex, Order, PR, dan PO sudah diupload.</td></tr>';
+    document.getElementById('trk-rowCount').textContent = '0 order';
+    renderPagination('trk-pagination','trk',0,1,1,100,renderTracking);
+    return;
+  }
+
+  const pg   = paginate(trkFiltered, 'trk');
+  const rows = pg.rows;
+  const html = [];
+
+  rows.forEach(g => {
+    const isOpen   = !!trkExpanded[g.Order];
+    const barColor = progressColor(g.pct);
+    // ── L1 ROW ──
+    html.push(`<tr class="trk-l1" data-order="${esc(g.Order)}">
+      <td style="text-align:center">
+        <button class="trk-expand-btn ${isOpen?'open':''}" onclick="toggleTrkOrder('${esc(g.Order)}')">${isOpen?'▼':'▶'}</button>
+      </td>
+      <td class="mono" style="color:#1a56db;font-weight:700">${D(g.Order)}</td>
+      <td class="mono">${D(g.Equipment)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${D(g.Description)}</td>
+      <td class="mono">${D(g.Plant)}</td>
+      <td class="num">${g.totalItems}</td>
+      <td class="num">${g.totalPR > 0 ? `<span class="badge badge-blue">${g.totalPR}</span>` : D(null)}</td>
+      <td class="num">${g.totalPO > 0 ? `<span class="badge badge-green">${g.totalPO}</span>` : D(null)}</td>
+      <td class="num">${g.totalDeliv > 0 ? `<span class="badge badge-teal">${g.totalDeliv}</span>` : D(null)}</td>
+      <td class="num" style="font-size:11px">${g.totalNilai > 0 ? fmtRp(g.totalNilai) : '—'}</td>
+      <td style="min-width:120px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="trk-progress-wrap" style="flex:1">
+            <div class="trk-progress-bar" style="width:${g.pct}%;background:${barColor}"></div>
+          </div>
+          <span style="font-size:10px;color:#6b7280;width:28px;text-align:right">${g.pct}%</span>
+        </div>
+      </td>
+      <td>${statusLabel(g._status)}</td>
+    </tr>`);
+
+    // ── L2 ROWS (material items) ──
+    if (isOpen) {
+      g._items.forEach((item, idx) => {
+        const l2key   = g.Order + '|' + item.Material + '|' + idx;
+        const isOpenL2 = !!trkExpandedL2[l2key];
+
+        html.push(`<tr class="trk-l2" data-l2="${esc(l2key)}">
+          <td style="text-align:center;padding-left:12px">
+            ${item._poRows.length > 0
+              ? `<button class="trk-expand-btn ${isOpenL2?'open':''}" style="width:18px;height:18px;font-size:9px" onclick="toggleTrkL2('${esc(l2key)}')">${isOpenL2?'▼':'▶'}</button>`
+              : '<span style="color:#d1d5db;font-size:10px">—</span>'}
+          </td>
+          <td class="mono" style="padding-left:24px;color:#6b7280">${D(item.Material)}</td>
+          <td colspan="2" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${D(item.Material_Description)}</td>
+          <td class="mono" style="font-size:11px">${D(item.Plant)}</td>
+          <td class="num" style="font-size:11px">${N(item.Qty_Reqmts)}</td>
+          <td class="num" style="font-size:11px">${item.PR ? `<span class="badge badge-blue" style="font-size:10px">${item.PR}</span>` : D(null)}</td>
+          <td class="num" style="font-size:11px">${item.PO ? `<span class="badge badge-green" style="font-size:10px">${item.PO}</span>` : D(null)}</td>
+          <td class="num" style="font-size:11px">${item.Qty_Delivered > 0 ? `<span class="badge badge-teal">${item.Qty_Delivered}</span>` : D(null)}</td>
+          <td class="num" style="font-size:11px">${item.Net_Price ? fmtRp(item.Net_Price) : '—'}</td>
+          <td></td>
+          <td>${statusLabel(item._status)}</td>
+        </tr>`);
+
+        // ── L3 ROWS (PO detail) ──
+        if (isOpenL2 && item._poRows.length > 0) {
+          // header L3
+          html.push(`<tr class="trk-l3">
+            <td></td>
+            <td colspan="11" style="padding:0">
+              <table style="width:100%;border-collapse:collapse;font-size:11px">
+                <thead>
+                  <tr style="background:#f3f4f6">
+                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">PO Number</th>
+                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">PO Item</th>
+                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Doc Date</th>
+                    <th style="padding:5px 10px;text-align:right;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">PO Qty</th>
+                    <th style="padding:5px 10px;text-align:right;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Qty Delivered</th>
+                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Deliv. Date</th>
+                    <th style="padding:5px 10px;text-align:right;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Net Price</th>
+                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Crcy</th>
+                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">OUn</th>
+                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${item._poRows.map(p => {
+                    const pStat = calcItemStatus({PR: item.PR, PO: p.PO, PO_Quantity: p.PO_Quantity, Qty_Delivered: p.Qty_Delivered});
+                    return `<tr style="border-bottom:1px solid #f3f4f6">
+                      <td style="padding:5px 10px;font-family:monospace;color:#059669;font-weight:600">${p.PO||'—'}</td>
+                      <td style="padding:5px 10px;font-family:monospace">${p.PO_Item||'—'}</td>
+                      <td style="padding:5px 10px;font-family:monospace">${p.Doc_Date||'—'}</td>
+                      <td style="padding:5px 10px;text-align:right;font-family:monospace">${p.PO_Quantity??'—'}</td>
+                      <td style="padding:5px 10px;text-align:right;font-family:monospace;color:${(p.Qty_Delivered||0)>0?'#059669':'#9ca3af'}">${p.Qty_Delivered??'—'}</td>
+                      <td style="padding:5px 10px;font-family:monospace">${p.Deliv_Date||'—'}</td>
+                      <td style="padding:5px 10px;text-align:right;font-family:monospace">${p.Net_Price?fmtRp(p.Net_Price):'—'}</td>
+                      <td style="padding:5px 10px">${p.Crcy||'—'}</td>
+                      <td style="padding:5px 10px">${p.OUn||'—'}</td>
+                      <td style="padding:5px 10px">${statusLabel(pStat)}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </td>
+          </tr>`);
+        }
+      });
+    }
+  });
+
+  tbody.innerHTML = html.join('');
+  document.getElementById('trk-rowCount').textContent = trkFiltered.length + ' order · ' + filtered.length + ' item';
+  renderPagination('trk-pagination','trk',pg.total,pg.page,pg.totalPages,pg.size,renderTracking);
+}
+
+function esc(s) { return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function toggleTrkOrder(orderKey) {
+  trkExpanded[orderKey] = !trkExpanded[orderKey];
+  renderTracking();
+}
+function toggleTrkL2(l2key) {
+  trkExpandedL2[l2key] = !trkExpandedL2[l2key];
+  renderTracking();
+}
+
+function updateTrackingCards(rows) {
+  const orders   = [...new Set(rows.map(r => r.Order).filter(Boolean))];
+  const hasPR    = rows.filter(r => r.PR).length;
+  const hasPO    = rows.filter(r => r.PO).length;
+  const partial  = rows.filter(r => r._status === 'partial').length;
+  const complete = rows.filter(r => r._status === 'complete').length;
+  const noPR     = rows.filter(r => r._status === 'no-pr').length;
+  const totalNilai = rows.reduce((s, r) => s + (r.Net_Price || 0), 0);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('trk-total-order',    orders.length);
+  set('trk-total-material', rows.length);
+  set('trk-total-pr',       hasPR);
+  set('trk-total-po',       hasPO);
+  set('trk-total-partial',  partial);
+  set('trk-total-complete', complete);
+  set('trk-total-noPR',     noPR);
+  set('trk-total-nilai',    'Rp ' + totalNilai.toLocaleString('id-ID'));
+}
+
+function exportTrackingExcel() {
+  const rows = buildTrackingData();
+  if (!rows.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows.map(r => ({
+    Plant:                r.Plant||'',
+    Order:                r.Order||'',
+    Equipment:            r.Equipment||'',
+    Order_Description:    r.Description||'',
+    Material:             r.Material||'',
+    Material_Description: r.Material_Description||'',
+    Qty_Reqmts:           r.Qty_Reqmts??'',
+    PR:                   r.PR||'',
+    PR_Item:              r.PR_Item||'',
+    Qty_PR:               r.Qty_PR??'',
+    Req_Date:             r.Req_Date||'',
+    PO:                   r.PO||'',
+    PO_Item:              r.PO_Item||'',
+    PO_Quantity:          r.PO_Quantity??'',
+    Qty_Delivered:        r.Qty_Delivered??'',
+    Deliv_Date:           r.Deliv_Date||'',
+    Net_Price:            r.Net_Price??'',
+    Crcy:                 r.Crcy||'',
+    Status:               r._status||'',
+  })));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tracking');
+  XLSX.writeFile(wb, `Tracking_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.xlsx`);
+  toast('Export Tracking berhasil!', 'ok');
+}
 
 init().then(() => { switchApp('taex'); initAllResizable(); });
 </script>
