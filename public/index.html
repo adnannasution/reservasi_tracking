@@ -487,8 +487,7 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     </select>
     <button class="btn btn-search" onclick="taexApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="taexResetFilter()">Reset</button>
-    <button class="btn btn-success" onclick="openAddTaexModal()" style="margin-left:8px">➕ Tambah Data</button>
-    <button class="btn btn-teal" onclick="openTaexUploadModal()" style="margin-left:4px">📥 Upload Excel</button>
+    <button class="btn btn-teal" onclick="openTaexUploadModal()" style="margin-left:8px">📥 Upload Excel</button>
     <button class="btn btn-orange" onclick="downloadTaexTemplate()" style="margin-left:4px">📋 Download Template</button>
     <button class="btn btn-export" onclick="exportTaexExcel()" style="margin-left:4px">📤 Export Excel</button>
     <button class="col-toggle-btn" onclick="toggleColPanel('taex')" style="margin-left:4px">⚙ Kolom</button>
@@ -498,42 +497,44 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
   <div class="col-panel" id="col-panel-taex">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('taex')">Reset</span></div>
     <label><input type="checkbox" data-tab="taex" data-col="0" onchange="applyColVisibility('taex')"> ID</label>
-    <label><input type="checkbox" data-tab="taex" data-col="1" onchange="applyColVisibility('taex')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="taex" data-col="2" onchange="applyColVisibility('taex')" checked> Order</label>
-    <label><input type="checkbox" data-tab="taex" data-col="3" onchange="applyColVisibility('taex')" checked> Revision</label>
-    <label><input type="checkbox" data-tab="taex" data-col="4" onchange="applyColVisibility('taex')" checked> Material</label>
-    <label><input type="checkbox" data-tab="taex" data-col="5" onchange="applyColVisibility('taex')"> Itm</label>
-    <label><input type="checkbox" data-tab="taex" data-col="6" onchange="applyColVisibility('taex')" checked> Material Description</label>
-    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')" checked> Qty Reqmts</label>
-    <label><input type="checkbox" data-tab="taex" data-col="8" onchange="applyColVisibility('taex')"> Qty Stock</label>
-    <label><input type="checkbox" data-tab="taex" data-col="9" onchange="applyColVisibility('taex')" checked> PR</label>
-    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')"> Item</label>
-    <label><input type="checkbox" data-tab="taex" data-col="11" onchange="applyColVisibility('taex')"> Qty PR</label>
-    <label><input type="checkbox" data-tab="taex" data-col="12" onchange="applyColVisibility('taex')" checked> PO</label>
-    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')"> PO Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="14" onchange="applyColVisibility('taex')"> Qty Deliv</label>
-    <label><input type="checkbox" data-tab="taex" data-col="15" onchange="applyColVisibility('taex')"> Delivery Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="16" onchange="applyColVisibility('taex')"> SLoc</label>
-    <label><input type="checkbox" data-tab="taex" data-col="17" onchange="applyColVisibility('taex')" checked> Del</label>
-    <label><input type="checkbox" data-tab="taex" data-col="18" onchange="applyColVisibility('taex')" checked> FIs</label>
-    <label><input type="checkbox" data-tab="taex" data-col="19" onchange="applyColVisibility('taex')" checked> Ict</label>
-    <label><input type="checkbox" data-tab="taex" data-col="20" onchange="applyColVisibility('taex')" checked> PG</label>
-    <label><input type="checkbox" data-tab="taex" data-col="21" onchange="applyColVisibility('taex')"> Recipient</label>
-    <label><input type="checkbox" data-tab="taex" data-col="22" onchange="applyColVisibility('taex')"> Unloading Point</label>
-    <label><input type="checkbox" data-tab="taex" data-col="23" onchange="applyColVisibility('taex')"> Reqmts Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="24" onchange="applyColVisibility('taex')"> Qty Avail</label>
-    <label><input type="checkbox" data-tab="taex" data-col="25" onchange="applyColVisibility('taex')"> Qty Withdrawn</label>
-    <label><input type="checkbox" data-tab="taex" data-col="26" onchange="applyColVisibility('taex')"> UoM</label>
-    <label><input type="checkbox" data-tab="taex" data-col="27" onchange="applyColVisibility('taex')"> GL Acct</label>
-    <label><input type="checkbox" data-tab="taex" data-col="28" onchange="applyColVisibility('taex')"> Res Price</label>
-    <label><input type="checkbox" data-tab="taex" data-col="29" onchange="applyColVisibility('taex')"> Res Per</label>
-    <label><input type="checkbox" data-tab="taex" data-col="30" onchange="applyColVisibility('taex')"> Res Curr</label>
+    <label><input type="checkbox" data-tab="taex" data-col="1" onchange="applyColVisibility('taex')" checked> Plant</label>
+    <label><input type="checkbox" data-tab="taex" data-col="2" onchange="applyColVisibility('taex')" checked> Equipment</label>
+    <label><input type="checkbox" data-tab="taex" data-col="3" onchange="applyColVisibility('taex')" checked> Order</label>
+    <label><input type="checkbox" data-tab="taex" data-col="4" onchange="applyColVisibility('taex')" checked> Revision</label>
+    <label><input type="checkbox" data-tab="taex" data-col="5" onchange="applyColVisibility('taex')" checked> Material</label>
+    <label><input type="checkbox" data-tab="taex" data-col="6" onchange="applyColVisibility('taex')"> Itm</label>
+    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="taex" data-col="8" onchange="applyColVisibility('taex')" checked> Qty Reqmts</label>
+    <label><input type="checkbox" data-tab="taex" data-col="9" onchange="applyColVisibility('taex')"> Qty Stock</label>
+    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')" checked> PR</label>
+    <label><input type="checkbox" data-tab="taex" data-col="11" onchange="applyColVisibility('taex')"> Item</label>
+    <label><input type="checkbox" data-tab="taex" data-col="12" onchange="applyColVisibility('taex')"> Qty PR</label>
+    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')" checked> PO</label>
+    <label><input type="checkbox" data-tab="taex" data-col="14" onchange="applyColVisibility('taex')"> PO Date</label>
+    <label><input type="checkbox" data-tab="taex" data-col="15" onchange="applyColVisibility('taex')"> Qty Deliv</label>
+    <label><input type="checkbox" data-tab="taex" data-col="16" onchange="applyColVisibility('taex')"> Delivery Date</label>
+    <label><input type="checkbox" data-tab="taex" data-col="17" onchange="applyColVisibility('taex')"> SLoc</label>
+    <label><input type="checkbox" data-tab="taex" data-col="18" onchange="applyColVisibility('taex')" checked> Del</label>
+    <label><input type="checkbox" data-tab="taex" data-col="19" onchange="applyColVisibility('taex')" checked> FIs</label>
+    <label><input type="checkbox" data-tab="taex" data-col="20" onchange="applyColVisibility('taex')" checked> Ict</label>
+    <label><input type="checkbox" data-tab="taex" data-col="21" onchange="applyColVisibility('taex')" checked> PG</label>
+    <label><input type="checkbox" data-tab="taex" data-col="22" onchange="applyColVisibility('taex')"> Recipient</label>
+    <label><input type="checkbox" data-tab="taex" data-col="23" onchange="applyColVisibility('taex')"> Unloading Point</label>
+    <label><input type="checkbox" data-tab="taex" data-col="24" onchange="applyColVisibility('taex')"> Reqmts Date</label>
+    <label><input type="checkbox" data-tab="taex" data-col="25" onchange="applyColVisibility('taex')"> Qty Avail</label>
+    <label><input type="checkbox" data-tab="taex" data-col="26" onchange="applyColVisibility('taex')"> Qty Withdrawn</label>
+    <label><input type="checkbox" data-tab="taex" data-col="27" onchange="applyColVisibility('taex')"> UoM</label>
+    <label><input type="checkbox" data-tab="taex" data-col="28" onchange="applyColVisibility('taex')"> GL Acct</label>
+    <label><input type="checkbox" data-tab="taex" data-col="29" onchange="applyColVisibility('taex')"> Res Price</label>
+    <label><input type="checkbox" data-tab="taex" data-col="30" onchange="applyColVisibility('taex')"> Res Per</label>
+    <label><input type="checkbox" data-tab="taex" data-col="31" onchange="applyColVisibility('taex')"> Res Curr</label>
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
         <th onclick="taexSort('ID')">ID</th>
+        <th class="no-sort">Plant</th>
         <th onclick="taexSort('Equipment')">Equipment</th>
         <th onclick="taexSort('Order')">Order</th>
         <th onclick="taexSort('Revision')">Revision</th>
@@ -565,7 +566,7 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
         <th onclick="taexSort('Res_per')">Res Per</th>
         <th class="no-sort">Res Curr</th>
       </tr></thead>
-      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="31">Memuat data dari server...</td></tr></tbody>
+      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="32">Memuat data dari server...</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="taex-pagination"></div>
@@ -1097,6 +1098,10 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     <button class="btn btn-search" onclick="trkApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="trkResetFilter()">Reset</button>
     <button class="btn btn-export" onclick="exportTrackingExcel()" style="margin-left:8px">📤 Export Excel</button>
+    <div style="display:flex;align-items:center;gap:4px;margin-left:8px;border:1px solid #d1d5db;border-radius:4px;overflow:hidden;">
+      <button id="trk-btn-row" onclick="setTrkView('row')" style="border:none;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:#1a56db;color:white;" title="Tampilan Row (ringkas)">☰ Row</button>
+      <button id="trk-btn-expand" onclick="setTrkView('expand')" style="border:none;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:#6b7280;" title="Tampilan Expand (detail material)">⊞ Expand</button>
+    </div>
     <button class="col-toggle-btn" onclick="toggleColPanel('trk')" style="margin-left:4px">⚙ Kolom</button>
     <span class="filter-right" id="trk-rowCount"></span>
   </div>
@@ -1644,13 +1649,14 @@ function renderTaex() {
   });
   taexFiltered = applySort(data, 'taex');
   const tbody = document.getElementById('taex-tbody');
-  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="31">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
+  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="32">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
   const pg = paginate(taexFiltered, 'taex');
   tbody.innerHTML = pg.rows.map(r => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     const rowCls = r.PO ? 'has-po' : r.PR ? 'has-pr' : '';
     return `<tr class="${rowCls}">
       <td class="center mono">${r.ID}</td>
+      <td class="mono">${D(r.Plant)}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
       <td class="mono">${D(r.Order)}</td>
       <td class="mono">${D(r.Revision)}</td>
@@ -1844,7 +1850,6 @@ function ksResetFilter() { document.getElementById('ks-search').value=''; docume
 function renderKumpulan() {
   const q = document.getElementById('ks-search').value.toLowerCase();
   const code = document.getElementById('ks-filterCode').value;
-  // Gunakan kumpulanData sebagai sumber baris
   let data = state.kumpulanData.filter(r => {
     const mq = !q || Object.values(r).some(v => v && String(v).toLowerCase().includes(q));
     const mc = !code || r.CodeTracking === code;
@@ -1852,11 +1857,10 @@ function renderKumpulan() {
   });
   ksFiltered = applySort(data, 'ks');
   const tbody = document.getElementById('ks-tbody');
-  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Belum ada data Kumpulan Summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,renderKumpulan); return; }
+  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,renderKumpulan); return; }
   const pgKs = paginate(ksFiltered, 'ks');
   tbody.innerHTML = pgKs.rows.map(r => {
-    const qtyPR = r.Qty_PR ?? null;
-    const rowCls = (qtyPR && qtyPR > 0) ? 'has-pr' : '';
+    const rowCls = (r.Qty_PR && r.Qty_PR > 0) ? 'has-pr' : '';
     return `<tr class="${rowCls}">
     <td class="mono">${D(r.Plant)}</td>
     <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
@@ -1868,7 +1872,7 @@ function renderKumpulan() {
     <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
     <td class="num">${N(r.Qty_Req)}</td>
     <td class="num" style="color:#059669;font-weight:600">${N(r.Qty_Stock)}</td>
-    <td class="num">${qtyPR!==null?`<span class="badge badge-blue">${qtyPR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
+    <td class="num">${r.Qty_PR!==null?`<span class="badge badge-blue">${r.Qty_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     <td class="num">${r.Qty_To_PR!==null?`<span class="badge badge-amber">${r.Qty_To_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     <td><span class="badge badge-purple">${r.CodeTracking||'—'}</span></td>
   </tr>`;}).join('');
@@ -1942,9 +1946,9 @@ function exportKumpulanExcel() {
 // DOWNLOAD TEMPLATES
 // ============================================================
 function downloadTaexTemplate() {
-  const headers = [['Equipment','Order','Revision','Material','Itm','Material_Description','Qty_Reqmts','Qty_Stock','PR','Item','Qty_PR','PO','PO_Date','Qty_Deliv','Delivery_Date','SLoc','Del','FIs','Ict','PG','Recipient','Unloading_point','Reqmts_Date','Qty_f_avail_check','Qty_Withdrawn','UoM','GL_Acct','Res_Price','Res_per','Res_Curr']];
+  const headers = [['Plant','Equipment','Order','Revision','Material','Itm','Material_Description','Qty_Reqmts','Qty_Stock','PR','Item','Qty_PR','PO','PO_Date','Qty_Deliv','Delivery_Date','SLoc','Del','FIs','Ict','PG','Recipient','Unloading_point','Reqmts_Date','Qty_f_avail_check','Qty_Withdrawn','UoM','GL_Acct','Res_Price','Res_per','Res_Curr']];
   const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{wch:14},{wch:14},{wch:10},{wch:14},{wch:6},{wch:45},{wch:12},{wch:12},{wch:14},{wch:8},{wch:8},{wch:14},{wch:12},{wch:10},{wch:14},{wch:8},{wch:6},{wch:6},{wch:6},{wch:8},{wch:18},{wch:18},{wch:14},{wch:14},{wch:14},{wch:8},{wch:14},{wch:12},{wch:10},{wch:10}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:14},{wch:10},{wch:14},{wch:6},{wch:45},{wch:12},{wch:12},{wch:14},{wch:8},{wch:8},{wch:14},{wch:12},{wch:10},{wch:14},{wch:8},{wch:6},{wch:6},{wch:6},{wch:8},{wch:18},{wch:18},{wch:14},{wch:14},{wch:14},{wch:8},{wch:14},{wch:12},{wch:10},{wch:10}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template TA-ex');
   XLSX.writeFile(wb, 'Template_TAex_Reservasi.xlsx');
@@ -2020,6 +2024,9 @@ async function importTaexData() {
 
   const newRows = taexUploadBuffer.map((r, i) => ({
     ID: maxId + i + 1,
+
+    // Plant
+    Plant: col(r, 'Plant', 'plant', 'Plnt', 'plnt', 'PLANT'),
 
     // Identitas utama
     Equipment:            col(r, 'Equipment', 'equipment') || '',
@@ -2403,6 +2410,9 @@ async function submitKertasKerja() {
   try {
     await apiFetch('/state/summary_current', { method:'POST', body:{ value: state.summaryData } });
     await apiFetch('/prisma', { method:'PUT', body: state.prismaReservasiData });
+    await apiFetch('/state/kk_current', { method:'POST', body:{ value: { code: null, data: [] } } });
+    state.kkData = [];
+    state.kkCode = null;
     hideLoading();
     setSyncStatus('ok', `✅ Kertas Kerja disubmit · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Kertas Kerja disubmit! Summary dibuat.', 'ok');
@@ -2432,8 +2442,6 @@ async function submitSummary() {
     hideLoading();
     setSyncStatus('ok', `✅ Summary tersimpan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Summary tersimpan di Kumpulan Summary!', 'ok');
-    renderKumpulan();
-    populateFilters();
     switchApp('kumpulan');
   } catch(e) {
     hideLoading();
@@ -2722,7 +2730,7 @@ function updateBadges() {
   set('badge-prisma', state.prismaReservasiData.length);
   set('badge-kk',     state.kkData.length);
   set('badge-sum',    state.summaryData.length);
-  set('badge-ks',     state.summaryData.length);
+  set('badge-ks',     state.kumpulanData.length);
   set('badge-pr',     state.prData.length);
   set('badge-order',  state.orderData.length);
   set('badge-po',     state.poData.length);
@@ -2748,7 +2756,7 @@ function skeletonRows(tbodyId, cols) {
 function exportTaexExcel() {
   if (!state.taexData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
   const ws = XLSX.utils.json_to_sheet(state.taexData.map(r=>({
-    ID:r.ID, Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
+    ID:r.ID, Plant:r.Plant||'', Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
     Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
     Qty_Reqmts:r.Qty_Reqmts??'', Qty_Stock:r.Qty_Stock??'',
     PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'',
@@ -3119,6 +3127,26 @@ function exportPoExcel() {
 let trkFiltered = [];
 let trkExpanded = {}; // { orderId: bool } level1 expand state
 let trkExpandedL2 = {}; // { orderId_material: bool } level2 expand state
+let trkViewMode = 'row'; // 'row' | 'expand'
+
+function setTrkView(mode) {
+  trkViewMode = mode;
+  const btnRow    = document.getElementById('trk-btn-row');
+  const btnExpand = document.getElementById('trk-btn-expand');
+  if (mode === 'row') {
+    btnRow.style.background    = '#1a56db'; btnRow.style.color    = 'white';
+    btnExpand.style.background = 'white';   btnExpand.style.color = '#6b7280';
+    // Tutup semua expand di mode row
+    trkExpanded   = {};
+    trkExpandedL2 = {};
+  } else {
+    btnExpand.style.background = '#1a56db'; btnExpand.style.color = 'white';
+    btnRow.style.background    = 'white';   btnRow.style.color    = '#6b7280';
+    // Buka semua expand level1 di mode expand
+    trkFiltered.forEach(g => { trkExpanded[g.Order] = true; });
+  }
+  renderTracking();
+}
 
 function trkSort(key) { setSort('trk', key); renderTracking(); }
 function trkApplyFilter() { resetPg('trk'); renderTracking(); }
@@ -3316,13 +3344,21 @@ function renderTracking() {
   const rows = pg.rows;
   const html = [];
 
+  // Di mode expand: auto-buka semua L1
+  if (trkViewMode === 'expand') {
+    rows.forEach(g => { trkExpanded[g.Order] = true; });
+  }
+
   rows.forEach(g => {
-    const isOpen   = !!trkExpanded[g.Order];
+    const isOpen   = trkViewMode === 'expand' ? true : !!trkExpanded[g.Order];
     const barColor = progressColor(g.pct);
     // ── L1 ROW ──
     html.push(`<tr class="trk-l1" data-order="${esc(g.Order)}">
       <td style="text-align:center">
-        <button class="trk-expand-btn ${isOpen?'open':''}" onclick="toggleTrkOrder('${esc(g.Order)}')">${isOpen?'▼':'▶'}</button>
+        ${trkViewMode === 'expand'
+          ? '<span style="color:#d1d5db;font-size:11px">▼</span>'
+          : `<button class="trk-expand-btn ${isOpen?'open':''}" onclick="toggleTrkOrder('${esc(g.Order)}')">${isOpen?'▼':'▶'}</button>`
+        }
       </td>
       <td class="mono" style="color:#1a56db;font-weight:700">${D(g.Order)}</td>
       <td class="mono">${D(g.Equipment)}</td>
@@ -3347,8 +3383,8 @@ function renderTracking() {
     // ── L2 ROWS (material items) ──
     if (isOpen) {
       g._items.forEach((item, idx) => {
-        const l2key   = g.Order + '|' + item.Material + '|' + idx;
-        const isOpenL2 = !!trkExpandedL2[l2key];
+        const l2key    = g.Order + '|' + item.Material + '|' + idx;
+        const isOpenL2 = trkViewMode === 'expand' ? true : !!trkExpandedL2[l2key];
 
         html.push(`<tr class="trk-l2" data-l2="${esc(l2key)}">
           <td style="text-align:center;padding-left:12px">

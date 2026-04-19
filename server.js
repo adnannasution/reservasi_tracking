@@ -163,6 +163,12 @@ async function migrate() {
   await query(`
     CREATE TABLE IF NOT EXISTS kumpulan_summary (
       id                   SERIAL PRIMARY KEY,
+      plant                TEXT,
+      equipment            TEXT,
+      revision             TEXT,
+      "order"              TEXT,
+      reservno             TEXT,
+      itm                  TEXT,
       material             TEXT,
       material_description TEXT,
       qty_req              NUMERIC DEFAULT 0,
@@ -174,6 +180,17 @@ async function migrate() {
       updated_at           TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  // ALTER TABLE kumpulan_summary - migrasi untuk DB yang sudah ada
+  const ksCols = [
+    `ALTER TABLE kumpulan_summary ADD COLUMN IF NOT EXISTS plant TEXT`,
+    `ALTER TABLE kumpulan_summary ADD COLUMN IF NOT EXISTS equipment TEXT`,
+    `ALTER TABLE kumpulan_summary ADD COLUMN IF NOT EXISTS revision TEXT`,
+    `ALTER TABLE kumpulan_summary ADD COLUMN IF NOT EXISTS "order" TEXT`,
+    `ALTER TABLE kumpulan_summary ADD COLUMN IF NOT EXISTS reservno TEXT`,
+    `ALTER TABLE kumpulan_summary ADD COLUMN IF NOT EXISTS itm TEXT`,
+  ];
+  for (const sql of ksCols) { await query(sql); }
 
   await query(`
     CREATE TABLE IF NOT EXISTS sap_pr (
@@ -334,7 +351,9 @@ const mapPrisma = r => ({
   CodeKertasKerja: r.code_kertas_kerja,
 });
 const mapKumpulan = r => ({
-  ID: r.id, Material: r.material, Material_Description: r.material_description,
+  ID: r.id, Plant: r.plant, Equipment: r.equipment, Revision: r.revision,
+  Order: r.order, Reservno: r.reservno, Itm: r.itm,
+  Material: r.material, Material_Description: r.material_description,
   Qty_Req: n(r.qty_req), Qty_Stock: n(r.qty_stock),
   Qty_PR: n(r.qty_pr), Qty_To_PR: n(r.qty_to_pr), CodeTracking: r.code_tracking,
 });
@@ -416,10 +435,11 @@ async function bulkReplaceKumpulan(client, rows) {
   await client.query('DELETE FROM kumpulan_summary');
   for (const r of rows) {
     await client.query(
-      `INSERT INTO kumpulan_summary (material,material_description,qty_req,qty_stock,qty_pr,qty_to_pr,code_tracking)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [r.Material||null,r.Material_Description||null,r.Qty_Req||0,r.Qty_Stock||0,
-       r.Qty_PR??null,r.Qty_To_PR??null,r.CodeTracking||null]
+      `INSERT INTO kumpulan_summary (plant,equipment,revision,"order",reservno,itm,material,material_description,qty_req,qty_stock,qty_pr,qty_to_pr,code_tracking)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [r.Plant||null,r.Equipment||null,r.Revision||null,r.Order||null,r.Reservno||null,r.Itm||null,
+       r.Material||null,r.Material_Description||null,
+       r.Qty_Req||0,r.Qty_Stock||0,r.Qty_PR??null,r.Qty_To_PR??null,r.CodeTracking||null]
     );
   }
 }
