@@ -423,6 +423,39 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
 .trk-s-partial  { background: #ffedd5; color: #ea580c; }
 .trk-s-complete { background: #d1fae5; color: #059669; }
 
+/* ── CHECKLIST & BULK ACTION ── */
+.bulk-bar {
+  display: none; align-items: center; gap: 8px; padding: 7px 14px;
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px;
+  font-size: 12px; font-weight: 600; color: #92400e; flex-shrink: 0;
+}
+.bulk-bar.show { display: flex; }
+.bulk-count { color: #1a56db; font-weight: 700; }
+th.th-check { width: 32px !important; text-align: center !important; cursor: default !important; padding: 6px !important; }
+th.th-check:hover { background: #1a56db !important; }
+td.td-check { text-align: center; width: 32px; padding: 4px !important; }
+td.td-actions { text-align: center; white-space: nowrap; }
+input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 14px; vertical-align: middle; }
+.btn-act { border: none; border-radius: 3px; padding: 2px 9px; font-size: 11px; cursor: pointer; font-weight: 600; transition: all 0.15s; }
+.btn-act-edit { background: #dbeafe; color: #1d4ed8; }
+.btn-act-edit:hover { background: #1a56db; color: white; }
+.btn-act-del  { background: #fee2e2; color: #dc2626; margin-left: 4px; }
+.btn-act-del:hover  { background: #dc2626; color: white; }
+.btn-act-ret  { background: #fef3c7; color: #d97706; }
+.btn-act-ret:hover  { background: #d97706; color: white; }
+.btn-bulk-del { background: #dc2626; color: white; border: none; border-radius: 3px; padding: 4px 14px; font-size: 12px; cursor: pointer; font-weight: 600; }
+.btn-bulk-del:hover { background: #b91c1c; }
+.btn-bulk-ret { background: #d97706; color: white; border: none; border-radius: 3px; padding: 4px 14px; font-size: 12px; cursor: pointer; font-weight: 600; }
+.btn-bulk-ret:hover { background: #b45309; }
+
+/* ── EDIT MODAL ── */
+.edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+.edit-grid .fg-full { grid-column: 1/-1; }
+.fg { display: flex; flex-direction: column; gap: 3px; }
+.fg label { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.4px; }
+.fg input, .fg select { border: 1px solid #d1d5db; border-radius: 4px; padding: 6px 9px; font-size: 12px; outline: none; font-family: inherit; }
+.fg input:focus { border-color: #1a56db; box-shadow: 0 0 0 2px rgba(26,86,219,0.1); }
+
 </style>
 </head>
 <body>
@@ -493,46 +526,53 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     <button class="col-toggle-btn" onclick="toggleColPanel('taex')" style="margin-left:4px">⚙ Kolom</button>
     <span class="filter-right" id="taex-rowCount"></span>
   </div>
+  <div class="bulk-bar" id="bulk-bar-taex">
+    <span>Terpilih: <span class="bulk-count" id="bulk-count-taex">0</span> baris</span>
+    <button class="btn-bulk-del" onclick="bulkDelete('taex')">🗑 Hapus yang dipilih</button>
+    <button class="btn btn-reset" onclick="clearChecks('taex')" style="padding:4px 12px;font-size:12px">✕ Batal</button>
+  </div>
   <!-- Panel pilih kolom TA-ex -->
   <div class="col-panel" id="col-panel-taex">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('taex')">Reset</span></div>
-    <label><input type="checkbox" data-tab="taex" data-col="0" onchange="applyColVisibility('taex')"> ID</label>
-    <label><input type="checkbox" data-tab="taex" data-col="1" onchange="applyColVisibility('taex')" checked> Plant</label>
-    <label><input type="checkbox" data-tab="taex" data-col="2" onchange="applyColVisibility('taex')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="taex" data-col="3" onchange="applyColVisibility('taex')" checked> Order</label>
-    <label><input type="checkbox" data-tab="taex" data-col="4" onchange="applyColVisibility('taex')" checked> Revision</label>
-    <label><input type="checkbox" data-tab="taex" data-col="5" onchange="applyColVisibility('taex')" checked> Material</label>
-    <label><input type="checkbox" data-tab="taex" data-col="6" onchange="applyColVisibility('taex')"> Itm</label>
-    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')" checked> Material Description</label>
-    <label><input type="checkbox" data-tab="taex" data-col="8" onchange="applyColVisibility('taex')" checked> Qty Reqmts</label>
-    <label><input type="checkbox" data-tab="taex" data-col="9" onchange="applyColVisibility('taex')"> Qty Stock</label>
-    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')" checked> PR</label>
-    <label><input type="checkbox" data-tab="taex" data-col="11" onchange="applyColVisibility('taex')"> Item</label>
-    <label><input type="checkbox" data-tab="taex" data-col="12" onchange="applyColVisibility('taex')"> Qty PR</label>
-    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')" checked> PO</label>
-    <label><input type="checkbox" data-tab="taex" data-col="14" onchange="applyColVisibility('taex')"> PO Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="15" onchange="applyColVisibility('taex')"> Qty Deliv</label>
-    <label><input type="checkbox" data-tab="taex" data-col="16" onchange="applyColVisibility('taex')"> Delivery Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="17" onchange="applyColVisibility('taex')"> SLoc</label>
-    <label><input type="checkbox" data-tab="taex" data-col="18" onchange="applyColVisibility('taex')" checked> Del</label>
-    <label><input type="checkbox" data-tab="taex" data-col="19" onchange="applyColVisibility('taex')" checked> FIs</label>
-    <label><input type="checkbox" data-tab="taex" data-col="20" onchange="applyColVisibility('taex')" checked> Ict</label>
-    <label><input type="checkbox" data-tab="taex" data-col="21" onchange="applyColVisibility('taex')" checked> PG</label>
-    <label><input type="checkbox" data-tab="taex" data-col="22" onchange="applyColVisibility('taex')"> Recipient</label>
-    <label><input type="checkbox" data-tab="taex" data-col="23" onchange="applyColVisibility('taex')"> Unloading Point</label>
-    <label><input type="checkbox" data-tab="taex" data-col="24" onchange="applyColVisibility('taex')"> Reqmts Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="25" onchange="applyColVisibility('taex')"> Qty Avail</label>
-    <label><input type="checkbox" data-tab="taex" data-col="26" onchange="applyColVisibility('taex')"> Qty Withdrawn</label>
-    <label><input type="checkbox" data-tab="taex" data-col="27" onchange="applyColVisibility('taex')"> UoM</label>
-    <label><input type="checkbox" data-tab="taex" data-col="28" onchange="applyColVisibility('taex')"> GL Acct</label>
-    <label><input type="checkbox" data-tab="taex" data-col="29" onchange="applyColVisibility('taex')"> Res Price</label>
-    <label><input type="checkbox" data-tab="taex" data-col="30" onchange="applyColVisibility('taex')"> Res Per</label>
-    <label><input type="checkbox" data-tab="taex" data-col="31" onchange="applyColVisibility('taex')"> Res Curr</label>
+    <label><input type="checkbox" data-tab="taex" data-col="1" onchange="applyColVisibility('taex')"> ID</label>
+    <label><input type="checkbox" data-tab="taex" data-col="2" onchange="applyColVisibility('taex')" checked> Plant</label>
+    <label><input type="checkbox" data-tab="taex" data-col="3" onchange="applyColVisibility('taex')" checked> Equipment</label>
+    <label><input type="checkbox" data-tab="taex" data-col="4" onchange="applyColVisibility('taex')" checked> Order</label>
+    <label><input type="checkbox" data-tab="taex" data-col="5" onchange="applyColVisibility('taex')" checked> Revision</label>
+    <label><input type="checkbox" data-tab="taex" data-col="6" onchange="applyColVisibility('taex')" checked> Material</label>
+    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')"> Itm</label>
+    <label><input type="checkbox" data-tab="taex" data-col="8" onchange="applyColVisibility('taex')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="taex" data-col="9" onchange="applyColVisibility('taex')" checked> Qty Reqmts</label>
+    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')"> Qty Stock</label>
+    <label><input type="checkbox" data-tab="taex" data-col="11" onchange="applyColVisibility('taex')" checked> PR</label>
+    <label><input type="checkbox" data-tab="taex" data-col="12" onchange="applyColVisibility('taex')"> Item</label>
+    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')"> Qty PR</label>
+    <label><input type="checkbox" data-tab="taex" data-col="14" onchange="applyColVisibility('taex')" checked> PO</label>
+    <label><input type="checkbox" data-tab="taex" data-col="15" onchange="applyColVisibility('taex')"> PO Date</label>
+    <label><input type="checkbox" data-tab="taex" data-col="16" onchange="applyColVisibility('taex')"> Qty Deliv</label>
+    <label><input type="checkbox" data-tab="taex" data-col="17" onchange="applyColVisibility('taex')"> Delivery Date</label>
+    <label><input type="checkbox" data-tab="taex" data-col="18" onchange="applyColVisibility('taex')"> SLoc</label>
+    <label><input type="checkbox" data-tab="taex" data-col="19" onchange="applyColVisibility('taex')" checked> Del</label>
+    <label><input type="checkbox" data-tab="taex" data-col="20" onchange="applyColVisibility('taex')" checked> FIs</label>
+    <label><input type="checkbox" data-tab="taex" data-col="21" onchange="applyColVisibility('taex')" checked> Ict</label>
+    <label><input type="checkbox" data-tab="taex" data-col="22" onchange="applyColVisibility('taex')" checked> PG</label>
+    <label><input type="checkbox" data-tab="taex" data-col="23" onchange="applyColVisibility('taex')"> Recipient</label>
+    <label><input type="checkbox" data-tab="taex" data-col="24" onchange="applyColVisibility('taex')"> Unloading Point</label>
+    <label><input type="checkbox" data-tab="taex" data-col="25" onchange="applyColVisibility('taex')"> Reqmts Date</label>
+    <label><input type="checkbox" data-tab="taex" data-col="26" onchange="applyColVisibility('taex')"> Qty Avail</label>
+    <label><input type="checkbox" data-tab="taex" data-col="27" onchange="applyColVisibility('taex')"> Qty Withdrawn</label>
+    <label><input type="checkbox" data-tab="taex" data-col="28" onchange="applyColVisibility('taex')"> UoM</label>
+    <label><input type="checkbox" data-tab="taex" data-col="29" onchange="applyColVisibility('taex')"> GL Acct</label>
+    <label><input type="checkbox" data-tab="taex" data-col="30" onchange="applyColVisibility('taex')"> Res Price</label>
+    <label><input type="checkbox" data-tab="taex" data-col="31" onchange="applyColVisibility('taex')"> Res Per</label>
+    <label><input type="checkbox" data-tab="taex" data-col="32" onchange="applyColVisibility('taex')"> Res Curr</label>
+    <label><input type="checkbox" data-tab="taex" data-col="33" onchange="applyColVisibility('taex')" checked> Aksi</label>
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
+        <th class="th-check no-sort"><input type="checkbox" class="row-check" id="chk-all-taex" onchange="toggleAllChecks('taex',this.checked)"></th>
         <th onclick="taexSort('ID')">ID</th>
         <th class="no-sort">Plant</th>
         <th onclick="taexSort('Equipment')">Equipment</th>
@@ -565,8 +605,9 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
         <th onclick="taexSort('Res_Price')">Res Price</th>
         <th onclick="taexSort('Res_per')">Res Per</th>
         <th class="no-sort">Res Curr</th>
+        <th class="no-sort">Aksi</th>
       </tr></thead>
-      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="32">Memuat data dari server...</td></tr></tbody>
+      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="34">Memuat data dari server...</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="taex-pagination"></div>
@@ -648,6 +689,7 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
         <th class="no-sort"><span class="th-wrap">Qty dari PR<span class="tooltip-icon" data-tip="Qty yang sudah di-PR">ⓘ</span></span></th>
         <th class="no-sort"><span class="th-wrap">Qty Stock Onhand<span class="tooltip-icon" data-tip="Qty stok fisik tersedia">ⓘ</span></span></th>
         <th class="no-sort">Code Kertas Kerja</th>
+        <th class="no-sort">Aksi</th>
       </tr></thead>
       <tbody id="pr-tbody"></tbody>
     </table>
@@ -843,32 +885,39 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     <button class="col-toggle-btn" onclick="toggleColPanel('sap')" style="margin-left:4px">⚙ Kolom</button>
     <span class="filter-right" id="sap-rowCount"></span>
   </div>
+  <div class="bulk-bar" id="bulk-bar-sap">
+    <span>Terpilih: <span class="bulk-count" id="bulk-count-sap">0</span> baris</span>
+    <button class="btn-bulk-del" onclick="bulkDelete('sap')">🗑 Hapus yang dipilih</button>
+    <button class="btn btn-reset" onclick="clearChecks('sap')" style="padding:4px 12px;font-size:12px">✕ Batal</button>
+  </div>
   <!-- Panel pilih kolom SAP PR -->
   <div class="col-panel" id="col-panel-sap">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('sap')">Reset</span></div>
-    <label><input type="checkbox" data-tab="sap" data-col="0" onchange="applyColVisibility('sap')"> ID</label>
-    <label><input type="checkbox" data-tab="sap" data-col="1" onchange="applyColVisibility('sap')"> Plant</label>
-    <label><input type="checkbox" data-tab="sap" data-col="2" onchange="applyColVisibility('sap')" checked> PR</label>
-    <label><input type="checkbox" data-tab="sap" data-col="3" onchange="applyColVisibility('sap')" checked> Item</label>
-    <label><input type="checkbox" data-tab="sap" data-col="4" onchange="applyColVisibility('sap')" checked> Material</label>
-    <label><input type="checkbox" data-tab="sap" data-col="5" onchange="applyColVisibility('sap')" checked> Material Description</label>
-    <label><input type="checkbox" data-tab="sap" data-col="6" onchange="applyColVisibility('sap')"> D</label>
-    <label><input type="checkbox" data-tab="sap" data-col="7" onchange="applyColVisibility('sap')"> R</label>
-    <label><input type="checkbox" data-tab="sap" data-col="8" onchange="applyColVisibility('sap')"> PGr</label>
-    <label><input type="checkbox" data-tab="sap" data-col="9" onchange="applyColVisibility('sap')"> TrackingNo</label>
-    <label><input type="checkbox" data-tab="sap" data-col="10" onchange="applyColVisibility('sap')" checked> Qty PR</label>
-    <label><input type="checkbox" data-tab="sap" data-col="11" onchange="applyColVisibility('sap')"> Un</label>
-    <label><input type="checkbox" data-tab="sap" data-col="12" onchange="applyColVisibility('sap')" checked> Req Date</label>
-    <label><input type="checkbox" data-tab="sap" data-col="13" onchange="applyColVisibility('sap')"> Valn Price</label>
-    <label><input type="checkbox" data-tab="sap" data-col="14" onchange="applyColVisibility('sap')"> PR Curr</label>
-    <label><input type="checkbox" data-tab="sap" data-col="15" onchange="applyColVisibility('sap')"> PR Per</label>
-    <label><input type="checkbox" data-tab="sap" data-col="16" onchange="applyColVisibility('sap')"> Release Date</label>
-    <label><input type="checkbox" data-tab="sap" data-col="17" onchange="applyColVisibility('sap')" checked> Tracking</label>
+    <label><input type="checkbox" data-tab="sap" data-col="1" onchange="applyColVisibility('sap')"> ID</label>
+    <label><input type="checkbox" data-tab="sap" data-col="2" onchange="applyColVisibility('sap')"> Plant</label>
+    <label><input type="checkbox" data-tab="sap" data-col="3" onchange="applyColVisibility('sap')" checked> PR</label>
+    <label><input type="checkbox" data-tab="sap" data-col="4" onchange="applyColVisibility('sap')" checked> Item</label>
+    <label><input type="checkbox" data-tab="sap" data-col="5" onchange="applyColVisibility('sap')" checked> Material</label>
+    <label><input type="checkbox" data-tab="sap" data-col="6" onchange="applyColVisibility('sap')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="sap" data-col="7" onchange="applyColVisibility('sap')"> D</label>
+    <label><input type="checkbox" data-tab="sap" data-col="8" onchange="applyColVisibility('sap')"> R</label>
+    <label><input type="checkbox" data-tab="sap" data-col="9" onchange="applyColVisibility('sap')"> PGr</label>
+    <label><input type="checkbox" data-tab="sap" data-col="10" onchange="applyColVisibility('sap')"> TrackingNo</label>
+    <label><input type="checkbox" data-tab="sap" data-col="11" onchange="applyColVisibility('sap')" checked> Qty PR</label>
+    <label><input type="checkbox" data-tab="sap" data-col="12" onchange="applyColVisibility('sap')"> Un</label>
+    <label><input type="checkbox" data-tab="sap" data-col="13" onchange="applyColVisibility('sap')" checked> Req Date</label>
+    <label><input type="checkbox" data-tab="sap" data-col="14" onchange="applyColVisibility('sap')"> Valn Price</label>
+    <label><input type="checkbox" data-tab="sap" data-col="15" onchange="applyColVisibility('sap')"> PR Curr</label>
+    <label><input type="checkbox" data-tab="sap" data-col="16" onchange="applyColVisibility('sap')"> PR Per</label>
+    <label><input type="checkbox" data-tab="sap" data-col="17" onchange="applyColVisibility('sap')"> Release Date</label>
+    <label><input type="checkbox" data-tab="sap" data-col="18" onchange="applyColVisibility('sap')" checked> Tracking</label>
+    <label><input type="checkbox" data-tab="sap" data-col="19" onchange="applyColVisibility('sap')" checked> Aksi</label>
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
+        <th class="th-check no-sort"><input type="checkbox" class="row-check" id="chk-all-sap" onchange="toggleAllChecks('sap',this.checked)"></th>
         <th onclick="sapSort('ID')">ID</th>
         <th class="no-sort">Plant</th>
         <th onclick="sapSort('PR')">Purchreq</th>
@@ -887,8 +936,9 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
         <th class="no-sort" style="text-align:right">PR Per</th>
         <th class="no-sort">Release Date</th>
         <th onclick="sapSort('Tracking')">Tracking</th>
+        <th class="no-sort">Aksi</th>
       </tr></thead>
-      <tbody id="sap-tbody"><tr class="loading-row"><td colspan="18">Belum ada data PR</td></tr></tbody>
+      <tbody id="sap-tbody"><tr class="loading-row"><td colspan="20">Belum ada data PR</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="sap-pagination"></div>
@@ -908,37 +958,44 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     <button class="col-toggle-btn" onclick="toggleColPanel('order')" style="margin-left:4px">⚙ Kolom</button>
     <span class="filter-right" id="order-rowCount"></span>
   </div>
+  <div class="bulk-bar" id="bulk-bar-order">
+    <span>Terpilih: <span class="bulk-count" id="bulk-count-order">0</span> baris</span>
+    <button class="btn-bulk-del" onclick="bulkDelete('order')">🗑 Hapus yang dipilih</button>
+    <button class="btn btn-reset" onclick="clearChecks('order')" style="padding:4px 12px;font-size:12px">✕ Batal</button>
+  </div>
   <!-- Panel pilih kolom Order -->
   <div class="col-panel" id="col-panel-order">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('order')">Reset</span></div>
-    <label><input type="checkbox" data-tab="order" data-col="0" onchange="applyColVisibility('order')" checked> Plant</label>
-    <label><input type="checkbox" data-tab="order" data-col="1" onchange="applyColVisibility('order')" checked> Order</label>
-    <label><input type="checkbox" data-tab="order" data-col="2" onchange="applyColVisibility('order')"> Superior Order</label>
-    <label><input type="checkbox" data-tab="order" data-col="3" onchange="applyColVisibility('order')"> Notification</label>
-    <label><input type="checkbox" data-tab="order" data-col="4" onchange="applyColVisibility('order')"> Created On</label>
-    <label><input type="checkbox" data-tab="order" data-col="5" onchange="applyColVisibility('order')" checked> Description</label>
-    <label><input type="checkbox" data-tab="order" data-col="6" onchange="applyColVisibility('order')" checked> Revision</label>
-    <label><input type="checkbox" data-tab="order" data-col="7" onchange="applyColVisibility('order')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="order" data-col="8" onchange="applyColVisibility('order')" checked> System Status</label>
-    <label><input type="checkbox" data-tab="order" data-col="9" onchange="applyColVisibility('order')"> User Status</label>
-    <label><input type="checkbox" data-tab="order" data-col="10" onchange="applyColVisibility('order')"> Funct Location</label>
-    <label><input type="checkbox" data-tab="order" data-col="11" onchange="applyColVisibility('order')"> Location</label>
-    <label><input type="checkbox" data-tab="order" data-col="12" onchange="applyColVisibility('order')"> WBS Ord Header</label>
-    <label><input type="checkbox" data-tab="order" data-col="13" onchange="applyColVisibility('order')"> Cost Center</label>
-    <label><input type="checkbox" data-tab="order" data-col="14" onchange="applyColVisibility('order')"> Total Plan Cost</label>
-    <label><input type="checkbox" data-tab="order" data-col="15" onchange="applyColVisibility('order')"> Total Act Cost</label>
-    <label><input type="checkbox" data-tab="order" data-col="16" onchange="applyColVisibility('order')"> Planner Group</label>
-    <label><input type="checkbox" data-tab="order" data-col="17" onchange="applyColVisibility('order')"> Main WorkCtr</label>
-    <label><input type="checkbox" data-tab="order" data-col="18" onchange="applyColVisibility('order')"> Entry By</label>
-    <label><input type="checkbox" data-tab="order" data-col="19" onchange="applyColVisibility('order')"> Changed By</label>
-    <label><input type="checkbox" data-tab="order" data-col="20" onchange="applyColVisibility('order')" checked> Basic Start Date</label>
-    <label><input type="checkbox" data-tab="order" data-col="21" onchange="applyColVisibility('order')" checked> Basic Finish Date</label>
-    <label><input type="checkbox" data-tab="order" data-col="22" onchange="applyColVisibility('order')"> Actual Release</label>
+    <label><input type="checkbox" data-tab="order" data-col="1" onchange="applyColVisibility('order')" checked> Plant</label>
+    <label><input type="checkbox" data-tab="order" data-col="2" onchange="applyColVisibility('order')" checked> Order</label>
+    <label><input type="checkbox" data-tab="order" data-col="3" onchange="applyColVisibility('order')"> Superior Order</label>
+    <label><input type="checkbox" data-tab="order" data-col="4" onchange="applyColVisibility('order')"> Notification</label>
+    <label><input type="checkbox" data-tab="order" data-col="5" onchange="applyColVisibility('order')"> Created On</label>
+    <label><input type="checkbox" data-tab="order" data-col="6" onchange="applyColVisibility('order')" checked> Description</label>
+    <label><input type="checkbox" data-tab="order" data-col="7" onchange="applyColVisibility('order')" checked> Revision</label>
+    <label><input type="checkbox" data-tab="order" data-col="8" onchange="applyColVisibility('order')" checked> Equipment</label>
+    <label><input type="checkbox" data-tab="order" data-col="9" onchange="applyColVisibility('order')" checked> System Status</label>
+    <label><input type="checkbox" data-tab="order" data-col="10" onchange="applyColVisibility('order')"> User Status</label>
+    <label><input type="checkbox" data-tab="order" data-col="11" onchange="applyColVisibility('order')"> Funct Location</label>
+    <label><input type="checkbox" data-tab="order" data-col="12" onchange="applyColVisibility('order')"> Location</label>
+    <label><input type="checkbox" data-tab="order" data-col="13" onchange="applyColVisibility('order')"> WBS Ord Header</label>
+    <label><input type="checkbox" data-tab="order" data-col="14" onchange="applyColVisibility('order')"> Cost Center</label>
+    <label><input type="checkbox" data-tab="order" data-col="15" onchange="applyColVisibility('order')"> Total Plan Cost</label>
+    <label><input type="checkbox" data-tab="order" data-col="16" onchange="applyColVisibility('order')"> Total Act Cost</label>
+    <label><input type="checkbox" data-tab="order" data-col="17" onchange="applyColVisibility('order')"> Planner Group</label>
+    <label><input type="checkbox" data-tab="order" data-col="18" onchange="applyColVisibility('order')"> Main WorkCtr</label>
+    <label><input type="checkbox" data-tab="order" data-col="19" onchange="applyColVisibility('order')"> Entry By</label>
+    <label><input type="checkbox" data-tab="order" data-col="20" onchange="applyColVisibility('order')"> Changed By</label>
+    <label><input type="checkbox" data-tab="order" data-col="21" onchange="applyColVisibility('order')" checked> Basic Start Date</label>
+    <label><input type="checkbox" data-tab="order" data-col="22" onchange="applyColVisibility('order')" checked> Basic Finish Date</label>
+    <label><input type="checkbox" data-tab="order" data-col="23" onchange="applyColVisibility('order')"> Actual Release</label>
+    <label><input type="checkbox" data-tab="order" data-col="24" onchange="applyColVisibility('order')" checked> Aksi</label>
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
+        <th class="th-check no-sort"><input type="checkbox" class="row-check" id="chk-all-order" onchange="toggleAllChecks('order',this.checked)"></th>
         <th class="no-sort">Plant</th>
         <th onclick="orderSort('Order')">Order</th>
         <th onclick="orderSort('Superior_Order')">Superior Order</th>
@@ -962,8 +1019,9 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
         <th class="no-sort">Basic Start Date</th>
         <th class="no-sort">Basic Finish Date</th>
         <th class="no-sort">Actual Release</th>
+        <th class="no-sort">Aksi</th>
       </tr></thead>
-      <tbody id="order-tbody"><tr class="loading-row"><td colspan="23">Belum ada data Order. Upload Excel untuk memulai.</td></tr></tbody>
+      <tbody id="order-tbody"><tr class="loading-row"><td colspan="25">Belum ada data Order. Upload Excel untuk memulai.</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="order-pagination"></div>
@@ -984,32 +1042,39 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     <button class="col-toggle-btn" onclick="toggleColPanel('po')" style="margin-left:4px">⚙ Kolom</button>
     <span class="filter-right" id="po-rowCount"></span>
   </div>
+  <div class="bulk-bar" id="bulk-bar-po">
+    <span>Terpilih: <span class="bulk-count" id="bulk-count-po">0</span> baris</span>
+    <button class="btn-bulk-del" onclick="bulkDelete('po')">🗑 Hapus yang dipilih</button>
+    <button class="btn btn-reset" onclick="clearChecks('po')" style="padding:4px 12px;font-size:12px">✕ Batal</button>
+  </div>
   <!-- Panel pilih kolom PO -->
   <div class="col-panel" id="col-panel-po">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('po')">Reset</span></div>
-    <label><input type="checkbox" data-tab="po" data-col="0" onchange="applyColVisibility('po')"> Plnt</label>
-    <label><input type="checkbox" data-tab="po" data-col="1" onchange="applyColVisibility('po')" checked> Purchreq</label>
-    <label><input type="checkbox" data-tab="po" data-col="2" onchange="applyColVisibility('po')"> Item</label>
-    <label><input type="checkbox" data-tab="po" data-col="3" onchange="applyColVisibility('po')" checked> Material</label>
-    <label><input type="checkbox" data-tab="po" data-col="4" onchange="applyColVisibility('po')" checked> Short Text</label>
-    <label><input type="checkbox" data-tab="po" data-col="5" onchange="applyColVisibility('po')" checked> PO</label>
-    <label><input type="checkbox" data-tab="po" data-col="6" onchange="applyColVisibility('po')" checked> PO Item</label>
-    <label><input type="checkbox" data-tab="po" data-col="7" onchange="applyColVisibility('po')"> D</label>
-    <label><input type="checkbox" data-tab="po" data-col="8" onchange="applyColVisibility('po')"> DCI</label>
-    <label><input type="checkbox" data-tab="po" data-col="9" onchange="applyColVisibility('po')"> PGr</label>
-    <label><input type="checkbox" data-tab="po" data-col="10" onchange="applyColVisibility('po')"> Doc Date</label>
-    <label><input type="checkbox" data-tab="po" data-col="11" onchange="applyColVisibility('po')" checked> PO Quantity</label>
-    <label><input type="checkbox" data-tab="po" data-col="12" onchange="applyColVisibility('po')" checked> Qty Delivered</label>
-    <label><input type="checkbox" data-tab="po" data-col="13" onchange="applyColVisibility('po')" checked> Deliv Date</label>
-    <label><input type="checkbox" data-tab="po" data-col="14" onchange="applyColVisibility('po')"> OUn</label>
-    <label><input type="checkbox" data-tab="po" data-col="15" onchange="applyColVisibility('po')" checked> Net Price</label>
-    <label><input type="checkbox" data-tab="po" data-col="16" onchange="applyColVisibility('po')"> Crcy</label>
-    <label><input type="checkbox" data-tab="po" data-col="17" onchange="applyColVisibility('po')"> Per</label>
+    <label><input type="checkbox" data-tab="po" data-col="1" onchange="applyColVisibility('po')"> Plnt</label>
+    <label><input type="checkbox" data-tab="po" data-col="2" onchange="applyColVisibility('po')" checked> Purchreq</label>
+    <label><input type="checkbox" data-tab="po" data-col="3" onchange="applyColVisibility('po')"> Item</label>
+    <label><input type="checkbox" data-tab="po" data-col="4" onchange="applyColVisibility('po')" checked> Material</label>
+    <label><input type="checkbox" data-tab="po" data-col="5" onchange="applyColVisibility('po')" checked> Short Text</label>
+    <label><input type="checkbox" data-tab="po" data-col="6" onchange="applyColVisibility('po')" checked> PO</label>
+    <label><input type="checkbox" data-tab="po" data-col="7" onchange="applyColVisibility('po')" checked> PO Item</label>
+    <label><input type="checkbox" data-tab="po" data-col="8" onchange="applyColVisibility('po')"> D</label>
+    <label><input type="checkbox" data-tab="po" data-col="9" onchange="applyColVisibility('po')"> DCI</label>
+    <label><input type="checkbox" data-tab="po" data-col="10" onchange="applyColVisibility('po')"> PGr</label>
+    <label><input type="checkbox" data-tab="po" data-col="11" onchange="applyColVisibility('po')"> Doc Date</label>
+    <label><input type="checkbox" data-tab="po" data-col="12" onchange="applyColVisibility('po')" checked> PO Quantity</label>
+    <label><input type="checkbox" data-tab="po" data-col="13" onchange="applyColVisibility('po')" checked> Qty Delivered</label>
+    <label><input type="checkbox" data-tab="po" data-col="14" onchange="applyColVisibility('po')" checked> Deliv Date</label>
+    <label><input type="checkbox" data-tab="po" data-col="15" onchange="applyColVisibility('po')"> OUn</label>
+    <label><input type="checkbox" data-tab="po" data-col="16" onchange="applyColVisibility('po')" checked> Net Price</label>
+    <label><input type="checkbox" data-tab="po" data-col="17" onchange="applyColVisibility('po')"> Crcy</label>
+    <label><input type="checkbox" data-tab="po" data-col="18" onchange="applyColVisibility('po')"> Per</label>
+    <label><input type="checkbox" data-tab="po" data-col="19" onchange="applyColVisibility('po')" checked> Aksi</label>
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
+        <th class="th-check no-sort"><input type="checkbox" class="row-check" id="chk-all-po" onchange="toggleAllChecks('po',this.checked)"></th>
         <th class="no-sort">Plnt</th>
         <th onclick="poSort('Purchreq')">Purchreq</th>
         <th onclick="poSort('Item')">Item</th>
@@ -1028,8 +1093,9 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
         <th class="no-sort" style="text-align:right">Net Price</th>
         <th class="no-sort">Crcy</th>
         <th class="no-sort" style="text-align:right">Per</th>
+        <th class="no-sort">Aksi</th>
       </tr></thead>
-      <tbody id="po-tbody"><tr class="loading-row"><td colspan="18">Belum ada data PO. Upload Excel untuk memulai.</td></tr></tbody>
+      <tbody id="po-tbody"><tr class="loading-row"><td colspan="20">Belum ada data PO. Upload Excel untuk memulai.</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="po-pagination"></div>
@@ -1659,12 +1725,14 @@ function renderTaex() {
   });
   taexFiltered = applySort(data, 'taex');
   const tbody = document.getElementById('taex-tbody');
-  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="32">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
+  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="34">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
   const pg = paginate(taexFiltered, 'taex');
   tbody.innerHTML = pg.rows.map(r => {
+    const origIdx = state.taexData.indexOf(r);
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     const rowCls = r.PO ? 'has-po' : r.PR ? 'has-pr' : '';
-    return `<tr class="${rowCls}">
+    return `<tr class="${rowCls}" data-idx="${origIdx}">
+      <td class="td-check"><input type="checkbox" class="row-check" data-tab="taex" data-idx="${origIdx}" onchange="onCheckChange('taex')"></td>
       <td class="center mono">${r.ID}</td>
       <td class="mono">${D(r.Plant)}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
@@ -1697,6 +1765,10 @@ function renderTaex() {
       <td class="num">${N(r.Res_Price)}</td>
       <td class="num">${N(r.Res_per)}</td>
       <td class="mono">${D(r.Res_Curr)}</td>
+      <td class="td-actions">
+        <button class="btn-act btn-act-edit" onclick="openEditModal('taex',${origIdx})">✏ Edit</button>
+        <button class="btn-act btn-act-del" onclick="deleteRow('taex',${origIdx})">🗑</button>
+      </td>
     </tr>`;
   }).join('');
   document.getElementById('taex-rowCount').textContent = taexFiltered.length+' dari '+state.taexData.length+' baris';
@@ -1730,6 +1802,7 @@ function renderPrismaReservasi() {
   if (!prFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="23">Tidak ada data</td></tr>'; document.getElementById('pr-rowCount').textContent='0 baris'; return; }
   const pgPr = paginate(prFiltered, 'prisma');
   tbody.innerHTML = pgPr.rows.map(r => {
+    const origIdx = state.prismaReservasiData.indexOf(r);
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     const rowCls = r.PR_Prisma ? 'has-pr' : '';
     return `<tr class="${rowCls}">
@@ -1756,6 +1829,7 @@ function renderPrismaReservasi() {
       <td class="num">${r.Qty_PR_Prisma!==null?`<span class="badge badge-green">${r.Qty_PR_Prisma}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td class="num">${r.Qty_StockOnhand!==null?`<span style="color:#059669;font-weight:600">${r.Qty_StockOnhand}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td>${r.CodeKertasKerja?`<span class="badge badge-purple">${r.CodeKertasKerja}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
+      <td class="td-actions"><button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${origIdx})">↩ Return</button></td>
     </tr>`;
   }).join('');
   document.getElementById('pr-rowCount').textContent = prFiltered.length+' dari '+state.prismaReservasiData.length+' baris';
@@ -1904,9 +1978,12 @@ function renderSAP() {
   let data = state.prData.filter(r=> !q||Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
   sapFiltered = applySort(data,'sap');
   const tbody = document.getElementById('sap-tbody');
-  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="18">Belum ada data PR</td></tr>'; renderPagination('sap-pagination','sap',0,1,1,100,renderSAP); return; }
+  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="20">Belum ada data PR</td></tr>'; renderPagination('sap-pagination','sap',0,1,1,100,renderSAP); return; }
   const pgSap = paginate(sapFiltered, 'sap');
-  tbody.innerHTML = pgSap.rows.map(r=>`<tr>
+  tbody.innerHTML = pgSap.rows.map(r=>{
+    const origIdx = state.prData.indexOf(r);
+    return `<tr data-idx="${origIdx}">
+    <td class="td-check"><input type="checkbox" class="row-check" data-tab="sap" data-idx="${origIdx}" onchange="onCheckChange('sap')"></td>
     <td class="center mono">${r.ID}</td>
     <td class="mono">${D(r.Plant)}</td>
     <td>${badge(r.PR,'blue')}</td>
@@ -1925,7 +2002,11 @@ function renderSAP() {
     <td class="num">${N(r.PR_Per)}</td>
     <td class="mono">${D(r.Release_Date)}</td>
     <td><span class="badge badge-purple">${r.Tracking||'—'}</span></td>
-  </tr>`).join('');
+    <td class="td-actions">
+      <button class="btn-act btn-act-edit" onclick="openEditModal('sap',${origIdx})">✏ Edit</button>
+      <button class="btn-act btn-act-del" onclick="deleteRow('sap',${origIdx})">🗑</button>
+    </td>
+  </tr>`;}).join('');
   document.getElementById('sap-rowCount').textContent = sapFiltered.length+' baris';
   renderPagination('sap-pagination','sap',pgSap.total,pgSap.page,pgSap.totalPages,pgSap.size,renderSAP);
   updateBadges();
@@ -2841,13 +2922,16 @@ function renderOrder() {
   orderFiltered = applySort(data,'order');
   const tbody = document.getElementById('order-tbody');
   if (!orderFiltered.length) {
-    tbody.innerHTML='<tr class="loading-row"><td colspan="23">Belum ada data Order. Upload Excel untuk memulai.</td></tr>';
+    tbody.innerHTML='<tr class="loading-row"><td colspan="25">Belum ada data Order. Upload Excel untuk memulai.</td></tr>';
     document.getElementById('order-rowCount').textContent='0 baris';
     renderPagination('order-pagination','order',0,1,1,100,renderOrder);
     return;
   }
   const pg = paginate(orderFiltered, 'order');
-  tbody.innerHTML = pg.rows.map(r => `<tr>
+  tbody.innerHTML = pg.rows.map(r => {
+    const origIdx = state.orderData.indexOf(r);
+    return `<tr data-idx="${origIdx}">
+    <td class="td-check"><input type="checkbox" class="row-check" data-tab="order" data-idx="${origIdx}" onchange="onCheckChange('order')"></td>
     <td class="mono">${D(r.Plant)}</td>
     <td class="mono" style="color:#1a56db;font-weight:600">${D(r.Order)}</td>
     <td class="mono">${D(r.Superior_Order)}</td>
@@ -2871,7 +2955,11 @@ function renderOrder() {
     <td class="mono">${D(r.Basic_start_date)}</td>
     <td class="mono">${D(r.Basic_finish_date)}</td>
     <td class="mono">${D(r.Actual_Release)}</td>
-  </tr>`).join('');
+    <td class="td-actions">
+      <button class="btn-act btn-act-edit" onclick="openEditModal('order',${origIdx})">✏ Edit</button>
+      <button class="btn-act btn-act-del" onclick="deleteRow('order',${origIdx})">🗑</button>
+    </td>
+  </tr>`;}).join('');
   document.getElementById('order-rowCount').textContent = orderFiltered.length+' dari '+state.orderData.length+' baris';
   renderPagination('order-pagination','order',pg.total,pg.page,pg.totalPages,pg.size,renderOrder);
   updateBadges();
@@ -2973,13 +3061,16 @@ function renderPo() {
   poFiltered = applySort(data,'po');
   const tbody = document.getElementById('po-tbody');
   if (!poFiltered.length) {
-    tbody.innerHTML='<tr class="loading-row"><td colspan="18">Belum ada data PO. Upload Excel untuk memulai.</td></tr>';
+    tbody.innerHTML='<tr class="loading-row"><td colspan="20">Belum ada data PO. Upload Excel untuk memulai.</td></tr>';
     document.getElementById('po-rowCount').textContent='0 baris';
     renderPagination('po-pagination','po',0,1,1,100,renderPo);
     return;
   }
   const pg = paginate(poFiltered, 'po');
-  tbody.innerHTML = pg.rows.map(r => `<tr>
+  tbody.innerHTML = pg.rows.map(r => {
+    const origIdx = state.poData.indexOf(r);
+    return `<tr data-idx="${origIdx}">
+    <td class="td-check"><input type="checkbox" class="row-check" data-tab="po" data-idx="${origIdx}" onchange="onCheckChange('po')"></td>
     <td class="mono">${D(r.Plnt)}</td>
     <td class="mono" style="color:#1a56db;font-weight:600">${D(r.Purchreq)}</td>
     <td class="mono">${D(r.Item)}</td>
@@ -2998,7 +3089,11 @@ function renderPo() {
     <td class="num">${N(r.Net_Price)}</td>
     <td class="mono">${D(r.Crcy)}</td>
     <td class="num">${N(r.Per)}</td>
-  </tr>`).join('');
+    <td class="td-actions">
+      <button class="btn-act btn-act-edit" onclick="openEditModal('po',${origIdx})">✏ Edit</button>
+      <button class="btn-act btn-act-del" onclick="deleteRow('po',${origIdx})">🗑</button>
+    </td>
+  </tr>`;}).join('');
   document.getElementById('po-rowCount').textContent = poFiltered.length+' dari '+state.poData.length+' baris';
   renderPagination('po-pagination','po',pg.total,pg.page,pg.totalPages,pg.size,renderPo);
   updateBadges();
@@ -3554,6 +3649,208 @@ function initColVisibility() {
 }
 
 init().then(() => { switchApp('taex'); initAllResizable(); initColVisibility(); });
+
+// ============================================================
+// CHECKLIST ENGINE
+// ============================================================
+const checkedRows = { taex: new Set(), sap: new Set(), order: new Set(), po: new Set() };
+
+function onCheckChange(tab) {
+  const checks = document.querySelectorAll(`input.row-check[data-tab="${tab}"]`);
+  checkedRows[tab] = new Set();
+  checks.forEach(c => { if (c.checked) checkedRows[tab].add(parseInt(c.dataset.idx)); });
+  updateBulkBar(tab);
+  // sync "check all" header state
+  const allChk = document.getElementById('chk-all-' + tab);
+  if (allChk) {
+    allChk.checked = checks.length > 0 && [...checks].every(c => c.checked);
+    allChk.indeterminate = checkedRows[tab].size > 0 && checkedRows[tab].size < checks.length;
+  }
+}
+
+function toggleAllChecks(tab, checked) {
+  const checks = document.querySelectorAll(`input.row-check[data-tab="${tab}"]`);
+  checks.forEach(c => { c.checked = checked; });
+  checkedRows[tab] = checked ? new Set([...checks].map(c => parseInt(c.dataset.idx))) : new Set();
+  updateBulkBar(tab);
+}
+
+function updateBulkBar(tab) {
+  const bar = document.getElementById('bulk-bar-' + tab);
+  const cnt = document.getElementById('bulk-count-' + tab);
+  if (!bar) return;
+  const n = checkedRows[tab].size;
+  if (n > 0) { bar.classList.add('show'); cnt.textContent = n; }
+  else { bar.classList.remove('show'); }
+}
+
+function clearChecks(tab) {
+  checkedRows[tab] = new Set();
+  document.querySelectorAll(`input.row-check[data-tab="${tab}"]`).forEach(c => c.checked = false);
+  const allChk = document.getElementById('chk-all-' + tab);
+  if (allChk) { allChk.checked = false; allChk.indeterminate = false; }
+  updateBulkBar(tab);
+}
+
+// ============================================================
+// DELETE (single & bulk)
+// ============================================================
+const tabStateMap = { taex: 'taexData', sap: 'prData', order: 'orderData', po: 'poData' };
+const tabApiMap   = { taex: '/taex', sap: '/pr', order: '/order', po: '/po' };
+const tabRenderMap = { taex: renderTaex, sap: renderSAP, order: renderOrder, po: renderPo };
+
+function deleteRow(tab, idx) {
+  const r = state[tabStateMap[tab]][idx];
+  const label = r.Material || r.Order || r.PR || r.PO || `baris #${idx+1}`;
+  if (!confirm(`Hapus "${label}"?`)) return;
+  state[tabStateMap[tab]].splice(idx, 1);
+  clearChecks(tab);
+  saveTabData(tab);
+}
+
+async function bulkDelete(tab) {
+  const idxs = [...checkedRows[tab]].sort((a,b) => b - a); // descending agar splice aman
+  if (!idxs.length) return;
+  if (!confirm(`Hapus ${idxs.length} baris yang dipilih?`)) return;
+  idxs.forEach(i => state[tabStateMap[tab]].splice(i, 1));
+  clearChecks(tab);
+  await saveTabData(tab);
+}
+
+async function saveTabData(tab) {
+  const renderFn = tabRenderMap[tab];
+  renderFn();
+  try {
+    await apiFetch(tabApiMap[tab], { method: 'PUT', body: state[tabStateMap[tab]] });
+    setSyncStatus('ok', `✅ Data disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
+    toast('Data berhasil disimpan!', 'ok');
+  } catch(e) {
+    setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
+    toast('Gagal simpan ke server!', 'err');
+  }
+}
+
+// ============================================================
+// RETURN PRISMA → TA-EX
+// ============================================================
+async function returnPrismaToTaex(idx) {
+  const r = state.prismaReservasiData[idx];
+  if (!confirm(`Return "${r.Material}" kembali ke TA-ex Reservasi?`)) return;
+  // Hapus dari prisma
+  state.prismaReservasiData.splice(idx, 1);
+  try {
+    await apiFetch('/prisma', { method: 'PUT', body: state.prismaReservasiData });
+    renderPrismaReservasi();
+    toast('Baris dikembalikan ke TA-ex Reservasi.', 'info');
+    setSyncStatus('ok', `✅ Return selesai · ${new Date().toLocaleTimeString('id-ID')}`);
+  } catch(e) {
+    setSyncStatus('err', '❌ Gagal: ' + e.message);
+    toast('Gagal menyimpan perubahan!', 'err');
+  }
+}
+
+// ============================================================
+// EDIT MODAL
+// ============================================================
+let editState = { tab: null, idx: null };
+
+const editFields = {
+  taex: [
+    { key:'Plant', label:'Plant' }, { key:'Equipment', label:'Equipment' }, { key:'Order', label:'Order' },
+    { key:'Revision', label:'Revision' }, { key:'Material', label:'Material' }, { key:'Itm', label:'Itm' },
+    { key:'Material_Description', label:'Material Description', full:true },
+    { key:'Qty_Reqmts', label:'Qty Reqmts', type:'number' }, { key:'Qty_Stock', label:'Qty Stock', type:'number' },
+    { key:'PR', label:'PR' }, { key:'Item', label:'PR Item' }, { key:'Qty_PR', label:'Qty PR', type:'number' },
+    { key:'PO', label:'PO' }, { key:'PO_Date', label:'PO Date' }, { key:'Qty_Deliv', label:'Qty Deliv', type:'number' },
+    { key:'Delivery_Date', label:'Delivery Date' }, { key:'Del', label:'Del' }, { key:'FIs', label:'FIs' },
+    { key:'Ict', label:'Ict' }, { key:'PG', label:'PG' }, { key:'UoM', label:'UoM' },
+  ],
+  sap: [
+    { key:'Plant', label:'Plant' }, { key:'PR', label:'PR' }, { key:'Item', label:'Item' },
+    { key:'Material', label:'Material' },
+    { key:'Material_Description', label:'Material Description', full:true },
+    { key:'D', label:'D' }, { key:'R', label:'R' }, { key:'PGr', label:'PGr' },
+    { key:'TrackingNo', label:'TrackingNo' }, { key:'Qty_PR', label:'Qty PR', type:'number' },
+    { key:'Un', label:'Un' }, { key:'Req_Date', label:'Req Date' },
+    { key:'Valn_price', label:'Valn Price', type:'number' }, { key:'PR_Curr', label:'PR Curr' },
+    { key:'PR_Per', label:'PR Per', type:'number' }, { key:'Release_Date', label:'Release Date' },
+    { key:'Tracking', label:'Tracking' },
+  ],
+  order: [
+    { key:'Plant', label:'Plant' }, { key:'Order', label:'Order' }, { key:'Superior_Order', label:'Superior Order' },
+    { key:'Notification', label:'Notification' }, { key:'Description', label:'Description', full:true },
+    { key:'Revision', label:'Revision' }, { key:'Equipment', label:'Equipment' },
+    { key:'System_Status', label:'System Status' }, { key:'User_Status', label:'User Status' },
+    { key:'Basic_start_date', label:'Basic Start Date' }, { key:'Basic_finish_date', label:'Basic Finish Date' },
+    { key:'Total_Plan_Cost', label:'Total Plan Cost', type:'number' }, { key:'Total_Act_Cost', label:'Total Act Cost', type:'number' },
+    { key:'Planner_Group', label:'Planner Group' }, { key:'MainWorkCtr', label:'Main WorkCtr' },
+  ],
+  po: [
+    { key:'Plnt', label:'Plant' }, { key:'Purchreq', label:'Purchreq' }, { key:'Item', label:'Item' },
+    { key:'Material', label:'Material' }, { key:'Short_Text', label:'Short Text', full:true },
+    { key:'PO', label:'PO' }, { key:'PO_Item', label:'PO Item' },
+    { key:'D', label:'D' }, { key:'DCI', label:'DCI' }, { key:'PGr', label:'PGr' },
+    { key:'Doc_Date', label:'Doc Date' },
+    { key:'PO_Quantity', label:'PO Quantity', type:'number' }, { key:'Qty_Delivered', label:'Qty Delivered', type:'number' },
+    { key:'Deliv_Date', label:'Deliv Date' }, { key:'OUn', label:'OUn' },
+    { key:'Net_Price', label:'Net Price', type:'number' }, { key:'Crcy', label:'Crcy' },
+    { key:'Per', label:'Per', type:'number' },
+  ],
+};
+
+function openEditModal(tab, idx) {
+  editState = { tab, idx };
+  const r = state[tabStateMap[tab]][idx];
+  const fields = editFields[tab] || [];
+  const tabLabel = { taex:'TA-ex Reservasi', sap:'SAP PR', order:'Order', po:'PO' }[tab] || tab;
+  document.getElementById('edit-modal-title').textContent = `Edit ${tabLabel}`;
+  const grid = document.getElementById('edit-modal-fields');
+  grid.innerHTML = fields.map(f => `
+    <div class="fg${f.full ? ' fg-full' : ''}">
+      <label>${f.label}</label>
+      <input id="ef-${f.key}" type="${f.type||'text'}" value="${esc(r[f.key]??'')}">
+    </div>`).join('');
+  document.getElementById('modal-edit').classList.add('show');
+}
+
+function closeEditModal() {
+  document.getElementById('modal-edit').classList.remove('show');
+  editState = { tab: null, idx: null };
+}
+
+async function saveEdit() {
+  const { tab, idx } = editState;
+  if (!tab || idx === null) return;
+  const fields = editFields[tab] || [];
+  const r = state[tabStateMap[tab]][idx];
+  fields.forEach(f => {
+    const el = document.getElementById('ef-' + f.key);
+    if (!el) return;
+    const val = el.value.trim();
+    if (f.type === 'number') r[f.key] = val === '' ? null : parseFloat(val) || 0;
+    else r[f.key] = val === '' ? null : val;
+  });
+  closeEditModal();
+  await saveTabData(tab);
+}
+
 </script>
+<!-- MODAL: EDIT ROW -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal" style="width:700px;">
+    <div class="modal-header" style="background:#1a56db;">
+      <h3 id="edit-modal-title">✏ Edit Baris</h3>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-grid" id="edit-modal-fields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-reset" onclick="closeEditModal()">Batal</button>
+      <button class="btn btn-success" onclick="saveEdit()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
