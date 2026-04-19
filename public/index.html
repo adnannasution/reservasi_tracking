@@ -272,19 +272,35 @@ thead th { position: relative; }
 .step.done .step-num { background: #059669; border-color: #059669; color: white; font-size: 9px; }
 .step-arrow { color: #d1d5db; font-size: 10px; }
 
-/* ── STICKY FIRST 2 COLUMNS ── */
-table.sticky-col thead th:nth-child(1),
-table.sticky-col tbody td:nth-child(1) {
-  position: sticky; left: 0; z-index: 4; background: #1a56db;
+/* ── FREEZE COLUMNS (dynamic via JS) ── */
+th.col-frozen, td.col-frozen {
+  position: sticky !important;
+  z-index: 3;
+  background: inherit;
 }
-table.sticky-col tbody td:nth-child(1) { background: white; z-index: 3; }
-table.sticky-col thead th:nth-child(2),
-table.sticky-col tbody td:nth-child(2) {
-  position: sticky; left: 48px; z-index: 4; background: #1a56db;
+th.col-frozen { z-index: 5; background: #1a56db !important; }
+td.col-frozen { background: white; }
+tbody tr:hover td.col-frozen { background: #f0f5ff !important; }
+tbody tr.has-pr td.col-frozen { background: #f0fdf4 !important; }
+tbody tr.has-pr:hover td.col-frozen { background: #dcfce7 !important; }
+tbody tr.has-po td.col-frozen { background: #eff6ff !important; }
+tbody tr.has-po:hover td.col-frozen { background: #dbeafe !important; }
+
+/* freeze indicator on header */
+th.col-frozen { border-right: 2px solid rgba(255,255,255,0.5) !important; }
+th.col-frozen-last { border-right: 3px solid #60a5fa !important; }
+td.col-frozen-last { border-right: 3px solid #bfdbfe !important; }
+
+/* double-click hint on th */
+thead th { position: relative; }
+thead th.freezable:not(.th-check)::after {
+  content: ''; position: absolute; inset: 0;
 }
-table.sticky-col tbody td:nth-child(2) { background: white; z-index: 3; }
-table.sticky-col tbody tr:hover td:nth-child(1),
-table.sticky-col tbody tr:hover td:nth-child(2) { background: #f0f5ff; }
+th.col-frozen-last::before {
+  content: '❄';
+  position: absolute; top: 2px; right: 4px;
+  font-size: 9px; opacity: 0.7; pointer-events: none;
+}
 
 /* ── ROW HIGHLIGHT (sudah ada PR) ── */
 tbody tr.has-pr td { background: #f0fdf4 !important; }
@@ -540,13 +556,13 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <label><input type="checkbox" data-tab="taex" data-col="4" onchange="applyColVisibility('taex')" checked> Order</label>
     <label><input type="checkbox" data-tab="taex" data-col="5" onchange="applyColVisibility('taex')" checked> Revision</label>
     <label><input type="checkbox" data-tab="taex" data-col="6" onchange="applyColVisibility('taex')" checked> Material</label>
-    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')"> Itm</label>
+    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')" checked> Itm</label>
     <label><input type="checkbox" data-tab="taex" data-col="8" onchange="applyColVisibility('taex')" checked> Material Description</label>
     <label><input type="checkbox" data-tab="taex" data-col="9" onchange="applyColVisibility('taex')" checked> Qty Reqmts</label>
-    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')"> Qty Stock</label>
+    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')" checked> Qty Stock</label>
     <label><input type="checkbox" data-tab="taex" data-col="11" onchange="applyColVisibility('taex')" checked> PR</label>
     <label><input type="checkbox" data-tab="taex" data-col="12" onchange="applyColVisibility('taex')"> Item</label>
-    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')"> Qty PR</label>
+    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')" checked> Qty PR</label>
     <label><input type="checkbox" data-tab="taex" data-col="14" onchange="applyColVisibility('taex')" checked> PO</label>
     <label><input type="checkbox" data-tab="taex" data-col="15" onchange="applyColVisibility('taex')"> PO Date</label>
     <label><input type="checkbox" data-tab="taex" data-col="16" onchange="applyColVisibility('taex')"> Qty Deliv</label>
@@ -638,7 +654,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <label><input type="checkbox" data-tab="prisma" data-col="3" onchange="applyColVisibility('prisma')"> Revision</label>
     <label><input type="checkbox" data-tab="prisma" data-col="4" onchange="applyColVisibility('prisma')" checked> Order</label>
     <label><input type="checkbox" data-tab="prisma" data-col="5" onchange="applyColVisibility('prisma')" checked> Reservno</label>
-    <label><input type="checkbox" data-tab="prisma" data-col="6" onchange="applyColVisibility('prisma')"> Itm</label>
+    <label><input type="checkbox" data-tab="prisma" data-col="6" onchange="applyColVisibility('prisma')" checked> Itm</label>
     <label><input type="checkbox" data-tab="prisma" data-col="7" onchange="applyColVisibility('prisma')" checked> Material</label>
     <label><input type="checkbox" data-tab="prisma" data-col="8" onchange="applyColVisibility('prisma')" checked> Material Description</label>
     <label><input type="checkbox" data-tab="prisma" data-col="9" onchange="applyColVisibility('prisma')"> Del</label>
@@ -652,8 +668,8 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <label><input type="checkbox" data-tab="prisma" data-col="17" onchange="applyColVisibility('prisma')"> UoM</label>
     <label><input type="checkbox" data-tab="prisma" data-col="18" onchange="applyColVisibility('prisma')" checked> PR Prisma</label>
     <label><input type="checkbox" data-tab="prisma" data-col="19" onchange="applyColVisibility('prisma')"> Item Prisma</label>
-    <label><input type="checkbox" data-tab="prisma" data-col="20" onchange="applyColVisibility('prisma')"> Qty PR Prisma</label>
-    <label><input type="checkbox" data-tab="prisma" data-col="21" onchange="applyColVisibility('prisma')" checked> Qty Stock Onhand</label>
+    <label><input type="checkbox" data-tab="prisma" data-col="20" onchange="applyColVisibility('prisma')" checked> Qty Stock Onhand</label>
+    <label><input type="checkbox" data-tab="prisma" data-col="21" onchange="applyColVisibility('prisma')" checked> Qty dari PR</label>
     <label><input type="checkbox" data-tab="prisma" data-col="22" onchange="applyColVisibility('prisma')" checked> Code Kertas Kerja</label>
   </div>
   <div class="empty-state" id="pr-empty-state">
@@ -686,8 +702,8 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         <th class="no-sort">UoM</th>
         <th class="no-sort">Purchreq</th>
         <th class="no-sort">Item</th>
-        <th class="no-sort"><span class="th-wrap">Qty dari PR<span class="tooltip-icon" data-tip="Qty yang sudah di-PR">ⓘ</span></span></th>
         <th class="no-sort"><span class="th-wrap">Qty Stock Onhand<span class="tooltip-icon" data-tip="Qty stok fisik tersedia">ⓘ</span></span></th>
+        <th class="no-sort"><span class="th-wrap">Qty dari PR<span class="tooltip-icon" data-tip="Qty yang sudah di-PR">ⓘ</span></span></th>
         <th class="no-sort">Code Kertas Kerja</th>
         <th class="no-sort">Aksi</th>
       </tr></thead>
@@ -1826,8 +1842,8 @@ function renderPrismaReservasi() {
       <td class="center">${D(r.UoM)}</td>
       <td>${badge(r.PR_Prisma,'blue')}</td>
       <td class="center mono">${D(r.Item_Prisma)}</td>
-      <td class="num">${r.Qty_PR_Prisma!==null?`<span class="badge badge-green">${r.Qty_PR_Prisma}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td class="num">${r.Qty_StockOnhand!==null?`<span style="color:#059669;font-weight:600">${r.Qty_StockOnhand}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
+      <td class="num">${r.Qty_PR_Prisma!==null?`<span class="badge badge-green">${r.Qty_PR_Prisma}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td>${r.CodeKertasKerja?`<span class="badge badge-purple">${r.CodeKertasKerja}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td class="td-actions"><button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${origIdx})">↩ Return</button></td>
     </tr>`;
@@ -3613,6 +3629,9 @@ function applyColVisibility(tab) {
       td.style.display = (colVisibility[tab][i] === false) ? 'none' : '';
     });
   });
+
+  // Re-apply freeze setelah visibility berubah
+  reapplyFreezeAfterRender(tab);
 }
 
 function resetColVisibility(tab) {
@@ -3621,8 +3640,7 @@ function resetColVisibility(tab) {
   applyColVisibility(tab);
 }
 
-// Patch render functions to re-apply column visibility after each render
-const _origApply = applyColVisibility;
+// Re-apply column visibility after each render
 function reapplyColAfterRender(tab) {
   const state = colVisibility[tab];
   if (!state || !Object.keys(state).length) return;
@@ -3639,6 +3657,9 @@ function reapplyColAfterRender(tab) {
       td.style.display = (state[i] === false) ? 'none' : '';
     });
   });
+
+  // Re-apply freeze setelah re-render
+  reapplyFreezeAfterRender(tab);
 }
 
 // Init: apply default visibility (all checked by default = show all, hidden = hide)
@@ -3648,7 +3669,124 @@ function initColVisibility() {
   });
 }
 
-init().then(() => { switchApp('taex'); initAllResizable(); initColVisibility(); });
+// ============================================================
+// FREEZE COLUMNS ENGINE
+// ============================================================
+// freezeState: { tabKey: frozenUpToVisibleIndex } — index dalam visible columns (0-based)
+const freezeState = {};
+
+// Dipanggil saat double-click header th
+function onThDblClick(e, tabKey) {
+  const th = e.currentTarget;
+  const table = th.closest('table');
+  if (!table) return;
+
+  // Cari semua th yang visible (tidak display:none), skip th-check
+  const allThs = [...table.querySelectorAll('thead th')];
+  const visibleThs = allThs.filter(t => t.style.display !== 'none');
+
+  // Index th yang di-dblclick di antara visible ths
+  const clickedVisIdx = visibleThs.indexOf(th);
+  if (clickedVisIdx < 0) return;
+
+  // Skip kolom checklist (th-check) — tidak bisa jadi batas freeze
+  if (th.classList.contains('th-check')) return;
+
+  // Toggle: kalau sudah freeze sampai kolom ini, unfreeze semua
+  if (freezeState[tabKey] === clickedVisIdx) {
+    freezeState[tabKey] = -1;
+  } else {
+    freezeState[tabKey] = clickedVisIdx;
+  }
+
+  applyFreeze(tabKey);
+}
+
+function applyFreeze(tabKey) {
+  const tableMap = {
+    taex: 'taex-tbody', prisma: 'pr-tbody', sap: 'sap-tbody',
+    order: 'order-tbody', po: 'po-tbody',
+    kk: 'kk-tbody', sum: 'sum-tbody', ks: 'ks-tbody', trk: 'trk-tbody',
+  };
+  const tbodyId = tableMap[tabKey];
+  if (!tbodyId) return;
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const table = tbody.closest('table');
+  if (!table) return;
+
+  const frozenUpTo = freezeState[tabKey] ?? -1;
+
+  // Kumpulkan th visible dan hitung left offset masing-masing
+  const allThs = [...table.querySelectorAll('thead th')];
+  const visibleThs = allThs.filter(t => t.style.display !== 'none');
+
+  // Reset semua th dulu
+  allThs.forEach(th => {
+    th.classList.remove('col-frozen', 'col-frozen-last');
+    th.style.left = '';
+  });
+
+  // Reset semua td
+  table.querySelectorAll('tbody td, tfoot td').forEach(td => {
+    td.classList.remove('col-frozen', 'col-frozen-last');
+    td.style.left = '';
+  });
+
+  if (frozenUpTo < 0) return; // unfreeze semua
+
+  // Hitung left offset setiap visible th sampai frozenUpTo
+  let leftOffset = 0;
+  const offsets = []; // offsets[visIdx] = left px
+  for (let vi = 0; vi <= frozenUpTo; vi++) {
+    offsets[vi] = leftOffset;
+    const th = visibleThs[vi];
+    th.classList.add('col-frozen');
+    if (vi === frozenUpTo) th.classList.add('col-frozen-last');
+    th.style.left = leftOffset + 'px';
+    leftOffset += th.offsetWidth || 80;
+  }
+
+  // Apply ke setiap baris tbody — harus map visible td index ke all-td index
+  const allRows = [...tbody.querySelectorAll('tr')];
+  allRows.forEach(tr => {
+    const allTds = [...tr.querySelectorAll('td')];
+    // Bangun visible tds (yang tidak display:none)
+    const visibleTds = allTds.filter(td => td.style.display !== 'none');
+    for (let vi = 0; vi <= frozenUpTo && vi < visibleTds.length; vi++) {
+      visibleTds[vi].classList.add('col-frozen');
+      if (vi === frozenUpTo) visibleTds[vi].classList.add('col-frozen-last');
+      visibleTds[vi].style.left = offsets[vi] + 'px';
+    }
+  });
+}
+
+// Re-apply freeze setelah render/resize/col-visibility
+function reapplyFreezeAfterRender(tabKey) {
+  if ((freezeState[tabKey] ?? -1) >= 0) {
+    setTimeout(() => applyFreeze(tabKey), 0);
+  }
+}
+
+// Attach double-click listener ke semua th di semua table
+function initFreezeListeners() {
+  const tabTableMap2 = {
+    taex: 'page-taex', prisma: 'page-prisma-reservasi', sap: 'page-pr',
+    order: 'page-order', po: 'page-po',
+    kk: 'page-kertas-kerja', sum: 'page-summary', ks: 'page-kumpulan', trk: 'page-tracking',
+  };
+  Object.entries(tabTableMap2).forEach(([tabKey, pageId]) => {
+    const page = document.getElementById(pageId);
+    if (!page) return;
+    page.querySelectorAll('thead th').forEach(th => {
+      if (th.classList.contains('th-check')) return;
+      th.addEventListener('dblclick', (e) => onThDblClick(e, tabKey));
+      th.title = 'Double-klik untuk freeze kolom sampai sini';
+    });
+  });
+}
+
+
 
 // ============================================================
 // CHECKLIST ENGINE
@@ -3833,6 +3971,16 @@ async function saveEdit() {
   closeEditModal();
   await saveTabData(tab);
 }
+
+// ============================================================
+// BOOT
+// ============================================================
+init().then(() => {
+  switchApp('taex');
+  initAllResizable();
+  initColVisibility();
+  initFreezeListeners();
+});
 
 </script>
 <!-- MODAL: EDIT ROW -->
