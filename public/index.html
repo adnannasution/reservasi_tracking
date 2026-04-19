@@ -1098,28 +1098,31 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     <button class="btn btn-search" onclick="trkApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="trkResetFilter()">Reset</button>
     <button class="btn btn-export" onclick="exportTrackingExcel()" style="margin-left:8px">📤 Export Excel</button>
-    <div style="display:flex;align-items:center;gap:4px;margin-left:8px;border:1px solid #d1d5db;border-radius:4px;overflow:hidden;">
-      <button id="trk-btn-row" onclick="setTrkView('row')" style="border:none;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:#1a56db;color:white;" title="Tampilan Row (ringkas)">☰ Row</button>
-      <button id="trk-btn-expand" onclick="setTrkView('expand')" style="border:none;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:#6b7280;" title="Tampilan Expand (detail material)">⊞ Expand</button>
-    </div>
     <button class="col-toggle-btn" onclick="toggleColPanel('trk')" style="margin-left:4px">⚙ Kolom</button>
     <span class="filter-right" id="trk-rowCount"></span>
   </div>
   <!-- Panel pilih kolom Tracking -->
   <div class="col-panel" id="col-panel-trk">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('trk')">Reset</span></div>
-    <label><input type="checkbox" data-tab="trk" data-col="0" onchange="applyColVisibility('trk')"> Expand</label>
-    <label><input type="checkbox" data-tab="trk" data-col="1" onchange="applyColVisibility('trk')" checked> Order</label>
-    <label><input type="checkbox" data-tab="trk" data-col="2" onchange="applyColVisibility('trk')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="trk" data-col="3" onchange="applyColVisibility('trk')" checked> Description</label>
-    <label><input type="checkbox" data-tab="trk" data-col="4" onchange="applyColVisibility('trk')" checked> Plant</label>
-    <label><input type="checkbox" data-tab="trk" data-col="5" onchange="applyColVisibility('trk')" checked> Total Item</label>
-    <label><input type="checkbox" data-tab="trk" data-col="6" onchange="applyColVisibility('trk')" checked> Sudah PR</label>
-    <label><input type="checkbox" data-tab="trk" data-col="7" onchange="applyColVisibility('trk')" checked> Sudah PO</label>
-    <label><input type="checkbox" data-tab="trk" data-col="8" onchange="applyColVisibility('trk')" checked> Delivered</label>
-    <label><input type="checkbox" data-tab="trk" data-col="9" onchange="applyColVisibility('trk')" checked> Nilai PO</label>
-    <label><input type="checkbox" data-tab="trk" data-col="10" onchange="applyColVisibility('trk')" checked> Progress</label>
-    <label><input type="checkbox" data-tab="trk" data-col="11" onchange="applyColVisibility('trk')" checked> Status</label>
+    <label><input type="checkbox" data-tab="trk" data-col="0" onchange="applyColVisibility('trk')" checked> Order</label>
+    <label><input type="checkbox" data-tab="trk" data-col="1" onchange="applyColVisibility('trk')" checked> Equipment</label>
+    <label><input type="checkbox" data-tab="trk" data-col="2" onchange="applyColVisibility('trk')" checked> Description</label>
+    <label><input type="checkbox" data-tab="trk" data-col="3" onchange="applyColVisibility('trk')" checked> Plant</label>
+    <label><input type="checkbox" data-tab="trk" data-col="4" onchange="applyColVisibility('trk')" checked> Material</label>
+    <label><input type="checkbox" data-tab="trk" data-col="5" onchange="applyColVisibility('trk')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="trk" data-col="6" onchange="applyColVisibility('trk')" checked> Qty Reqmts</label>
+    <label><input type="checkbox" data-tab="trk" data-col="7" onchange="applyColVisibility('trk')" checked> PR</label>
+    <label><input type="checkbox" data-tab="trk" data-col="8" onchange="applyColVisibility('trk')"> PR Item</label>
+    <label><input type="checkbox" data-tab="trk" data-col="9" onchange="applyColVisibility('trk')" checked> Qty PR</label>
+    <label><input type="checkbox" data-tab="trk" data-col="10" onchange="applyColVisibility('trk')"> Req Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="11" onchange="applyColVisibility('trk')" checked> PO</label>
+    <label><input type="checkbox" data-tab="trk" data-col="12" onchange="applyColVisibility('trk')"> PO Item</label>
+    <label><input type="checkbox" data-tab="trk" data-col="13" onchange="applyColVisibility('trk')" checked> PO Quantity</label>
+    <label><input type="checkbox" data-tab="trk" data-col="14" onchange="applyColVisibility('trk')" checked> Qty Delivered</label>
+    <label><input type="checkbox" data-tab="trk" data-col="15" onchange="applyColVisibility('trk')"> Deliv Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="16" onchange="applyColVisibility('trk')" checked> Net Price</label>
+    <label><input type="checkbox" data-tab="trk" data-col="17" onchange="applyColVisibility('trk')"> Crcy</label>
+    <label><input type="checkbox" data-tab="trk" data-col="18" onchange="applyColVisibility('trk')" checked> Status</label>
   </div>
 
   <!-- TABLE -->
@@ -1127,21 +1130,28 @@ tr.trk-l3 td:first-child { border-left: 3px solid #bbf7d0; }
     <div class="table-wrap">
       <table id="trk-table">
         <thead><tr>
-          <th class="no-sort" style="width:32px"></th>
           <th onclick="trkSort('Order')">Order</th>
           <th class="no-sort">Equipment</th>
           <th class="no-sort">Description</th>
           <th class="no-sort">Plant</th>
-          <th class="no-sort" style="text-align:right">Total Item</th>
-          <th class="no-sort" style="text-align:right">Sudah PR</th>
-          <th class="no-sort" style="text-align:right">Sudah PO</th>
-          <th class="no-sort" style="text-align:right">Delivered</th>
-          <th class="no-sort" style="text-align:right">Nilai PO</th>
-          <th class="no-sort" style="min-width:120px">Progress</th>
+          <th onclick="trkSort('Material')">Material</th>
+          <th class="no-sort">Material Description</th>
+          <th class="no-sort" style="text-align:right">Qty Reqmts</th>
+          <th onclick="trkSort('PR')">PR</th>
+          <th class="no-sort">PR Item</th>
+          <th class="no-sort" style="text-align:right">Qty PR</th>
+          <th class="no-sort">Req Date</th>
+          <th onclick="trkSort('PO')">PO</th>
+          <th class="no-sort">PO Item</th>
+          <th class="no-sort" style="text-align:right">PO Quantity</th>
+          <th class="no-sort" style="text-align:right">Qty Delivered</th>
+          <th class="no-sort">Deliv Date</th>
+          <th class="no-sort" style="text-align:right">Net Price</th>
+          <th class="no-sort">Crcy</th>
           <th class="no-sort">Status</th>
         </tr></thead>
         <tbody id="trk-tbody">
-          <tr class="loading-row"><td colspan="12">Memuat data tracking...</td></tr>
+          <tr class="loading-row"><td colspan="19">Memuat data tracking...</td></tr>
         </tbody>
       </table>
     </div>
@@ -3328,14 +3338,13 @@ function renderTracking() {
   // Update summary cards
   updateTrackingCards(allRows);
 
-  // Group by Order
-  const groups = groupByOrder(filtered);
-  trkFiltered  = applySort(groups, 'trk');
+  // Sort flat rows
+  trkFiltered = applySort(filtered, 'trk');
 
   const tbody = document.getElementById('trk-tbody');
   if (!trkFiltered.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="12">Tidak ada data tracking. Pastikan data TA-ex, Order, PR, dan PO sudah diupload.</td></tr>';
-    document.getElementById('trk-rowCount').textContent = '0 order';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="19">Tidak ada data tracking. Pastikan data TA-ex, Order, PR, dan PO sudah diupload.</td></tr>';
+    document.getElementById('trk-rowCount').textContent = '0 item';
     renderPagination('trk-pagination','trk',0,1,1,100,renderTracking);
     return;
   }
@@ -3344,115 +3353,33 @@ function renderTracking() {
   const rows = pg.rows;
   const html = [];
 
-  // Di mode expand: auto-buka semua L1
-  if (trkViewMode === 'expand') {
-    rows.forEach(g => { trkExpanded[g.Order] = true; });
-  }
-
-  rows.forEach(g => {
-    const isOpen   = trkViewMode === 'expand' ? true : !!trkExpanded[g.Order];
-    const barColor = progressColor(g.pct);
-    // ── L1 ROW ──
-    html.push(`<tr class="trk-l1" data-order="${esc(g.Order)}">
-      <td style="text-align:center">
-        ${trkViewMode === 'expand'
-          ? '<span style="color:#d1d5db;font-size:11px">▼</span>'
-          : `<button class="trk-expand-btn ${isOpen?'open':''}" onclick="toggleTrkOrder('${esc(g.Order)}')">${isOpen?'▼':'▶'}</button>`
-        }
-      </td>
-      <td class="mono" style="color:#1a56db;font-weight:700">${D(g.Order)}</td>
-      <td class="mono">${D(g.Equipment)}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${D(g.Description)}</td>
-      <td class="mono">${D(g.Plant)}</td>
-      <td class="num">${g.totalItems}</td>
-      <td class="num">${g.totalPR > 0 ? `<span class="badge badge-blue">${g.totalPR}</span>` : D(null)}</td>
-      <td class="num">${g.totalPO > 0 ? `<span class="badge badge-green">${g.totalPO}</span>` : D(null)}</td>
-      <td class="num">${g.totalDeliv > 0 ? `<span class="badge badge-teal">${g.totalDeliv}</span>` : D(null)}</td>
-      <td class="num" style="font-size:11px">${g.totalNilai > 0 ? fmtRp(g.totalNilai) : '—'}</td>
-      <td style="min-width:120px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div class="trk-progress-wrap" style="flex:1">
-            <div class="trk-progress-bar" style="width:${g.pct}%;background:${barColor}"></div>
-          </div>
-          <span style="font-size:10px;color:#6b7280;width:28px;text-align:right">${g.pct}%</span>
-        </div>
-      </td>
-      <td>${statusLabel(g._status)}</td>
+  rows.forEach(item => {
+    const rowCls = item.Qty_Delivered > 0 ? 'has-po' : item.PO ? 'has-po' : item.PR ? 'has-pr' : '';
+    html.push(`<tr class="${rowCls}">
+      <td class="mono" style="color:#1a56db;font-weight:700">${D(item.Order)}</td>
+      <td class="mono">${D(item.Equipment)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${D(item.Description)}</td>
+      <td class="mono">${D(item.Plant)}</td>
+      <td class="mono">${D(item.Material)}</td>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${D(item.Material_Description)}</td>
+      <td class="num">${N(item.Qty_Reqmts)}</td>
+      <td class="mono">${item.PR ? `<span class="badge badge-blue">${item.PR}</span>` : D(null)}</td>
+      <td class="mono" style="font-size:11px">${D(item.PR_Item)}</td>
+      <td class="num">${item.Qty_PR != null ? N(item.Qty_PR) : D(null)}</td>
+      <td class="mono" style="font-size:11px">${D(item.Req_Date)}</td>
+      <td class="mono">${item.PO ? `<span class="badge badge-green">${item.PO}</span>` : D(null)}</td>
+      <td class="mono" style="font-size:11px">${D(item.PO_Item)}</td>
+      <td class="num">${item.PO_Quantity != null ? N(item.PO_Quantity) : D(null)}</td>
+      <td class="num" style="color:${(item.Qty_Delivered||0)>0?'#059669':'inherit'}">${item.Qty_Delivered != null ? N(item.Qty_Delivered) : D(null)}</td>
+      <td class="mono" style="font-size:11px">${D(item.Deliv_Date)}</td>
+      <td class="num" style="font-size:11px">${item.Net_Price ? fmtRp(item.Net_Price) : '—'}</td>
+      <td class="mono" style="font-size:11px">${D(item.Crcy)}</td>
+      <td>${statusLabel(item._status)}</td>
     </tr>`);
-
-    // ── L2 ROWS (material items) ──
-    if (isOpen) {
-      g._items.forEach((item, idx) => {
-        const l2key    = g.Order + '|' + item.Material + '|' + idx;
-        const isOpenL2 = trkViewMode === 'expand' ? true : !!trkExpandedL2[l2key];
-
-        html.push(`<tr class="trk-l2" data-l2="${esc(l2key)}">
-          <td style="text-align:center;padding-left:12px">
-            ${item._poRows.length > 0
-              ? `<button class="trk-expand-btn ${isOpenL2?'open':''}" style="width:18px;height:18px;font-size:9px" onclick="toggleTrkL2('${esc(l2key)}')">${isOpenL2?'▼':'▶'}</button>`
-              : '<span style="color:#d1d5db;font-size:10px">—</span>'}
-          </td>
-          <td class="mono" style="padding-left:24px;color:#6b7280;font-size:11px">${D(item.Material)}</td>
-          <td class="mono" style="font-size:11px;color:#6b7280">—</td>
-          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#374151">${D(item.Material_Description)}</td>
-          <td class="mono" style="font-size:11px">${D(item.Plant)}</td>
-          <td class="num" style="font-size:11px">${N(item.Qty_Reqmts)}</td>
-          <td class="num" style="font-size:11px">${item.PR ? `<span class="badge badge-blue" style="font-size:10px">${item.PR}</span>` : D(null)}</td>
-          <td class="num" style="font-size:11px">${item.PO ? `<span class="badge badge-green" style="font-size:10px">${item.PO}</span>` : D(null)}</td>
-          <td class="num" style="font-size:11px">${item.Qty_Delivered > 0 ? `<span class="badge badge-teal">${item.Qty_Delivered}</span>` : D(null)}</td>
-          <td class="num" style="font-size:11px">${item.Net_Price ? fmtRp(item.Net_Price) : '—'}</td>
-          <td></td>
-          <td>${statusLabel(item._status)}</td>
-        </tr>`);
-
-        // ── L3 ROWS (PO detail) ──
-        if (isOpenL2 && item._poRows.length > 0) {
-          // header L3
-          html.push(`<tr class="trk-l3">
-            <td></td>
-            <td colspan="11" style="padding:0">
-              <table style="width:100%;border-collapse:collapse;font-size:11px">
-                <thead>
-                  <tr style="background:#f3f4f6">
-                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">PO Number</th>
-                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">PO Item</th>
-                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Doc Date</th>
-                    <th style="padding:5px 10px;text-align:right;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">PO Qty</th>
-                    <th style="padding:5px 10px;text-align:right;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Qty Delivered</th>
-                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Deliv. Date</th>
-                    <th style="padding:5px 10px;text-align:right;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Net Price</th>
-                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Crcy</th>
-                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">OUn</th>
-                    <th style="padding:5px 10px;text-align:left;color:#374151;font-size:10px;border-bottom:1px solid #e5e7eb">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${item._poRows.map(p => {
-                    const pStat = calcItemStatus({PR: item.PR, PO: p.PO, PO_Quantity: p.PO_Quantity, Qty_Delivered: p.Qty_Delivered});
-                    return `<tr style="border-bottom:1px solid #f3f4f6">
-                      <td style="padding:5px 10px;font-family:monospace;color:#059669;font-weight:600">${p.PO||'—'}</td>
-                      <td style="padding:5px 10px;font-family:monospace">${p.PO_Item||'—'}</td>
-                      <td style="padding:5px 10px;font-family:monospace">${p.Doc_Date||'—'}</td>
-                      <td style="padding:5px 10px;text-align:right;font-family:monospace">${p.PO_Quantity??'—'}</td>
-                      <td style="padding:5px 10px;text-align:right;font-family:monospace;color:${(p.Qty_Delivered||0)>0?'#059669':'#9ca3af'}">${p.Qty_Delivered??'—'}</td>
-                      <td style="padding:5px 10px;font-family:monospace">${p.Deliv_Date||'—'}</td>
-                      <td style="padding:5px 10px;text-align:right;font-family:monospace">${p.Net_Price?fmtRp(p.Net_Price):'—'}</td>
-                      <td style="padding:5px 10px">${p.Crcy||'—'}</td>
-                      <td style="padding:5px 10px">${p.OUn||'—'}</td>
-                      <td style="padding:5px 10px">${statusLabel(pStat)}</td>
-                    </tr>`;
-                  }).join('')}
-                </tbody>
-              </table>
-            </td>
-          </tr>`);
-        }
-      });
-    }
   });
 
   tbody.innerHTML = html.join('');
-  document.getElementById('trk-rowCount').textContent = trkFiltered.length + ' order · ' + filtered.length + ' item';
+  document.getElementById('trk-rowCount').textContent = trkFiltered.length + ' item';
   renderPagination('trk-pagination','trk',pg.total,pg.page,pg.totalPages,pg.size,renderTracking);
   reapplyColAfterRender('trk');
 }
