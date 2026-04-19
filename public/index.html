@@ -1860,7 +1860,7 @@ function renderPrismaReservasi() {
   const isEmpty = !state.prismaReservasiData || state.prismaReservasiData.length === 0;
   document.getElementById('pr-empty-state').style.display = isEmpty ? 'flex' : 'none';
   document.getElementById('pr-filter-bar').style.display = isEmpty ? 'none' : 'flex';
-  document.getElementById('pr-table-wrap').style.display = isEmpty ? 'none' : 'block';
+  document.getElementById('pr-table-wrap').style.display = isEmpty ? 'none' : 'flex';
   if (isEmpty) return;
   const q = document.getElementById('pr-search').value.toLowerCase();
   const ord = document.getElementById('pr-filterOrder').value;
