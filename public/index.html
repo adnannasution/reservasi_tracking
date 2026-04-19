@@ -273,33 +273,49 @@ thead th { position: relative; }
 .step-arrow { color: #d1d5db; font-size: 10px; }
 
 /* ── FREEZE COLUMNS (dynamic via JS) ── */
+
+/* Pastikan semua tbody tr punya background solid agar frozen td tidak transparan */
+tbody tr { background: #ffffff; }
+tbody tr:nth-child(even) { background: #ffffff; }
+
 th.col-frozen, td.col-frozen {
   position: sticky !important;
   z-index: 3;
-  background: inherit;
+  /* background harus di-set solid via JS, ini fallback */
+  background-clip: padding-box !important;
 }
-th.col-frozen { z-index: 5; background: #1a56db !important; }
-td.col-frozen { background: white; }
-tbody tr:hover td.col-frozen { background: #f0f5ff !important; }
-tbody tr.has-pr td.col-frozen { background: #f0fdf4 !important; }
-tbody tr.has-pr:hover td.col-frozen { background: #dcfce7 !important; }
-tbody tr.has-po td.col-frozen { background: #eff6ff !important; }
-tbody tr.has-po:hover td.col-frozen { background: #dbeafe !important; }
+th.col-frozen {
+  z-index: 5 !important;
+  background: #1a56db !important;
+  background-clip: padding-box !important;
+}
+td.col-frozen {
+  z-index: 3 !important;
+  background: #ffffff !important;
+  background-clip: padding-box !important;
+}
 
-/* freeze indicator on header */
-th.col-frozen { border-right: 2px solid rgba(255,255,255,0.5) !important; }
+/* Override per row state — HARUS lebih spesifik dari td.col-frozen */
+tbody tr:hover td.col-frozen          { background: #f0f5ff !important; }
+tbody tr.has-pr td.col-frozen         { background: #f0fdf4 !important; }
+tbody tr.has-pr:hover td.col-frozen   { background: #dcfce7 !important; }
+tbody tr.has-po td.col-frozen         { background: #eff6ff !important; }
+tbody tr.has-po:hover td.col-frozen   { background: #dbeafe !important; }
+
+/* Garis batas kanan frozen kolom terakhir agar jelas batasnya */
+th.col-frozen { border-right: 1px solid rgba(255,255,255,0.3) !important; }
 th.col-frozen-last { border-right: 3px solid #60a5fa !important; }
-td.col-frozen-last { border-right: 3px solid #bfdbfe !important; }
+td.col-frozen-last {
+  border-right: 3px solid #bfdbfe !important;
+  box-shadow: 3px 0 6px -2px rgba(0,0,0,0.12);
+}
 
 /* double-click hint on th */
 thead th { position: relative; }
-thead th.freezable:not(.th-check)::after {
-  content: ''; position: absolute; inset: 0;
-}
 th.col-frozen-last::before {
   content: '❄';
-  position: absolute; top: 2px; right: 4px;
-  font-size: 9px; opacity: 0.7; pointer-events: none;
+  position: absolute; top: 2px; right: 6px;
+  font-size: 9px; opacity: 0.8; pointer-events: none;
 }
 
 /* ── ROW HIGHLIGHT (sudah ada PR) ── */
@@ -2663,7 +2679,16 @@ async function submitPR() {
 // RESET ALL
 // ============================================================
 async function confirmResetAll() {
-  if (!confirm('⚠️ Yakin ingin menghapus SEMUA data?\n\nSemua data akan kembali ke data awal.')) return;
+  const ok = await showConfirm({
+    title: 'Reset Semua Data',
+    msg: `Yakin ingin menghapus <b>SEMUA data</b>?`,
+    sub: 'Seluruh data di semua tab akan dihapus dan tidak bisa dikembalikan.',
+    icon: '⚠️',
+    okLabel: 'Ya, Reset Semua',
+    okColor: '#dc2626',
+    headerColor: '#7f1d1d',
+  });
+  if (!ok) return;
   showLoading('Mereset semua data...');
   setSyncStatus('loading', '⏳ Mereset semua data...');
   try {
@@ -3753,11 +3778,35 @@ function applyFreeze(tabKey) {
     const allTds = [...tr.querySelectorAll('td')];
     // Bangun visible tds (yang tidak display:none)
     const visibleTds = allTds.filter(td => td.style.display !== 'none');
+
+    // Tentukan background solid berdasarkan row class
+    let bgColor = '#ffffff';
+    if (tr.classList.contains('has-po')) bgColor = '#eff6ff';
+    else if (tr.classList.contains('has-pr')) bgColor = '#f0fdf4';
+
+    // Hover colors
+    let bgHover = '#f0f5ff';
+    if (tr.classList.contains('has-po')) bgHover = '#dbeafe';
+    else if (tr.classList.contains('has-pr')) bgHover = '#dcfce7';
+
     for (let vi = 0; vi <= frozenUpTo && vi < visibleTds.length; vi++) {
       visibleTds[vi].classList.add('col-frozen');
       if (vi === frozenUpTo) visibleTds[vi].classList.add('col-frozen-last');
       visibleTds[vi].style.left = offsets[vi] + 'px';
+      visibleTds[vi].style.backgroundColor = bgColor;
     }
+
+    // Update frozen td bg on row hover
+    tr.addEventListener('mouseenter', () => {
+      visibleTds.slice(0, frozenUpTo + 1).forEach(td => {
+        if (td.classList.contains('col-frozen')) td.style.backgroundColor = bgHover;
+      });
+    });
+    tr.addEventListener('mouseleave', () => {
+      visibleTds.slice(0, frozenUpTo + 1).forEach(td => {
+        if (td.classList.contains('col-frozen')) td.style.backgroundColor = bgColor;
+      });
+    });
   });
 }
 
@@ -3831,28 +3880,88 @@ function clearChecks(tab) {
 }
 
 // ============================================================
-// DELETE (single & bulk)
+// CONFIRM MODAL ENGINE
 // ============================================================
-const tabStateMap = { taex: 'taexData', sap: 'prData', order: 'orderData', po: 'poData' };
-const tabApiMap   = { taex: '/taex', sap: '/pr', order: '/order', po: '/po' };
-const tabRenderMap = { taex: renderTaex, sap: renderSAP, order: renderOrder, po: renderPo };
+let _confirmResolve = null;
 
-function deleteRow(tab, idx) {
+function showConfirm({ title = 'Konfirmasi', msg, sub = '', icon = '🗑', okLabel = 'Ya, Hapus', okColor = '#dc2626', headerColor = '#dc2626' }) {
+  document.getElementById('modal-confirm-title').textContent = title;
+  document.getElementById('modal-confirm-msg').innerHTML = msg;
+  document.getElementById('modal-confirm-sub').textContent = sub;
+  document.getElementById('modal-confirm-icon').textContent = icon;
+  document.getElementById('modal-confirm-header').style.background = headerColor;
+  const okBtn = document.getElementById('modal-confirm-ok');
+  okBtn.textContent = okLabel;
+  okBtn.style.background = okColor;
+  document.getElementById('modal-confirm').classList.add('show');
+  return new Promise(resolve => { _confirmResolve = resolve; });
+}
+
+function confirmAccept() {
+  document.getElementById('modal-confirm').classList.remove('show');
+  if (_confirmResolve) { _confirmResolve(true); _confirmResolve = null; }
+}
+
+function confirmReject() {
+  document.getElementById('modal-confirm').classList.remove('show');
+  if (_confirmResolve) { _confirmResolve(false); _confirmResolve = null; }
+}
+
+// ============================================================
+// DELETE (single & bulk) — pakai confirm modal
+// ============================================================
+async function deleteRow(tab, idx) {
   const r = state[tabStateMap[tab]][idx];
-  const label = r.Material || r.Order || r.PR || r.PO || `baris #${idx+1}`;
-  if (!confirm(`Hapus "${label}"?`)) return;
+  const label = r.Material || r.Order || r.PR || r.PO || `baris #${idx + 1}`;
+  const ok = await showConfirm({
+    title: 'Hapus Baris',
+    msg: `Yakin ingin menghapus <b>${label}</b>?`,
+    sub: 'Data yang dihapus tidak bisa dikembalikan.',
+    icon: '🗑',
+  });
+  if (!ok) return;
   state[tabStateMap[tab]].splice(idx, 1);
   clearChecks(tab);
-  saveTabData(tab);
+  await saveTabData(tab);
 }
 
 async function bulkDelete(tab) {
-  const idxs = [...checkedRows[tab]].sort((a,b) => b - a); // descending agar splice aman
+  const idxs = [...checkedRows[tab]].sort((a, b) => b - a);
   if (!idxs.length) return;
-  if (!confirm(`Hapus ${idxs.length} baris yang dipilih?`)) return;
+  const ok = await showConfirm({
+    title: 'Hapus Baris Terpilih',
+    msg: `Yakin ingin menghapus <b>${idxs.length} baris</b> yang dipilih?`,
+    sub: 'Data yang dihapus tidak bisa dikembalikan.',
+    icon: '🗑',
+  });
+  if (!ok) return;
   idxs.forEach(i => state[tabStateMap[tab]].splice(i, 1));
   clearChecks(tab);
   await saveTabData(tab);
+}
+
+async function returnPrismaToTaex(idx) {
+  const r = state.prismaReservasiData[idx];
+  const ok = await showConfirm({
+    title: 'Return ke TA-ex',
+    msg: `Kembalikan <b>${r.Material}</b> ke TA-ex Reservasi?`,
+    sub: 'Baris ini akan dihapus dari PRISMA Reservasi.',
+    icon: '↩',
+    okLabel: 'Ya, Return',
+    okColor: '#d97706',
+    headerColor: '#d97706',
+  });
+  if (!ok) return;
+  state.prismaReservasiData.splice(idx, 1);
+  try {
+    await apiFetch('/prisma', { method: 'PUT', body: state.prismaReservasiData });
+    renderPrismaReservasi();
+    toast('Baris dikembalikan ke TA-ex Reservasi.', 'info');
+    setSyncStatus('ok', `✅ Return selesai · ${new Date().toLocaleTimeString('id-ID')}`);
+  } catch(e) {
+    setSyncStatus('err', '❌ Gagal: ' + e.message);
+    toast('Gagal menyimpan perubahan!', 'err');
+  }
 }
 
 async function saveTabData(tab) {
@@ -3865,25 +3974,6 @@ async function saveTabData(tab) {
   } catch(e) {
     setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
-  }
-}
-
-// ============================================================
-// RETURN PRISMA → TA-EX
-// ============================================================
-async function returnPrismaToTaex(idx) {
-  const r = state.prismaReservasiData[idx];
-  if (!confirm(`Return "${r.Material}" kembali ke TA-ex Reservasi?`)) return;
-  // Hapus dari prisma
-  state.prismaReservasiData.splice(idx, 1);
-  try {
-    await apiFetch('/prisma', { method: 'PUT', body: state.prismaReservasiData });
-    renderPrismaReservasi();
-    toast('Baris dikembalikan ke TA-ex Reservasi.', 'info');
-    setSyncStatus('ok', `✅ Return selesai · ${new Date().toLocaleTimeString('id-ID')}`);
-  } catch(e) {
-    setSyncStatus('err', '❌ Gagal: ' + e.message);
-    toast('Gagal menyimpan perubahan!', 'err');
   }
 }
 
@@ -3983,6 +4073,29 @@ init().then(() => {
 });
 
 </script>
+<!-- MODAL: CONFIRM -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header" id="modal-confirm-header" style="background:#dc2626;">
+      <h3 id="modal-confirm-title">Konfirmasi</h3>
+      <button class="modal-close" onclick="confirmReject()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px 24px 16px;">
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div id="modal-confirm-icon" style="font-size:32px;line-height:1;flex-shrink:0;">🗑</div>
+        <div>
+          <div id="modal-confirm-msg" style="font-size:13px;color:#374151;line-height:1.6;"></div>
+          <div id="modal-confirm-sub" style="font-size:11px;color:#9ca3af;margin-top:6px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-reset" onclick="confirmReject()" id="modal-confirm-cancel">Batal</button>
+      <button class="btn" id="modal-confirm-ok" onclick="confirmAccept()" style="background:#dc2626;color:white;">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: EDIT ROW -->
 <div class="modal-overlay" id="modal-edit">
   <div class="modal" style="width:700px;">
