@@ -1487,6 +1487,46 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- MODAL: CONFIRM -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header" id="modal-confirm-header" style="background:#dc2626;">
+      <h3 id="modal-confirm-title">Konfirmasi</h3>
+      <button class="modal-close" onclick="confirmReject()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px 24px 16px;">
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div id="modal-confirm-icon" style="font-size:32px;line-height:1;flex-shrink:0;">🗑</div>
+        <div>
+          <div id="modal-confirm-msg" style="font-size:13px;color:#374151;line-height:1.6;"></div>
+          <div id="modal-confirm-sub" style="font-size:11px;color:#9ca3af;margin-top:6px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-reset" onclick="confirmReject()" id="modal-confirm-cancel">Batal</button>
+      <button class="btn" id="modal-confirm-ok" onclick="confirmAccept()" style="background:#dc2626;color:white;">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT ROW -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal" style="width:700px;">
+    <div class="modal-header" style="background:#1a56db;">
+      <h3 id="edit-modal-title">✏ Edit Baris</h3>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-grid" id="edit-modal-fields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-reset" onclick="closeEditModal()">Batal</button>
+      <button class="btn btn-success" onclick="saveEdit()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 // ============================================================
@@ -3910,6 +3950,10 @@ function confirmReject() {
 // ============================================================
 // DELETE (single & bulk) — pakai confirm modal
 // ============================================================
+const tabStateMap  = { taex: 'taexData', sap: 'prData', order: 'orderData', po: 'poData' };
+const tabApiMap    = { taex: '/taex', sap: '/pr', order: '/order', po: '/po' };
+const tabRenderMap = { taex: renderTaex, sap: renderSAP, order: renderOrder, po: renderPo };
+
 async function deleteRow(tab, idx) {
   const r = state[tabStateMap[tab]][idx];
   const label = r.Material || r.Order || r.PR || r.PO || `baris #${idx + 1}`;
@@ -4073,45 +4117,6 @@ init().then(() => {
 });
 
 </script>
-<!-- MODAL: CONFIRM -->
-<div class="modal-overlay" id="modal-confirm">
-  <div class="modal" style="width:440px;">
-    <div class="modal-header" id="modal-confirm-header" style="background:#dc2626;">
-      <h3 id="modal-confirm-title">Konfirmasi</h3>
-      <button class="modal-close" onclick="confirmReject()">✕</button>
-    </div>
-    <div class="modal-body" style="padding:24px 24px 16px;">
-      <div style="display:flex;align-items:flex-start;gap:14px;">
-        <div id="modal-confirm-icon" style="font-size:32px;line-height:1;flex-shrink:0;">🗑</div>
-        <div>
-          <div id="modal-confirm-msg" style="font-size:13px;color:#374151;line-height:1.6;"></div>
-          <div id="modal-confirm-sub" style="font-size:11px;color:#9ca3af;margin-top:6px;"></div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-reset" onclick="confirmReject()" id="modal-confirm-cancel">Batal</button>
-      <button class="btn" id="modal-confirm-ok" onclick="confirmAccept()" style="background:#dc2626;color:white;">Ya, Hapus</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: EDIT ROW -->
-<div class="modal-overlay" id="modal-edit">
-  <div class="modal" style="width:700px;">
-    <div class="modal-header" style="background:#1a56db;">
-      <h3 id="edit-modal-title">✏ Edit Baris</h3>
-      <button class="modal-close" onclick="closeEditModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="edit-grid" id="edit-modal-fields"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-reset" onclick="closeEditModal()">Batal</button>
-      <button class="btn btn-success" onclick="saveEdit()">💾 Simpan</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
