@@ -934,18 +934,15 @@ app.get('*', (req, res) => {
 // ─────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────
-migrate()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 PRISMA TA-ex System running on port ${PORT}`);
-      console.log(`🐘 Database: PostgreSQL`);
-      console.log(`🪣 GCS Bucket: ${BUCKET}`);
-      console.log(`🔐 API Key: ${API_KEY ? 'AKTIF ✅' : 'TIDAK AKTIF ⚠️  (set API_KEY di env)'}`);
-      console.log(`🌍 CORS Origin: ${ALLOWED_ORIGIN}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ Migration failed:', err);
-    process.exit(1);
-  });
+app.listen(PORT, () => {
+  console.log(`🚀 PRISMA TA-ex System running on port ${PORT}`);
+  console.log(`🐘 Database: PostgreSQL`);
+  console.log(`🪣 GCS Bucket: ${BUCKET}`);
+  console.log(`🔐 API Key: ${API_KEY ? 'AKTIF ✅' : 'TIDAK AKTIF ⚠️  (set API_KEY di env)'}`);
+  console.log(`🌍 CORS Origin: ${ALLOWED_ORIGIN}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  migrate()
+    .then(() => console.log('✅ Migration complete'))
+    .catch(err => console.error('❌ Migration failed:', err));
+});
