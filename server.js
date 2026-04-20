@@ -401,18 +401,36 @@ async function setState(key, value) {
 // ─────────────────────────────────────────────
 async function bulkReplaceTaex(client, rows) {
   await client.query('DELETE FROM taex_reservasi');
-  for (const r of rows) {
+  await bulkInsertTaex(client, rows);
+}
+
+// Insert taex dengan multi-row VALUES per query (jauh lebih cepat dari loop 1-per-1)
+async function bulkInsertTaex(client, rows) {
+  const CHUNK = 500; // 500 baris per INSERT
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const batch = rows.slice(i, i + CHUNK);
+    const values = [];
+    const params = [];
+    let p = 1;
+    for (const r of batch) {
+      values.push(`($${p},$${p+1},$${p+2},$${p+3},$${p+4},$${p+5},$${p+6},$${p+7},$${p+8},$${p+9},$${p+10},$${p+11},$${p+12},$${p+13},$${p+14},$${p+15},$${p+16},$${p+17},$${p+18},$${p+19},$${p+20},$${p+21},$${p+22},$${p+23},$${p+24},$${p+25},$${p+26},$${p+27},$${p+28},$${p+29},$${p+30})`);
+      params.push(
+        r.Plant||null, r.Equipment||null, r.Order||null, r.Revision||null, r.Material||null, r.Itm||null,
+        r.Material_Description||null, r.Qty_Reqmts||0, r.Qty_Stock||0,
+        r.PR||null, r.Item||null, r.Qty_PR??null, r.PO||null, r.PO_Date||null, r.Qty_Deliv??null, r.Delivery_Date||null,
+        r.SLoc||null, r.Del||null, r.FIs||null, r.Ict||null, r.PG||null,
+        r.Recipient||null, r.Unloading_point||null, r.Reqmts_Date||null,
+        r.Qty_f_avail_check??null, r.Qty_Withdrawn??null,
+        r.UoM||null, r.GL_Acct||null, r.Res_Price??null, r.Res_per??null, r.Res_Curr||null
+      );
+      p += 31;
+    }
     await client.query(
       `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
-      [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
-       r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-       r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
-       r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
-       r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
-       r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-       r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null]
+       VALUES ${values.join(',')}`,
+      params
     );
+    console.log(`  taex insert: ${Math.min(i + CHUNK, rows.length)}/${rows.length}`);
   }
 }
 async function bulkReplacePrisma(client, rows) {
@@ -611,7 +629,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-api-key'],
 }));
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────────────────────────────────────────
@@ -694,22 +712,9 @@ app.post('/api/taex/append', requireApiKey, async (req, res) => {
     const rows = req.body;
     if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
     await withTransaction(async (client) => {
-      for (const r of rows) {
-        await client.query(
-          `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
-          [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
-           r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-           r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
-           r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
-           r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
-           r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-           r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null]
-        );
-      }
+      await bulkInsertTaex(client, rows);
     });
-    const { rows: all } = await query('SELECT * FROM taex_reservasi ORDER BY id');
-    res.json({ ok: true, count: rows.length, data: all.map(mapTaex) });
+    res.json({ ok: true, count: rows.length });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal append data' }); }
 });
 app.put('/api/taex', requireApiKey, async (req, res) => {

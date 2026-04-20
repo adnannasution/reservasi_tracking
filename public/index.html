@@ -1703,6 +1703,14 @@ function setProgress(pct, msg) {
   bar.style.width = pct + '%';
   label.textContent = (msg || '') + ' ' + Math.round(pct) + '%';
 }
+function updateLoadingProgress(pct) {
+  clearInterval(_progressInterval);
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  if (!bar) return;
+  bar.style.width = Math.min(pct, 100) + '%';
+  if (label) label.textContent = Math.round(pct) + '%';
+}
 function hideLoading() {
   clearInterval(_progressInterval);
   const bar = document.getElementById('progress-bar');
@@ -1782,6 +1790,23 @@ async function apiFetch(path, opts = {}) {
     setSyncStatus('err', '⚠️ Gagal konek ke server: ' + e.message);
     throw e;
   }
+}
+
+// ── CHUNKED UPLOAD: kirim array besar dalam batch ──────────────
+async function apiFetchChunked(path, rows, chunkSize = 2000, onProgress) {
+  const total  = rows.length;
+  const chunks = Math.ceil(total / chunkSize);
+  let saved = [];
+  for (let i = 0; i < chunks; i++) {
+    const slice = rows.slice(i * chunkSize, (i + 1) * chunkSize);
+    const pct   = Math.round(((i + 1) / chunks) * 100);
+    if (onProgress) onProgress(pct, i + 1, chunks);
+    // chunk pertama: replace; sisanya: append
+    const endpoint = i === 0 ? path + '/replace' : path + '/append';
+    const res = await apiFetch(endpoint, { method: 'POST', body: slice });
+    if (res && res.data) saved = res.data;
+  }
+  return saved;
 }
 
 function setSyncStatus(type, msg) {
@@ -2438,21 +2463,26 @@ async function importTaexData() {
 
   state.taexData = result;
 
-  showLoading('Menyimpan data TA-ex...', true);
-  setSyncStatus('loading', '⏳ Menyimpan data ke server...');
+  const totalRows = state.taexData.length;
+  showLoading(`Menyimpan ${totalRows.toLocaleString('id-ID')} baris... (chunk 1)`, true);
+  setSyncStatus('loading', `⏳ Menyimpan ${totalRows.toLocaleString('id-ID')} baris ke server...`);
   try {
-    await apiFetch('/taex', { method: 'PUT', body: state.taexData });
+    await apiFetchChunked('/taex', state.taexData, 2000, (pct, cur, tot) => {
+      showLoading(`Menyimpan... chunk ${cur}/${tot} (${pct}%)`, true);
+      setSyncStatus('loading', `⏳ Upload chunk ${cur}/${tot} · ${pct}%`);
+      updateLoadingProgress(pct);
+    });
     hideLoading();
     closeModal('modal-taex-upload');
     renderTaex(); populateFilters();
     taexUploadBuffer = [];
-    const msg = `Upsert selesai · ${updated} diupdate · ${inserted} baru ditambahkan`;
+    const msg = `Upsert selesai · ${updated} diupdate · ${inserted} baru ditambahkan · total ${totalRows.toLocaleString('id-ID')} baris`;
     setSyncStatus('ok', `✅ ${msg} · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast(msg, 'ok');
+    toast(`Upsert selesai! ${updated} diupdate, ${inserted} baru.`, 'ok');
   } catch(e) {
     hideLoading();
     setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
-    toast('Gagal simpan ke server!', 'err');
+    toast('Gagal simpan ke server! Coba lagi atau kecilkan ukuran file.', 'err');
   }
 }
 
