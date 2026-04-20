@@ -2356,20 +2356,39 @@ function handleFileSelect(e, type) {
   if (file) processUploadFile(file, type);
 }
 function processUploadFile(file, type) {
+  // Tampilkan loading dulu supaya browser tidak freeze tanpa feedback
+  showLoading(`Membaca file "${file.name}"...`);
+  document.getElementById('loading-msg').textContent = `Membaca file Excel... (${(file.size/1024/1024).toFixed(1)} MB)`;
+
   const reader = new FileReader();
   reader.onload = (e) => {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, {type:'array', cellDates:true});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
-      if (!rows.length) { toast('File kosong atau format tidak dikenali', 'err'); return; }
-      if (type === 'taex') { taexUploadBuffer = rows; showUploadPreview('taex', rows); }
-      else if (type === 'order') { orderUploadBuffer = rows; showUploadPreview('order', rows); }
-      else if (type === 'po') { poUploadBuffer = rows; showUploadPreview('po', rows); }
-      else { sapUploadBuffer = rows; showUploadPreview('sap', rows); }
-    } catch(err) { toast('Gagal membaca file: ' + err.message, 'err'); }
+    // Defer ke setTimeout agar UI sempat render loading overlay
+    setTimeout(() => {
+      try {
+        document.getElementById('loading-msg').textContent = 'Parsing Excel...';
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type:'array', cellDates:true, dense:true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+
+        document.getElementById('loading-msg').textContent = 'Membaca baris data...';
+        const rows = XLSX.utils.sheet_to_json(ws, { defval:'' });
+
+        hideLoading();
+        if (!rows.length) { toast('File kosong atau format tidak dikenali', 'err'); return; }
+
+        if (type === 'taex')       { taexUploadBuffer  = rows; showUploadPreview('taex',  rows); }
+        else if (type === 'order') { orderUploadBuffer = rows; showUploadPreview('order', rows); }
+        else if (type === 'po')    { poUploadBuffer    = rows; showUploadPreview('po',    rows); }
+        else                       { sapUploadBuffer   = rows; showUploadPreview('sap',   rows); }
+
+        toast(`${rows.length.toLocaleString('id-ID')} baris berhasil dibaca`, 'ok');
+      } catch(err) {
+        hideLoading();
+        toast('Gagal membaca file: ' + err.message, 'err');
+      }
+    }, 80); // 80ms cukup untuk browser render loading overlay
   };
+  reader.onerror = () => { hideLoading(); toast('Gagal membaca file', 'err'); };
   reader.readAsArrayBuffer(file);
 }
 function showUploadPreview(type, rows) {
