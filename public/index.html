@@ -324,6 +324,25 @@ tbody tr.has-pr:hover td { background: #dcfce7 !important; }
 tbody tr.has-po td { background: #eff6ff !important; }
 tbody tr.has-po:hover td { background: #dbeafe !important; }
 
+/* ── ROW LOCKED (sudah masuk Kertas Kerja) ── */
+tbody tr.row-locked td { background: #faf5ff !important; opacity: 0.85; }
+tbody tr.row-locked:hover td { background: #f3e8ff !important; }
+tbody tr.row-locked td.col-frozen { background: #faf5ff !important; }
+tbody tr.row-locked:hover td.col-frozen { background: #f3e8ff !important; }
+.btn-act-locked {
+  background: #e5e7eb; color: #9ca3af;
+  border: none; border-radius: 3px; padding: 2px 9px;
+  font-size: 11px; font-weight: 600; cursor: not-allowed;
+  opacity: 0.6;
+}
+.lock-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #ede9fe; color: #7c3aed;
+  border-radius: 3px; padding: 2px 7px;
+  font-size: 10.5px; font-weight: 700;
+  white-space: nowrap;
+}
+
 /* ── SKELETON LOADING ── */
 .skeleton { animation: shimmer 1.2s infinite linear; background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; border-radius: 3px; display: inline-block; height: 12px; }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
@@ -488,7 +507,24 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
 .fg input, .fg select { border: 1px solid #d1d5db; border-radius: 4px; padding: 6px 9px; font-size: 12px; outline: none; font-family: inherit; }
 .fg input:focus { border-color: #1a56db; box-shadow: 0 0 0 2px rgba(26,86,219,0.1); }
 
-/* ── INITIAL LOADING SCREEN ── */
+/* ── AUDIT ── */
+.audit-changed-old {
+  display: inline-block; background: #fee2e2; color: #dc2626;
+  padding: 1px 8px; border-radius: 3px; font-size: 11px; font-family: monospace;
+  text-decoration: line-through; opacity: 0.85;
+}
+.audit-changed-new {
+  display: inline-block; background: #dcfce7; color: #16a34a;
+  padding: 1px 8px; border-radius: 3px; font-size: 11px; font-family: monospace;
+  font-weight: 700;
+}
+.audit-arrow { color: #9ca3af; margin: 0 4px; font-size: 11px; }
+.audit-col-badge {
+  display: inline-block; background: #fef3c7; color: #92400e;
+  padding: 1px 7px; border-radius: 3px; font-size: 11px; font-weight: 700;
+}
+
+
 #init-loading {
   position: fixed; inset: 0; background: #1a56db;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -563,6 +599,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
   <div class="tab" id="tab-order" onclick="switchApp('order')">📋 Order<span class="tab-badge" id="badge-order">0</span></div>
   <div class="tab" id="tab-po" onclick="switchApp('po')">🛒 PO<span class="tab-badge" id="badge-po">0</span></div>
   <div class="tab" id="tab-tracking" onclick="switchApp('tracking')">🔍 Tracking<span class="tab-badge" id="badge-tracking">0</span></div>
+  <div class="tab" id="tab-audit" onclick="switchApp('audit')">🔎 Audit<span class="tab-badge" id="badge-audit" style="background:rgba(220,38,38,0.7)">0</span></div>
 </div>
 
 <!-- BODY -->
@@ -732,6 +769,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <label><input type="checkbox" data-tab="prisma" data-col="20" onchange="applyColVisibility('prisma')" checked> Qty Stock Onhand</label>
     <label><input type="checkbox" data-tab="prisma" data-col="21" onchange="applyColVisibility('prisma')" checked> Qty dari PR</label>
     <label><input type="checkbox" data-tab="prisma" data-col="22" onchange="applyColVisibility('prisma')" checked> Code Kertas Kerja</label>
+    <label><input type="checkbox" data-tab="prisma" data-col="23" onchange="applyColVisibility('prisma')" checked> Aksi</label>
   </div>
   <div class="empty-state" id="pr-empty-state">
     <div class="empty-icon">📋</div>
@@ -1302,6 +1340,64 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
   </div>
 </div>
 
+<!-- ==================== PAGE: AUDIT ==================== -->
+<div class="page" id="page-audit">
+  <!-- INFO BAR -->
+  <div class="info-bar" id="audit-info-bar">
+    <span>Total Perbedaan: <b id="audit-total">—</b></span>
+    <div class="info-divider"></div>
+    <span>Baris TA-ex: <b id="audit-taex-count">—</b></span>
+    <div class="info-divider"></div>
+    <span>Baris PRISMA: <b id="audit-prisma-count">—</b></span>
+    <div class="info-divider"></div>
+    <span style="color:#dc2626;font-weight:600" id="audit-changed-label">—</span>
+  </div>
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <label>Cari:</label>
+    <span class="search-wrap">
+      <input type="text" id="audit-search" placeholder="Order, material, equipment..." oninput="debounceRender('audit')">
+      <span class="search-clear" onclick="clearSearch('audit-search','audit')">✕</span>
+    </span>
+    <label>Kolom berubah:</label>
+    <select id="audit-filter-col" onchange="renderAudit()">
+      <option value="">Semua</option>
+      <option value="Equipment">Equipment</option>
+      <option value="Revision">Revision</option>
+      <option value="Material_Description">Material Description</option>
+      <option value="Qty_Reqmts">Qty Reqmts</option>
+      <option value="Del">Del</option>
+      <option value="FIs">FIs</option>
+      <option value="Ict">Ict</option>
+      <option value="PG">PG</option>
+      <option value="UoM">UoM</option>
+    </select>
+    <button class="btn btn-search" onclick="renderAudit()">Cari</button>
+    <button class="btn btn-reset" onclick="auditResetFilter()">Reset</button>
+    <button class="btn btn-export" onclick="exportAuditExcel()" style="margin-left:8px">📤 Export Excel</button>
+    <span class="filter-right" id="audit-rowCount"></span>
+  </div>
+  <!-- TABLE -->
+  <div class="table-container">
+    <div class="table-wrap">
+      <table id="audit-table">
+        <thead><tr>
+          <th class="no-sort">Order</th>
+          <th class="no-sort">Material</th>
+          <th class="no-sort">Itm</th>
+          <th class="no-sort">Kolom</th>
+          <th class="no-sort">Nilai di PRISMA</th>
+          <th class="no-sort">Nilai di TA-ex</th>
+        </tr></thead>
+        <tbody id="audit-tbody">
+          <tr class="loading-row"><td colspan="6">Klik tab Audit untuk memuat data perbandingan.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="audit-pagination"></div>
+  </div>
+</div>
+
 </div><!-- /pages -->
 </div><!-- /body -->
 
@@ -1348,7 +1444,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     </div>
     <div class="modal-body">
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;">
-        <b>Kolom yang didukung:</b> Equipment, Order, Revision, Material, Itm, Material_Description, Qty_Reqmts, Qty_Stock, PR, Item, Qty_PR, PO, PO_Date, Qty_Deliv, Delivery_Date
+        <b>Mode Upsert:</b> Baris yang cocok (Order + Material + Itm) akan di-update kolom <b>PR, Item, Qty PR, Qty Stock</b> saja. Baris baru akan ditambahkan otomatis.
       </div>
       <div class="upload-zone" id="taex-upload-zone" onclick="document.getElementById('taex-file-input').click()" ondragover="handleDrag(event,'taex-upload-zone')" ondragleave="handleDragLeave(event,'taex-upload-zone')" ondrop="handleDrop(event,'taex')">
         <input type="file" id="taex-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'taex')">
@@ -1357,18 +1453,15 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         <span>.xlsx, .xls, .csv</span>
       </div>
       <div id="taex-upload-preview" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:6px;">
+        <div style="margin-top:12px;margin-bottom:6px;">
           <span id="taex-preview-info" style="font-size:12px;color:#374151;font-weight:600;"></span>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
-            <input type="checkbox" id="taex-replace-check"> Ganti semua data (replace)
-          </label>
         </div>
         <div class="preview-wrap" id="taex-preview-table"></div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-reset" onclick="closeModal('modal-taex-upload')">Batal</button>
-      <button class="btn btn-teal" id="taex-import-btn" onclick="importTaexData()" style="display:none">✅ Import Data</button>
+      <button class="btn btn-teal" id="taex-import-btn" onclick="importTaexData()" style="display:none">🔄 Upsert Data</button>
     </div>
   </div>
 </div>
@@ -1784,6 +1877,7 @@ const SIDEBAR_MENUS = {
   'pr':                [{icon:'🗂', label:'Kumpulan Summary'},{icon:'🧾', label:'SAP PR', active:true}],
   'order':             [{icon:'📋', label:'Order', active:true}],
   'tracking':          [{icon:'🔍', label:'Tracking', active:true}],
+  'audit':             [{icon:'🔎', label:'Audit', active:true}],
 };
 const HEADER_TITLES = {
   'taex':             ['TA-ex', 'Material Reservation'],
@@ -1795,6 +1889,7 @@ const HEADER_TITLES = {
   'order':            ['Order', 'Work Order Management'],
   'po':               ['PO', 'Purchase Order'],
   'tracking':         ['Tracking', 'End-to-End Procurement Tracking'],
+  'audit':            ['Audit', 'Cek Perubahan TA-ex vs PRISMA'],
 };
 
 function switchApp(app) {
@@ -1812,7 +1907,7 @@ function switchApp(app) {
   renderPage(app);
 }
 
-function renderAll() { renderTaex(); renderPrismaReservasi(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); }
+function renderAll() { renderTaex(); renderPrismaReservasi(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); renderAudit(); }
 function renderPage(app) {
   if (app==='taex') renderTaex();
   else if (app==='prisma-reservasi') renderPrismaReservasi();
@@ -1823,6 +1918,7 @@ function renderPage(app) {
   else if (app==='order') renderOrder();
   else if (app==='po') renderPo();
   else if (app==='tracking') renderTracking();
+  else if (app==='audit') renderAudit();
 }
 
 function populateFilters() {
@@ -1867,12 +1963,20 @@ function renderTaex() {
   const tbody = document.getElementById('taex-tbody');
   if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="34">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
   const pg = paginate(taexFiltered, 'taex');
+  // Build set of keys yang sudah masuk kertas kerja (kkData aktif)
+  const kkKeySet = new Set(state.kkData.map(k => `${k.Order}||${k.Material}||${k.Itm}`));
   tbody.innerHTML = pg.rows.map(r => {
     const origIdx = state.taexData.indexOf(r);
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
-    const rowCls = r.PO ? 'has-po' : r.PR ? 'has-pr' : '';
+    // Cek apakah baris ini sudah masuk kertas kerja:
+    // 1. Ada di kkData aktif (kertas kerja sedang berjalan), ATAU
+    // 2. Sudah punya PR yang berasal dari proses PRISMA (PR terisi via submitPR)
+    const inKK = kkKeySet.has(`${r.Order}||${r.Material}||${r.Itm}`);
+    const locked = inKK;
+    const rowCls = (locked ? 'row-locked' : (r.PO ? 'has-po' : r.PR ? 'has-pr' : ''));
+    const kkCode = locked ? (state.kkCode || '—') : '';
     return `<tr class="${rowCls}" data-idx="${origIdx}">
-      <td class="td-check"><input type="checkbox" class="row-check" data-tab="taex" data-idx="${origIdx}" onchange="onCheckChange('taex')"></td>
+      <td class="td-check"><input type="checkbox" class="row-check" data-tab="taex" data-idx="${origIdx}" onchange="onCheckChange('taex')" ${locked ? 'disabled title="Tidak bisa dipilih: sudah masuk Kertas Kerja"' : ''}></td>
       <td class="center mono">${r.ID}</td>
       <td class="mono">${D(r.Plant)}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
@@ -1906,8 +2010,11 @@ function renderTaex() {
       <td class="num">${N(r.Res_per)}</td>
       <td class="mono">${D(r.Res_Curr)}</td>
       <td class="td-actions">
-        <button class="btn-act btn-act-edit" onclick="openEditModal('taex',${origIdx})">✏ Edit</button>
-        <button class="btn-act btn-act-del" onclick="deleteRow('taex',${origIdx})">🗑</button>
+        ${locked
+          ? `<span class="lock-badge" title="Sudah masuk Kertas Kerja: ${kkCode}">🔒 KK: ${kkCode}</span>`
+          : `<button class="btn-act btn-act-edit" onclick="openEditModal('taex',${origIdx})">✏ Edit</button>
+             <button class="btn-act btn-act-del" onclick="deleteRow('taex',${origIdx})">🗑</button>`
+        }
       </td>
     </tr>`;
   }).join('');
@@ -1969,7 +2076,10 @@ function renderPrismaReservasi() {
       <td class="num">${r.Qty_StockOnhand!==null?`<span style="color:#059669;font-weight:600">${r.Qty_StockOnhand}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td class="num">${r.Qty_PR_Prisma!==null?`<span class="badge badge-green">${r.Qty_PR_Prisma}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td>${r.CodeKertasKerja?`<span class="badge badge-purple">${r.CodeKertasKerja}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
-      <td class="td-actions"><button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${origIdx})">↩ Return</button></td>
+      <td class="td-actions">
+        <button class="btn-act btn-act-edit" onclick="openEditModal('prisma',${origIdx})">✏ Edit</button>
+        <button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${origIdx})" style="margin-left:4px">↩ Return</button>
+      </td>
     </tr>`;
   }).join('');
   document.getElementById('pr-rowCount').textContent = prFiltered.length+' dari '+state.prismaReservasiData.length+' baris';
@@ -2241,116 +2351,96 @@ function showUploadPreview(type, rows) {
 }
 
 // ============================================================
-// IMPORT TA-EX — PUSH KE BACKEND ✅
+// IMPORT TA-EX — UPSERT (update PR/Item/Qty_PR/Qty_Stock jika ada, insert jika baru)
 // ============================================================
 async function importTaexData() {
   if (!taexUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
-  const replace = document.getElementById('taex-replace-check').checked;
-  const maxId = replace ? 0 : state.taexData.reduce((m,r)=>Math.max(m,r.ID||0),0);
 
   // Helper: ambil nilai dari baris r dengan banyak kemungkinan nama kolom
   const col = (r, ...keys) => { for (const k of keys) { if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k]; } return null; };
   const num = (r, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || 0 : null; };
   const numDef = (r, def, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || def : def; };
 
-  const newRows = taexUploadBuffer.map((r, i) => ({
-    ID: maxId + i + 1,
-
-    // Plant
-    Plant: col(r, 'Plant', 'plant', 'Plnt', 'plnt', 'PLANT'),
-
-    // Identitas utama
-    Equipment:            col(r, 'Equipment', 'equipment') || '',
-    Order:                String(col(r, 'Order', 'order', 'ORDER') || ''),
-    Revision:             col(r, 'Revision', 'revision'),
-    Material:             String(col(r, 'Material', 'material', 'MATERIAL') || ''),
-    Itm:                  col(r, 'Itm', 'itm', 'ITM', 'Item_No', 'LineItem'),
-
-    // Deskripsi — SAP export pakai "Short Text"
-    Material_Description: col(r, 'Material_Description', 'Material_description',
-                               'material_description', 'Short Text', 'Short_Text',
-                               'ShortText', 'Description', 'description', 'Deskripsi') || '',
-
-    // Qty kebutuhan — SAP export pakai "Qty Requested" atau "Reqmts_Qty"
-    Qty_Reqmts: numDef(r, 0, 'Qty_Reqmts', 'qty_reqmts', 'Reqmts_Qty', 'Reqmts Qty',
-                             'Qty Requested', 'Qty_Requested', 'QtyRequested', 'Quantity'),
-
-    // Qty stok — SAP export pakai "Qty_Reserved" (nilainya 0 dari query)
-    Qty_Stock:  numDef(r, 0, 'Qty_Stock', 'qty_stock', 'Qty_Reserved', 'Qty Reserved',
-                             'QtyReserved', 'Stock'),
-
-    // PR — SAP export pakai "PurchReq"
-    PR:   col(r, 'PR', 'PurchReq', 'Purchreq', 'purchreq', 'PurchaseReq', 'Purchase_Req'),
-    Item: col(r, 'Item', 'item', 'PR_Item'),
-
-    // Qty PR — SAP export pakai "Qty_PurchReq" atau "Qty Requested"
-    Qty_PR: num(r, 'Qty_PR', 'qty_pr', 'Qty_PurchReq', 'Qty PurchReq',
-                    'QtyPurchReq', 'Qty Requested', 'Qty_Requested'),
-
-    // PO
+  // Parse semua baris dari buffer
+  const parsed = taexUploadBuffer.map(r => ({
+    Order:    String(col(r, 'Order', 'order', 'ORDER') || ''),
+    Material: String(col(r, 'Material', 'material', 'MATERIAL') || ''),
+    Itm:      col(r, 'Itm', 'itm', 'ITM', 'Item_No', 'LineItem'),
+    // 4 kolom yang di-update
+    PR:      col(r, 'PR', 'PurchReq', 'Purchreq', 'purchreq', 'PurchaseReq', 'Purchase_Req'),
+    Item:    col(r, 'Item', 'item', 'PR_Item'),
+    Qty_PR:  num(r, 'Qty_PR', 'qty_pr', 'Qty_PurchReq', 'Qty PurchReq', 'QtyPurchReq', 'Qty Requested', 'Qty_Requested'),
+    Qty_Stock: numDef(r, 0, 'Qty_Stock', 'qty_stock', 'Qty_Reserved', 'Qty Reserved', 'QtyReserved', 'Stock'),
+    // kolom lengkap untuk insert baru
+    Plant:               col(r, 'Plant', 'plant', 'Plnt', 'plnt', 'PLANT'),
+    Equipment:           col(r, 'Equipment', 'equipment') || '',
+    Revision:            col(r, 'Revision', 'revision'),
+    Material_Description: col(r, 'Material_Description', 'Material_description', 'material_description', 'Short Text', 'Short_Text', 'ShortText', 'Description', 'description', 'Deskripsi') || '',
+    Qty_Reqmts:          numDef(r, 0, 'Qty_Reqmts', 'qty_reqmts', 'Reqmts_Qty', 'Reqmts Qty', 'Qty Requested', 'Qty_Requested', 'QtyRequested', 'Quantity'),
     PO:           col(r, 'PO', 'po'),
     PO_Date:      col(r, 'PO_Date', 'PO Date', 'PO_date', 'PODate'),
     Qty_Deliv:    num(r, 'Qty_Deliv', 'qty_deliv', 'Qty Deliv', 'QtyDeliv', 'Qty_Delivered'),
-    Delivery_Date:col(r, 'Delivery_Date', 'Delivery Date', 'DeliveryDate', 'Deliv_Date'),
-
-    // Del — SAP export pakai kolom "D" (satu huruf)
+    Delivery_Date: col(r, 'Delivery_Date', 'Delivery Date', 'DeliveryDate', 'Deliv_Date'),
     Del: col(r, 'Del', 'del', 'D'),
-
-    // FIs, Ict — SAP export pakai "ICt"
     FIs: col(r, 'FIs', 'fis', 'FIS', 'Fis'),
     Ict: col(r, 'Ict', 'ict', 'ICT', 'ICt'),
-
-    // PG & PGr
     PG:  col(r, 'PG', 'pg'),
     PGr: col(r, 'PGr', 'pgr', 'PGR'),
-
-    // Lokasi & tujuan
-    SLoc:            col(r, 'SLoc', 'sloc', 'SLOC', 'Sloc'),
-    Recipient:       col(r, 'Recipient', 'recipient'),
-    Unloading_point: col(r, 'Unloading_point', 'Unloading_Point', 'Unloading Point',
-                             'UnloadingPoint', 'unloading_point'),
-
-    // Tanggal kebutuhan — SAP export pakai "ReqDate" atau "PR_date"
-    Reqmts_Date: col(r, 'Reqmts_Date', 'reqmts_date', 'ReqDate', 'Req_Date',
-                        'PR_date', 'PRDate', 'Request_Date'),
-
-    // Qty availability & withdrawn
-    Qty_f_avail_check: num(r, 'Qty_f_avail_check', 'Qty f avail check',
-                               'Qty_f_Avail_Check', 'QtyFAvailCheck'),
-    Qty_Withdrawn:     num(r, 'Qty_Withdrawn', 'Qty Withdrawn', 'QtyWithdrawn', 'qty_withdrawn'),
-
-    // UoM — SAP export pakai "Un"
+    SLoc: col(r, 'SLoc', 'sloc', 'SLOC', 'Sloc'),
+    Recipient: col(r, 'Recipient', 'recipient'),
+    Unloading_point: col(r, 'Unloading_point', 'Unloading_Point', 'Unloading Point', 'UnloadingPoint', 'unloading_point'),
+    Reqmts_Date: col(r, 'Reqmts_Date', 'reqmts_date', 'ReqDate', 'Req_Date', 'PR_date', 'PRDate', 'Request_Date'),
+    Qty_f_avail_check: num(r, 'Qty_f_avail_check', 'Qty f avail check', 'Qty_f_Avail_Check', 'QtyFAvailCheck'),
+    Qty_Withdrawn: num(r, 'Qty_Withdrawn', 'Qty Withdrawn', 'QtyWithdrawn', 'qty_withdrawn'),
     UoM: col(r, 'UoM', 'uom', 'UOM', 'Un', 'Unit', 'unit'),
-
-    // GL Account — SAP export pakai "G/L Acct"
-    GL_Acct: col(r, 'GL_Acct', 'gl_acct', 'G/L Acct', 'GL Acct', 'GLAcct',
-                    'G_L_Acct', 'GlAcct'),
-
-    // Harga — SAP export pakai "Valn Price" atau "Price"
-    Res_Price: num(r, 'Res_Price', 'res_price', 'Valn Price', 'Valn_Price',
-                      'Valn_price', 'ValPrice', 'Price', 'price'),
+    GL_Acct: col(r, 'GL_Acct', 'gl_acct', 'G/L Acct', 'GL Acct', 'GLAcct', 'G_L_Acct', 'GlAcct'),
+    Res_Price: num(r, 'Res_Price', 'res_price', 'Valn Price', 'Valn_Price', 'Valn_price', 'ValPrice', 'Price', 'price'),
     Res_per:   num(r, 'Res_per', 'res_per', 'Per', 'per', 'ResPer'),
-
-    // Mata uang — SAP export pakai "Crcy"
-    Res_Curr: col(r, 'Res_Curr', 'res_curr', 'Crcy', 'crcy', 'Currency', 'Curr'),
+    Res_Curr:  col(r, 'Res_Curr', 'res_curr', 'Crcy', 'crcy', 'Currency', 'Curr'),
   }));
 
-  showLoading('Mengimport data TA-ex...', true);
+  // Upsert: match by Order + Material + Itm
+  let updated = 0, inserted = 0;
+  const maxId = state.taexData.reduce((m, r) => Math.max(m, r.ID || 0), 0);
+  let nextId = maxId + 1;
+
+  const result = [...state.taexData];
+  parsed.forEach(p => {
+    const idx = result.findIndex(e =>
+      String(e.Order) === String(p.Order) &&
+      String(e.Material) === String(p.Material) &&
+      String(e.Itm ?? '') === String(p.Itm ?? '')
+    );
+    if (idx >= 0) {
+      // UPDATE hanya 4 kolom
+      result[idx] = {
+        ...result[idx],
+        PR:        p.PR,
+        Item:      p.Item,
+        Qty_PR:    p.Qty_PR,
+        Qty_Stock: p.Qty_Stock,
+      };
+      updated++;
+    } else {
+      // INSERT baris baru
+      result.push({ ...p, ID: nextId++ });
+      inserted++;
+    }
+  });
+
+  state.taexData = result;
+
+  showLoading('Menyimpan data TA-ex...', true);
   setSyncStatus('loading', '⏳ Menyimpan data ke server...');
   try {
-    const endpoint = replace ? '/taex/replace' : '/taex/append';
-    const result = await apiFetch(endpoint, { method: 'POST', body: newRows });
-    if (replace) {
-      state.taexData = newRows;
-    } else {
-      state.taexData = result.data || [...state.taexData, ...newRows];
-    }
+    await apiFetch('/taex', { method: 'PUT', body: state.taexData });
     hideLoading();
     closeModal('modal-taex-upload');
     renderTaex(); populateFilters();
     taexUploadBuffer = [];
-    setSyncStatus('ok', `✅ ${newRows.length} baris berhasil disimpan ke server · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast(`${newRows.length} baris berhasil diimport ke TA-ex!`, 'ok');
+    const msg = `Upsert selesai · ${updated} diupdate · ${inserted} baru ditambahkan`;
+    setSyncStatus('ok', `✅ ${msg} · ${new Date().toLocaleTimeString('id-ID')}`);
+    toast(msg, 'ok');
   } catch(e) {
     hideLoading();
     setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
@@ -2952,7 +3042,7 @@ function debounceRender(app) {
   }, 280);
 }
 function appToKey(app) {
-  const m = { 'taex':'taex','prisma-reservasi':'prisma','kertas-kerja':'kk','summary':'sum','kumpulan':'ks','pr':'sap','order':'order','po':'po','tracking':'trk' };
+  const m = { 'taex':'taex','prisma-reservasi':'prisma','kertas-kerja':'kk','summary':'sum','kumpulan':'ks','pr':'sap','order':'order','po':'po','tracking':'trk','audit':'audit' };
   return m[app] || app;
 }
 function clearSearch(inputId, app) {
@@ -2975,6 +3065,9 @@ function updateBadges() {
   set('badge-order',  state.orderData.length);
   set('badge-po',     state.poData.length);
   set('badge-tracking', state.taexData.length);
+  // badge audit = jumlah baris yang berubah
+  const auditCount = new Set(buildAuditData().map(d => `${d.Order}||${d.Material}||${d.Itm}`)).size;
+  set('badge-audit', auditCount || '');
 }
 
 // ============================================================
@@ -3469,8 +3562,8 @@ function buildTrackingData() {
     }
   });
 
-  // Build per-taex-row enriched record
-  const rows = state.taexData.map(t => {
+  // Build per-taex-row enriched record — hanya baris yang punya Material
+  const rows = state.taexData.filter(t => t.Material && String(t.Material).trim() !== '').map(t => {
     const orderKey = String(t.Order || '');
     const prKey    = String(t.PR    || '');
     const ord = orderMap[orderKey] || {};
@@ -3704,6 +3797,7 @@ const tabTableMap = {
   order:  'order-tbody',
   po:     'po-tbody',
   trk:    'trk-tbody',
+  audit:  'audit-tbody',
 };
 
 function toggleColPanel(tab) {
@@ -3931,6 +4025,7 @@ function initFreezeListeners() {
     taex: 'page-taex', prisma: 'page-prisma-reservasi', sap: 'page-pr',
     order: 'page-order', po: 'page-po',
     kk: 'page-kertas-kerja', sum: 'page-summary', ks: 'page-kumpulan', trk: 'page-tracking',
+    audit: 'page-audit',
   };
   Object.entries(tabTableMap2).forEach(([tabKey, pageId]) => {
     const page = document.getElementById(pageId);
@@ -4022,8 +4117,17 @@ const tabStateMap  = { taex: 'taexData', sap: 'prData', order: 'orderData', po: 
 const tabApiMap    = { taex: '/taex', sap: '/pr', order: '/order', po: '/po' };
 const tabRenderMap = { taex: renderTaex, sap: renderSAP, order: renderOrder, po: renderPo };
 
+function isTaexRowLocked(r) {
+  if (!state.kkData || !state.kkData.length) return false;
+  return state.kkData.some(k => k.Order === r.Order && k.Material === r.Material && k.Itm === r.Itm);
+}
+
 async function deleteRow(tab, idx) {
   const r = state[tabStateMap[tab]][idx];
+  if (tab === 'taex' && isTaexRowLocked(r)) {
+    toast(`🔒 "${r.Material}" sudah masuk Kertas Kerja (${state.kkCode||'—'}), tidak bisa dihapus!`, 'err');
+    return;
+  }
   const label = r.Material || r.Order || r.PR || r.PO || `baris #${idx + 1}`;
   const ok = await showConfirm({
     title: 'Hapus Baris',
@@ -4038,8 +4142,15 @@ async function deleteRow(tab, idx) {
 }
 
 async function bulkDelete(tab) {
-  const idxs = [...checkedRows[tab]].sort((a, b) => b - a);
+  let idxs = [...checkedRows[tab]].sort((a, b) => b - a);
   if (!idxs.length) return;
+  // Filter out locked rows for taex
+  if (tab === 'taex') {
+    const locked = idxs.filter(i => isTaexRowLocked(state.taexData[i]));
+    idxs = idxs.filter(i => !isTaexRowLocked(state.taexData[i]));
+    if (locked.length) toast(`🔒 ${locked.length} baris diskip (sudah masuk Kertas Kerja)`, 'info');
+    if (!idxs.length) return;
+  }
   const ok = await showConfirm({
     title: 'Hapus Baris Terpilih',
     msg: `Yakin ingin menghapus <b>${idxs.length} baris</b> yang dipilih?`,
@@ -4095,6 +4206,21 @@ async function saveTabData(tab) {
 let editState = { tab: null, idx: null };
 
 const editFields = {
+  prisma: [
+    { key:'Plant', label:'Plant' }, { key:'Equipment', label:'Equipment' },
+    { key:'Revision', label:'Revision' }, { key:'Order', label:'Order' },
+    { key:'Reservno', label:'Reservno' }, { key:'Itm', label:'Itm' },
+    { key:'Material', label:'Material' },
+    { key:'Material_Description', label:'Material Description', full:true },
+    { key:'Del', label:'Del' }, { key:'FIs', label:'FIs' }, { key:'Ict', label:'Ict' },
+    { key:'PG', label:'PG' }, { key:'Recipient', label:'Recipient' },
+    { key:'Unloading_point', label:'Unloading Point', full:true },
+    { key:'Reqmts_Date', label:'Reqmts Date' },
+    { key:'Qty_Reqmts', label:'Qty Reqmts', type:'number' }, { key:'UoM', label:'UoM' },
+    { key:'PR_Prisma', label:'PR Prisma' }, { key:'Item_Prisma', label:'Item Prisma' },
+    { key:'Qty_PR_Prisma', label:'Qty PR Prisma', type:'number' },
+    { key:'Qty_StockOnhand', label:'Qty Stock Onhand', type:'number' },
+  ],
   taex: [
     { key:'Plant', label:'Plant' }, { key:'Equipment', label:'Equipment' }, { key:'Order', label:'Order' },
     { key:'Revision', label:'Revision' }, { key:'Material', label:'Material' }, { key:'Itm', label:'Itm' },
@@ -4138,12 +4264,23 @@ const editFields = {
   ],
 };
 
+function getEditData(tab, idx) {
+  if (tab === 'prisma') return state.prismaReservasiData[idx];
+  return state[tabStateMap[tab]]?.[idx];
+}
+
 function openEditModal(tab, idx) {
+  const r = getEditData(tab, idx);
+  if (!r) return;
+  // Guard: baris TA-ex yang sudah masuk Kertas Kerja tidak bisa diedit
+  if (tab === 'taex' && isTaexRowLocked(r)) {
+    toast(`🔒 "${r.Material}" sudah masuk Kertas Kerja (${state.kkCode||'—'}), tidak bisa diedit!`, 'err');
+    return;
+  }
   editState = { tab, idx };
-  const r = state[tabStateMap[tab]][idx];
   const fields = editFields[tab] || [];
-  const tabLabel = { taex:'TA-ex Reservasi', sap:'SAP PR', order:'Order', po:'PO' }[tab] || tab;
-  document.getElementById('edit-modal-title').textContent = `Edit ${tabLabel}`;
+  const tabLabel = { taex:'TA-ex Reservasi', sap:'SAP PR', order:'Order', po:'PO', prisma:'PRISMA Reservasi' }[tab] || tab;
+  document.getElementById('edit-modal-title').textContent = `✏ Edit ${tabLabel}`;
   const grid = document.getElementById('edit-modal-fields');
   grid.innerHTML = fields.map(f => `
     <div class="fg${f.full ? ' fg-full' : ''}">
@@ -4161,17 +4298,187 @@ function closeEditModal() {
 async function saveEdit() {
   const { tab, idx } = editState;
   if (!tab || idx === null) return;
+
   const fields = editFields[tab] || [];
-  const r = state[tabStateMap[tab]][idx];
+  const r = getEditData(tab, idx);
+  if (!r) return;
+
+  // Kumpulkan perubahan dulu
+  const changes = [];
   fields.forEach(f => {
     const el = document.getElementById('ef-' + f.key);
     if (!el) return;
-    const val = el.value.trim();
-    if (f.type === 'number') r[f.key] = val === '' ? null : parseFloat(val) || 0;
-    else r[f.key] = val === '' ? null : val;
+    const raw = el.value.trim();
+    const newVal = f.type === 'number' ? (raw === '' ? null : parseFloat(raw) || 0) : (raw === '' ? null : raw);
+    const oldVal = r[f.key] ?? null;
+    if (String(newVal ?? '') !== String(oldVal ?? '')) {
+      changes.push({ field: f.label, old: oldVal, new: newVal, key: f.key });
+    }
   });
+
+  if (!changes.length) {
+    toast('Tidak ada perubahan.', 'info');
+    closeEditModal();
+    return;
+  }
+
+  // Tutup edit modal dulu
   closeEditModal();
-  await saveTabData(tab);
+
+  // Tampilkan confirm dengan ringkasan perubahan
+  const changeList = changes.map(c =>
+    `<div style="margin:4px 0;font-size:12px"><b>${c.field}:</b> <span style="color:#dc2626;text-decoration:line-through">${c.old ?? '—'}</span> → <span style="color:#16a34a;font-weight:700">${c.new ?? '—'}</span></div>`
+  ).join('');
+
+  const ok = await showConfirm({
+    title: 'Konfirmasi Perubahan',
+    msg: `Simpan ${changes.length} perubahan berikut?<div style="margin-top:10px;padding:10px;background:#f9fafb;border-radius:4px;border:1px solid #e5e7eb">${changeList}</div>`,
+    sub: '',
+    icon: '💾',
+    okLabel: 'Ya, Simpan',
+    okColor: '#1a56db',
+    headerColor: '#1a56db',
+  });
+
+  if (!ok) return;
+
+  // Apply perubahan
+  changes.forEach(c => { r[c.key] = c.new; });
+
+  // Simpan ke backend
+  if (tab === 'prisma') {
+    try {
+      await apiFetch('/prisma', { method: 'PUT', body: state.prismaReservasiData });
+      renderPrismaReservasi();
+      setSyncStatus('ok', `✅ PRISMA disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
+      toast('Perubahan PRISMA berhasil disimpan!', 'ok');
+    } catch(e) {
+      setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
+      toast('Gagal simpan ke server!', 'err');
+    }
+  } else {
+    await saveTabData(tab);
+  }
+}
+
+// ============================================================
+// AUDIT ENGINE — Cek Perubahan TA-ex vs PRISMA
+// ============================================================
+
+// Kolom yang dibandingkan beserta label
+const AUDIT_COLS = [
+  { key: 'Equipment',            label: 'Equipment' },
+  { key: 'Revision',             label: 'Revision' },
+  { key: 'Material_Description', label: 'Material Description' },
+  { key: 'Qty_Reqmts',           label: 'Qty Reqmts' },
+  { key: 'Del',                  label: 'Del' },
+  { key: 'FIs',                  label: 'FIs' },
+  { key: 'Ict',                  label: 'Ict' },
+  { key: 'PG',                   label: 'PG' },
+  { key: 'UoM',                  label: 'UoM' },
+];
+
+let auditFiltered = [];
+
+function buildAuditData() {
+  const diffs = [];
+  state.prismaReservasiData.forEach(p => {
+    const key = `${p.Order}||${p.Material}||${String(p.Itm ?? '')}`;
+    const t = state.taexData.find(e =>
+      String(e.Order) === String(p.Order) &&
+      String(e.Material) === String(p.Material) &&
+      String(e.Itm ?? '') === String(p.Itm ?? '')
+    );
+    if (!t) return; // tidak ada di taex, skip
+
+    AUDIT_COLS.forEach(col => {
+      const vPrisma = String(p[col.key] ?? '').trim();
+      const vTaex   = String(t[col.key] ?? '').trim();
+      if (vPrisma !== vTaex) {
+        diffs.push({
+          Order:    p.Order,
+          Material: p.Material,
+          Itm:      p.Itm,
+          col_key:  col.key,
+          col_label: col.label,
+          val_prisma: p[col.key],
+          val_taex:   t[col.key],
+        });
+      }
+    });
+  });
+  return diffs;
+}
+
+function auditResetFilter() {
+  document.getElementById('audit-search').value = '';
+  document.getElementById('audit-filter-col').value = '';
+  renderAudit();
+}
+
+function renderAudit() {
+  const allDiffs = buildAuditData();
+  const q      = (document.getElementById('audit-search').value || '').toLowerCase();
+  const fCol   = document.getElementById('audit-filter-col').value;
+
+  let filtered = allDiffs.filter(d => {
+    const mq  = !q || [d.Order, d.Material, d.Itm, d.col_label].some(v => String(v||'').toLowerCase().includes(q));
+    const mc  = !fCol || d.col_key === fCol;
+    return mq && mc;
+  });
+
+  auditFiltered = filtered;
+
+  // Update info bar
+  const changedRows = new Set(allDiffs.map(d => `${d.Order}||${d.Material}||${d.Itm}`)).size;
+  document.getElementById('audit-total').textContent      = allDiffs.length + ' perbedaan';
+  document.getElementById('audit-taex-count').textContent = state.taexData.length;
+  document.getElementById('audit-prisma-count').textContent = state.prismaReservasiData.length;
+  document.getElementById('audit-changed-label').textContent = changedRows + ' baris berubah';
+  document.getElementById('badge-audit').textContent = changedRows;
+
+  const tbody = document.getElementById('audit-tbody');
+  document.getElementById('audit-rowCount').textContent = filtered.length + ' perbedaan';
+
+  if (!filtered.length) {
+    tbody.innerHTML = allDiffs.length === 0
+      ? '<tr class="loading-row"><td colspan="6">✅ Tidak ada perbedaan — data TA-ex dan PRISMA konsisten.</td></tr>'
+      : '<tr class="loading-row"><td colspan="6">Tidak ada hasil untuk filter ini.</td></tr>';
+    renderPagination('audit-pagination','audit',0,1,1,100,renderAudit);
+    return;
+  }
+
+  const pg = paginate(filtered, 'audit');
+  tbody.innerHTML = pg.rows.map(d => `<tr>
+    <td class="mono" style="color:#1a56db;font-weight:700">${D(d.Order)}</td>
+    <td class="mono">${D(d.Material)}</td>
+    <td class="center mono">${D(d.Itm)}</td>
+    <td><span class="audit-col-badge">${d.col_label}</span></td>
+    <td><span class="audit-changed-old">${d.val_prisma ?? '—'}</span></td>
+    <td><span class="audit-changed-new">${d.val_taex ?? '—'}</span></td>
+  </tr>`).join('');
+
+  renderPagination('audit-pagination','audit',pg.total,pg.page,pg.totalPages,pg.size,renderAudit);
+}
+
+function exportAuditExcel() {
+  const data = buildAuditData();
+  if (!data.length) { toast('Tidak ada perbedaan untuk diekspor', 'info'); return; }
+  const rows = data.map(d => ({
+    Order:         d.Order || '',
+    Material:      d.Material || '',
+    Itm:           d.Itm ?? '',
+    Kolom:         d.col_label,
+    Nilai_PRISMA:  d.val_prisma ?? '',
+    Nilai_TAex:    d.val_taex ?? '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:14},{wch:16},{wch:6},{wch:22},{wch:30},{wch:30}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Audit');
+  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  XLSX.writeFile(wb, `Audit_TAex_PRISMA_${ts}.xlsx`);
+  toast('Export Audit berhasil!', 'ok');
 }
 
 // ============================================================
