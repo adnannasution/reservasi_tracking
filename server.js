@@ -399,75 +399,110 @@ async function setState(key, value) {
 // ─────────────────────────────────────────────
 // BULK HELPERS
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// BULK HELPERS — pakai batch INSERT supaya tidak timeout saat 90rb baris
+// ─────────────────────────────────────────────
+const CHUNK = 500; // rows per INSERT statement
+
 async function bulkReplaceTaex(client, rows) {
   await client.query('DELETE FROM taex_reservasi');
-  for (const r of rows) {
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const batch = rows.slice(i, i + CHUNK);
+    const vals = [], params = [];
+    batch.forEach((r, idx) => {
+      const b = idx * 31;
+      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31})`);
+      params.push(r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+        r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
+        r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+        r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
+        r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
+        r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
+        r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null);
+    });
     await client.query(
-      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
-      [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
-       r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-       r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
-       r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
-       r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
-       r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-       r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null]
+      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr) VALUES ${vals.join(',')}`,
+      params
     );
   }
 }
 async function bulkReplacePrisma(client, rows) {
   await client.query('DELETE FROM prisma_reservasi');
-  for (const r of rows) {
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const batch = rows.slice(i, i + CHUNK);
+    const vals = [], params = [];
+    batch.forEach((r, idx) => {
+      const b = idx * 22;
+      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22})`);
+      params.push(r.Plant||null,r.Equipment||null,r.Revision||null,r.Order||null,r.Reservno||null,r.Itm||null,
+        r.Material||null,r.Material_Description||null,
+        r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
+        r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
+        r.Qty_Reqmts||0,r.UoM||null,
+        r.PR_Prisma||null,r.Item_Prisma||null,r.Qty_PR_Prisma??null,
+        r.Qty_StockOnhand??null,r.CodeKertasKerja||null);
+    });
     await client.query(
-      `INSERT INTO prisma_reservasi (plant,equipment,revision,"order",reservno,itm,material,material_description,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_reqmts,uom,pr_prisma,item_prisma,qty_pr_prisma,qty_stock_onhand,code_kertas_kerja)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
-      [r.Plant||null,r.Equipment||null,r.Revision||null,r.Order||null,r.Reservno||null,r.Itm||null,
-       r.Material||null,r.Material_Description||null,
-       r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
-       r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
-       r.Qty_Reqmts||0,r.UoM||null,
-       r.PR_Prisma||null,r.Item_Prisma||null,r.Qty_PR_Prisma??null,
-       r.Qty_StockOnhand??null,r.CodeKertasKerja||null]
+      `INSERT INTO prisma_reservasi (plant,equipment,revision,"order",reservno,itm,material,material_description,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_reqmts,uom,pr_prisma,item_prisma,qty_pr_prisma,qty_stock_onhand,code_kertas_kerja) VALUES ${vals.join(',')}`,
+      params
     );
   }
 }
 async function bulkReplaceKumpulan(client, rows) {
   await client.query('DELETE FROM kumpulan_summary');
-  for (const r of rows) {
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const batch = rows.slice(i, i + CHUNK);
+    const vals = [], params = [];
+    batch.forEach((r, idx) => {
+      const b = idx * 13;
+      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13})`);
+      params.push(r.Plant||null,r.Equipment||null,r.Revision||null,r.Order||null,r.Reservno||null,r.Itm||null,
+        r.Material||null,r.Material_Description||null,
+        r.Qty_Req||0,r.Qty_Stock||0,r.Qty_PR??null,r.Qty_To_PR??null,r.CodeTracking||null);
+    });
     await client.query(
-      `INSERT INTO kumpulan_summary (plant,equipment,revision,"order",reservno,itm,material,material_description,qty_req,qty_stock,qty_pr,qty_to_pr,code_tracking)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-      [r.Plant||null,r.Equipment||null,r.Revision||null,r.Order||null,r.Reservno||null,r.Itm||null,
-       r.Material||null,r.Material_Description||null,
-       r.Qty_Req||0,r.Qty_Stock||0,r.Qty_PR??null,r.Qty_To_PR??null,r.CodeTracking||null]
+      `INSERT INTO kumpulan_summary (plant,equipment,revision,"order",reservno,itm,material,material_description,qty_req,qty_stock,qty_pr,qty_to_pr,code_tracking) VALUES ${vals.join(',')}`,
+      params
     );
   }
 }
 async function bulkReplacePR(client, rows) {
   await client.query('DELETE FROM sap_pr');
-  for (const r of rows) {
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const batch = rows.slice(i, i + CHUNK);
+    const vals = [], params = [];
+    batch.forEach((r, idx) => {
+      const b = idx * 17;
+      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17})`);
+      params.push(r.Plant||null,r.PR||null,r.Item||null,r.Material||null,r.Material_Description||null,
+        r.D||null,r.R||null,r.PGr||null,r.TrackingNo||null,
+        r.Qty_PR??null,r.Un||null,r.Req_Date||null,
+        r.Valn_price??null,r.PR_Curr||null,r.PR_Per??null,r.Release_Date||null,
+        r.Tracking||null);
+    });
     await client.query(
-      `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
-      [r.Plant||null,r.PR||null,r.Item||null,r.Material||null,r.Material_Description||null,
-       r.D||null,r.R||null,r.PGr||null,r.TrackingNo||null,
-       r.Qty_PR??null,r.Un||null,r.Req_Date||null,
-       r.Valn_price??null,r.PR_Curr||null,r.PR_Per??null,r.Release_Date||null,
-       r.Tracking||null]
+      `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking) VALUES ${vals.join(',')}`,
+      params
     );
   }
 }
 
 async function bulkReplacePO(client, rows) {
   await client.query('DELETE FROM sap_po');
-  for (const r of rows) {
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const batch = rows.slice(i, i + CHUNK);
+    const vals = [], params = [];
+    batch.forEach((r, idx) => {
+      const b = idx * 18;
+      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18})`);
+      params.push(r.Plnt||null,r.Purchreq||null,r.Item||null,r.Material||null,r.Short_Text||null,
+        r.PO||null,r.PO_Item||null,r.D||null,r.DCI||null,r.PGr||null,r.Doc_Date||null,
+        r.PO_Quantity??null,r.Qty_Delivered??null,r.Deliv_Date||null,r.OUn||null,
+        r.Net_Price??null,r.Crcy||null,r.Per??null);
+    });
     await client.query(
-      `INSERT INTO sap_po (plnt,purchreq,item,material,short_text,po,po_item,d,dci,pgr,doc_date,po_quantity,qty_delivered,deliv_date,oun,net_price,crcy,per)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
-      [r.Plnt||null,r.Purchreq||null,r.Item||null,r.Material||null,r.Short_Text||null,
-       r.PO||null,r.PO_Item||null,r.D||null,r.DCI||null,r.PGr||null,r.Doc_Date||null,
-       r.PO_Quantity??null,r.Qty_Delivered??null,r.Deliv_Date||null,r.OUn||null,
-       r.Net_Price??null,r.Crcy||null,r.Per??null]
+      `INSERT INTO sap_po (plnt,purchreq,item,material,short_text,po,po_item,d,dci,pgr,doc_date,po_quantity,qty_delivered,deliv_date,oun,net_price,crcy,per) VALUES ${vals.join(',')}`,
+      params
     );
   }
 }
@@ -611,7 +646,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-api-key'],
 }));
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '200mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────────────────────────────────────────
@@ -628,21 +663,36 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Load all data
+// Load all data — paginated per tabel supaya tidak OOM
+// Query params: page (default 1), limit (default 2000)
+// Contoh: GET /api/data?page=1&limit=2000
 app.get('/api/data', requireApiKey, async (req, res) => {
   try {
-    const [taex, prisma, kumpulan, pr, po, kkCurrent, kkCounter, prCounter, summaryData] = await Promise.all([
-      query('SELECT * FROM taex_reservasi ORDER BY id'),
-      query('SELECT * FROM prisma_reservasi ORDER BY id'),
-      query('SELECT * FROM kumpulan_summary ORDER BY id'),
-      query('SELECT * FROM sap_pr ORDER BY id'),
-      query('SELECT * FROM sap_po ORDER BY id'),
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(5000, Math.max(1, parseInt(req.query.limit) || 2000));
+    const offset = (page - 1) * limit;
+
+    const [taex, prisma, kumpulan, pr, po,
+           taexCount, prismaCount, kumpulanCount, prCount, poCount,
+           kkCurrent, kkCounter, prCounter, summaryData] = await Promise.all([
+      query('SELECT * FROM taex_reservasi ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
+      query('SELECT * FROM prisma_reservasi ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
+      query('SELECT * FROM kumpulan_summary ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
+      query('SELECT * FROM sap_pr ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
+      query('SELECT * FROM sap_po ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
+      query('SELECT COUNT(*) AS c FROM taex_reservasi'),
+      query('SELECT COUNT(*) AS c FROM prisma_reservasi'),
+      query('SELECT COUNT(*) AS c FROM kumpulan_summary'),
+      query('SELECT COUNT(*) AS c FROM sap_pr'),
+      query('SELECT COUNT(*) AS c FROM sap_po'),
       getState('kk_current'),
       getState('kk_counter'),
       getState('pr_counter'),
       getState('summary_current'),
     ]);
+
     res.json({
+      // Data halaman ini
       taexData:            taex.rows.map(mapTaex),
       prismaReservasiData: prisma.rows.map(mapPrisma),
       kumpulanData:        kumpulan.rows.map(mapKumpulan),
@@ -654,7 +704,52 @@ app.get('/api/data', requireApiKey, async (req, res) => {
       summaryData:         summaryData || [],
       kkCounter:           kkCounter || 0,
       prCounter:           prCounter || 0,
-      lastUpdated:         new Date().toISOString(),
+      // Pagination meta — dipakai frontend untuk tahu apakah ada halaman berikutnya
+      pagination: {
+        page,
+        limit,
+        totalTaex:     parseInt(taexCount.rows[0].c),
+        totalPrisma:   parseInt(prismaCount.rows[0].c),
+        totalKumpulan: parseInt(kumpulanCount.rows[0].c),
+        totalPR:       parseInt(prCount.rows[0].c),
+        totalPO:       parseInt(poCount.rows[0].c),
+        hasMore: offset + limit < Math.max(
+          parseInt(taexCount.rows[0].c),
+          parseInt(prismaCount.rows[0].c),
+          parseInt(kumpulanCount.rows[0].c),
+          parseInt(prCount.rows[0].c),
+          parseInt(poCount.rows[0].c),
+        ),
+      },
+      lastUpdated: new Date().toISOString(),
+    });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal memuat data' }); }
+});
+
+// Endpoint tambahan: load satu tabel secara paginated (lebih efisien)
+// GET /api/data/taex?page=1&limit=2000
+const TABLE_CONFIG = {
+  taex:     { table: 'taex_reservasi',   mapper: mapTaex },
+  prisma:   { table: 'prisma_reservasi', mapper: mapPrisma },
+  kumpulan: { table: 'kumpulan_summary', mapper: mapKumpulan },
+  pr:       { table: 'sap_pr',           mapper: mapSAP },
+  po:       { table: 'sap_po',           mapper: mapPO },
+};
+app.get('/api/data/:tabel', requireApiKey, async (req, res) => {
+  const cfg = TABLE_CONFIG[req.params.tabel];
+  if (!cfg) return res.status(404).json({ error: 'Tabel tidak ditemukan' });
+  try {
+    const page   = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit  = Math.min(5000, Math.max(1, parseInt(req.query.limit) || 2000));
+    const offset = (page - 1) * limit;
+    const [data, count] = await Promise.all([
+      query(`SELECT * FROM ${cfg.table} ORDER BY id LIMIT $1 OFFSET $2`, [limit, offset]),
+      query(`SELECT COUNT(*) AS c FROM ${cfg.table}`),
+    ]);
+    const total = parseInt(count.rows[0].c);
+    res.json({
+      data: data.rows.map(cfg.mapper),
+      pagination: { page, limit, total, hasMore: offset + limit < total },
     });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal memuat data' }); }
 });

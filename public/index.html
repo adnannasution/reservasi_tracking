@@ -1784,6 +1784,15 @@ async function apiFetch(path, opts = {}) {
   }
 }
 
+// apiPut — otomatis chunked jika rows > 1000, langsung jika kecil
+async function apiPut(path, rows) {
+  if (rows.length > 1000) {
+    return await chunkedReplace(path, rows, path.replace('/', '').toUpperCase());
+  }
+  return await apiFetch(path, { method: 'PUT', body: rows });
+}
+
+
 function setSyncStatus(type, msg) {
   const bar = document.getElementById('sync-bar');
   const msgEl = document.getElementById('sync-msg');
@@ -1830,14 +1839,47 @@ function hideInitLoading() {
   if (el) el.classList.add('hidden');
 }
 
+// ============================================================
+// CHUNKED UPLOAD — kirim JSON array ke server per 2000 baris
+// dengan progress bar realtime
+// ============================================================
+async function chunkedReplace(endpoint, allRows, progressLabel) {
+  const CHUNK_SIZE = 2000;
+  const total = allRows.length;
+  let sent = 0;
+
+  // Kirim chunk pertama pakai /replace (hapus dulu), sisanya pakai /append
+  for (let i = 0; i < total; i += CHUNK_SIZE) {
+    const chunk = allRows.slice(i, i + CHUNK_SIZE);
+    const pct = Math.round(((i + chunk.length) / total) * 100);
+
+    // Update progress bar
+    const bar = document.getElementById('progress-bar');
+    const label = document.getElementById('progress-label');
+    if (bar) bar.style.width = pct + '%';
+    if (label) { label.style.display = 'block'; label.textContent = `${progressLabel}: ${i + chunk.length} / ${total} baris (${pct}%)`; }
+
+    const ep = (i === 0) ? endpoint + '/replace' : endpoint + '/append';
+    await apiFetch(ep, { method: 'POST', body: chunk });
+    sent += chunk.length;
+  }
+  return sent;
+}
+
+// ============================================================
+// INIT — load data paginated, max 2000 baris per halaman
+// ============================================================
+const PAGE_LIMIT = 2000;
+
 async function init() {
   setInitProgress(10, 'Menghubungkan ke server...');
   setSyncStatus('loading', '⏳ Memuat data dari server...');
   try {
-    setInitProgress(30, 'Mengambil data dari server...');
-    const data = await apiFetch('/data');
+    setInitProgress(20, 'Mengambil data halaman pertama...');
+    // Load halaman 1 dulu — cepat, tidak OOM
+    const data = await apiFetch(`/data?page=1&limit=${PAGE_LIMIT}`);
 
-    setInitProgress(60, 'Memproses data...');
+    setInitProgress(50, 'Memproses data...');
     state.taexData            = data.taexData            || [];
     state.prismaReservasiData = data.prismaReservasiData || [];
     state.kkData              = data.kkData              || [];
@@ -1850,8 +1892,30 @@ async function init() {
     state.orderData           = data.orderData           || [];
     state.poData              = data.poData              || [];
 
-    setInitProgress(85, 'Menyiapkan tampilan...');
-    setSyncStatus('ok', `✅ Terhubung ke server · ${state.taexData.length} baris TA-ex · Terakhir sync: ${new Date().toLocaleTimeString('id-ID')}`);
+    // Jika ada lebih banyak halaman, muat semuanya di background
+    const pg = data.pagination;
+    if (pg && pg.hasMore) {
+      const maxTotal = Math.max(pg.totalTaex||0, pg.totalPrisma||0, pg.totalKumpulan||0, pg.totalPR||0, pg.totalPO||0);
+      const totalPages = Math.ceil(maxTotal / PAGE_LIMIT);
+
+      setInitProgress(60, `Memuat sisa data (${maxTotal.toLocaleString()} baris total)...`);
+      setSyncStatus('loading', `⏳ Memuat ${maxTotal.toLocaleString()} baris...`);
+
+      for (let page = 2; page <= totalPages; page++) {
+        const more = await apiFetch(`/data?page=${page}&limit=${PAGE_LIMIT}`);
+        state.taexData            = state.taexData.concat(more.taexData            || []);
+        state.prismaReservasiData = state.prismaReservasiData.concat(more.prismaReservasiData || []);
+        state.kumpulanData        = state.kumpulanData.concat(more.kumpulanData    || []);
+        state.prData              = state.prData.concat(more.prData                || []);
+        state.poData              = state.poData.concat(more.poData                || []);
+
+        const pct = 60 + Math.round((page / totalPages) * 35);
+        setInitProgress(pct, `Memuat halaman ${page}/${totalPages}...`);
+      }
+    }
+
+    setInitProgress(95, 'Menyiapkan tampilan...');
+    setSyncStatus('ok', `✅ Terhubung · ${state.taexData.length.toLocaleString()} baris TA-ex · Terakhir sync: ${new Date().toLocaleTimeString('id-ID')}`);
     renderAll();
     populateFilters();
 
@@ -2440,16 +2504,31 @@ async function importTaexData() {
 
   showLoading('Menyimpan data TA-ex...', true);
   setSyncStatus('loading', '⏳ Menyimpan data ke server...');
+  const wrap = document.getElementById('progress-wrap');
+  if (wrap) wrap.style.display = 'block';
   try {
-    await apiFetch('/taex', { method: 'PUT', body: state.taexData });
+    const sent = await chunkedReplace('/taex', result, 'TA-ex');
+    // Reload state dari server supaya ID konsisten
+    const fresh = await apiFetch(`/data/taex?page=1&limit=${PAGE_LIMIT}`);
+    state.taexData = fresh.data || [];
+    // Muat sisa halaman jika > PAGE_LIMIT
+    if (fresh.pagination && fresh.pagination.hasMore) {
+      const totalPages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
+      for (let p = 2; p <= totalPages; p++) {
+        const more = await apiFetch(`/data/taex?page=${p}&limit=${PAGE_LIMIT}`);
+        state.taexData = state.taexData.concat(more.data || []);
+      }
+    }
+    if (wrap) wrap.style.display = 'none';
     hideLoading();
     closeModal('modal-taex-upload');
     renderTaex(); populateFilters();
     taexUploadBuffer = [];
-    const msg = `Upsert selesai · ${updated} diupdate · ${inserted} baru ditambahkan`;
+    const msg = `Upload selesai · ${sent.toLocaleString()} baris tersimpan`;
     setSyncStatus('ok', `✅ ${msg} · ${new Date().toLocaleTimeString('id-ID')}`);
     toast(msg, 'ok');
   } catch(e) {
+    if (wrap) wrap.style.display = 'none';
     hideLoading();
     setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
@@ -2520,20 +2599,28 @@ async function importSapData() {
 
   showLoading('Mengimport data SAP PR...', true);
   setSyncStatus('loading', '⏳ Menyimpan data PR ke server...');
+  const wrap = document.getElementById('progress-wrap');
+  if (wrap) wrap.style.display = 'block';
   try {
-    const endpoint = replace ? '/pr/replace' : '/pr/append';
-    const result = await apiFetch(endpoint, { method: 'POST', body: newRows });
-    if (replace) {
-      state.prData = newRows;
-    } else {
-      state.prData = result.data || [...state.prData, ...newRows];
+    const sent = await chunkedReplace('/pr', newRows, 'SAP PR');
+    // Reload dari server
+    const fresh = await apiFetch(`/data/pr?page=1&limit=${PAGE_LIMIT}`);
+    state.prData = fresh.data || [];
+    if (fresh.pagination && fresh.pagination.hasMore) {
+      const totalPages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
+      for (let p = 2; p <= totalPages; p++) {
+        const more = await apiFetch(`/data/pr?page=${p}&limit=${PAGE_LIMIT}`);
+        state.prData = state.prData.concat(more.data || []);
+      }
     }
+    if (wrap) wrap.style.display = 'none';
     hideLoading();
     closeModal('modal-sap-upload');
     renderSAP(); sapUploadBuffer = [];
-    setSyncStatus('ok', `✅ Data SAP PR tersimpan · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast(`${newRows.length} baris berhasil diimport ke SAP PR!`, 'ok');
+    setSyncStatus('ok', `✅ Data SAP PR tersimpan · ${sent.toLocaleString()} baris · ${new Date().toLocaleTimeString('id-ID')}`);
+    toast(`${sent.toLocaleString()} baris berhasil diimport ke SAP PR!`, 'ok');
   } catch(e) {
+    if (wrap) wrap.style.display = 'none';
     hideLoading();
     setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
@@ -2639,7 +2726,7 @@ async function syncWithTaex() {
   showLoading('Sinkronisasi data...', true);
   setSyncStatus('loading', '⏳ Sinkronisasi ke server...');
   try {
-    await apiFetch('/prisma', { method: 'PUT', body: syncedData });
+    await apiPut('/prisma', syncedData);
     hideLoading();
     renderPrismaReservasi(); populateFilters();
     let msg = `✅ Sinkronisasi selesai · ${eligible.length} baris`;
@@ -2738,7 +2825,7 @@ async function submitKertasKerja() {
   setSyncStatus('loading', '⏳ Submit Kertas Kerja...');
   try {
     await apiFetch('/state/summary_current', { method:'POST', body:{ value: state.summaryData } });
-    await apiFetch('/prisma', { method:'PUT', body: state.prismaReservasiData });
+    await apiPut('/prisma', state.prismaReservasiData);
     await apiFetch('/state/kk_current', { method:'POST', body:{ value: { code: null, data: [] } } });
     state.kkData = [];
     state.kkCode = null;
@@ -2764,7 +2851,7 @@ async function submitSummary() {
   showLoading('Menyimpan ke Kumpulan Summary...', true);
   setSyncStatus('loading', '⏳ Menyimpan Summary...');
   try {
-    await apiFetch('/kumpulan', { method:'PUT', body: state.kumpulanData });
+    await apiPut('/kumpulan', state.kumpulanData);
     await apiFetch('/state/summary_current', { method:'POST', body:{ value: [] } });
     await apiFetch('/state/kk_current', { method:'POST', body:{ value: { code: null, data: [] } } });
     populateFilters();
@@ -2865,9 +2952,9 @@ async function submitPR() {
   showLoading('Sinkronisasi PR dari SAP PR...', true);
   setSyncStatus('loading', '⏳ Sinkronisasi PR ke server...');
   try {
-    await apiFetch('/kumpulan', { method:'PUT', body: state.kumpulanData });
-    await apiFetch('/prisma', { method:'PUT', body: state.prismaReservasiData });
-    await apiFetch('/taex', { method:'PUT', body: state.taexData });
+    await apiPut('/kumpulan', state.kumpulanData);
+    await apiPut('/prisma', state.prismaReservasiData);
+    await apiPut('/taex', state.taexData);
     hideLoading();
     closeModal('modal-pr');
     setSyncStatus('ok', `✅ Singkron PR selesai · ${matchCount} material diupdate · ${new Date().toLocaleTimeString('id-ID')}`);
@@ -3425,20 +3512,28 @@ async function importPoData() {
 
   showLoading('Mengimport data PO...', true);
   setSyncStatus('loading', '⏳ Menyimpan data PO ke server...');
+  const wrap = document.getElementById('progress-wrap');
+  if (wrap) wrap.style.display = 'block';
   try {
-    const endpoint = replace ? '/po/replace' : '/po/append';
-    const result = await apiFetch(endpoint, { method: 'POST', body: newRows });
-    if (replace) {
-      state.poData = newRows;
-    } else {
-      state.poData = result.data || [...state.poData, ...newRows];
+    const sent = await chunkedReplace('/po', newRows, 'SAP PO');
+    // Reload dari server
+    const fresh = await apiFetch(`/data/po?page=1&limit=${PAGE_LIMIT}`);
+    state.poData = fresh.data || [];
+    if (fresh.pagination && fresh.pagination.hasMore) {
+      const totalPages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
+      for (let p = 2; p <= totalPages; p++) {
+        const more = await apiFetch(`/data/po?page=${p}&limit=${PAGE_LIMIT}`);
+        state.poData = state.poData.concat(more.data || []);
+      }
     }
+    if (wrap) wrap.style.display = 'none';
     hideLoading();
     closeModal('modal-po-upload');
     renderPo(); poUploadBuffer = [];
-    setSyncStatus('ok', `✅ Data PO tersimpan · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast(`${newRows.length} baris berhasil diimport ke PO!`, 'ok');
+    setSyncStatus('ok', `✅ Data PO tersimpan · ${sent.toLocaleString()} baris · ${new Date().toLocaleTimeString('id-ID')}`);
+    toast(`${sent.toLocaleString()} baris berhasil diimport ke PO!`, 'ok');
   } catch(e) {
+    if (wrap) wrap.style.display = 'none';
     hideLoading();
     setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
     toast('Gagal simpan ke server!', 'err');
@@ -4190,7 +4285,7 @@ async function returnPrismaToTaex(idx) {
   if (!ok) return;
   state.prismaReservasiData.splice(idx, 1);
   try {
-    await apiFetch('/prisma', { method: 'PUT', body: state.prismaReservasiData });
+    await apiPut('/prisma', state.prismaReservasiData);
     renderPrismaReservasi();
     toast('Baris dikembalikan ke TA-ex Reservasi.', 'info');
     setSyncStatus('ok', `✅ Return selesai · ${new Date().toLocaleTimeString('id-ID')}`);
@@ -4204,7 +4299,13 @@ async function saveTabData(tab) {
   const renderFn = tabRenderMap[tab];
   renderFn();
   try {
-    await apiFetch(tabApiMap[tab], { method: 'PUT', body: state[tabStateMap[tab]] });
+    const rows = state[tabStateMap[tab]];
+    if (rows.length > 1000) {
+      // Pakai chunkedReplace untuk data besar
+      await chunkedReplace(tabApiMap[tab], rows, tab.toUpperCase());
+    } else {
+      await apiFetch(tabApiMap[tab], { method: 'PUT', body: rows });
+    }
     setSyncStatus('ok', `✅ Data disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Data berhasil disimpan!', 'ok');
   } catch(e) {
@@ -4361,7 +4462,7 @@ async function saveEdit() {
   // Simpan ke backend
   if (tab === 'prisma') {
     try {
-      await apiFetch('/prisma', { method: 'PUT', body: state.prismaReservasiData });
+      await apiPut('/prisma', state.prismaReservasiData);
       renderPrismaReservasi();
       setSyncStatus('ok', `✅ PRISMA disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
       toast('Perubahan PRISMA berhasil disimpan!', 'ok');
