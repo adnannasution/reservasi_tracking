@@ -1908,7 +1908,7 @@ const PAGE_LIMIT = 2000;
 let _prismaFullyLoaded = false;
 
 async function ensurePrismaLoaded() {
-  if (_prismaFullyLoaded && state.prismaReservasiData.length > 0) return;
+  if (_prismaFullyLoaded) return;  // sudah pernah di-load, pakai cache (meski kosong)
   try {
     const rows = await apiFetch('/prisma');
     state.prismaReservasiData = rows || [];
@@ -2013,10 +2013,10 @@ function switchApp(app) {
   renderPage(app);
 }
 
-function renderAll() { renderTaex(); renderPrismaReservasi(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); }
+function renderAll() { renderTaex(); fetchAndRenderPrisma(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); }
 function renderPage(app) {
   if (app==='taex') renderTaex();
-  else if (app==='prisma-reservasi') renderPrismaReservasi();
+  else if (app==='prisma-reservasi') fetchAndRenderPrisma();
   else if (app==='kertas-kerja') renderKK();
   else if (app==='summary') renderSummary();
   else if (app==='kumpulan') renderKumpulan();
@@ -2846,9 +2846,11 @@ async function syncWithTaex() {
   setSyncStatus('loading', '⏳ Sinkronisasi ke server...');
   try {
     await apiPut('/prisma', syncedData);
-    invalidatePrismaCache();
     hideLoading();
-    renderPrismaReservasi(); populateFilters();
+    // Invalidate cache lalu fetch ulang dari server supaya ID ter-assign
+    invalidatePrismaCache();
+    await fetchAndRenderPrisma();
+    populateFilters();
     let msg = `✅ Sinkronisasi selesai · ${newRows.length} baris baru ditambahkan`;
     if (skippedX > 0)        msg += ` · ${skippedX} diskip (Del/FIs=X)`;
     if (skippedIct > 0)      msg += ` · ${skippedIct} diskip (Ict≠L)`;
@@ -4976,4 +4978,4 @@ init().then(() => {
 </script>
 
 </body>
-</html> 
+</html>
