@@ -2394,7 +2394,141 @@ function handleFileSelect(e, type) {
   const file = e.target.files[0];
   if (file) processUploadFile(file, type);
 }
-function processUploadFile(file, type) {
+// ============================================================
+// UPLOAD KE SERVER — file dikirim langsung, parsing di server
+// Browser tidak freeze karena tidak ada XLSX.read() di sini
+// ============================================================
+
+// Map type → preview element ids
+const UPLOAD_META = {
+  taex:  { previewId: 'taex-upload-preview',  infoId: 'taex-preview-info',  tableId: 'taex-preview-table',  btnId: 'taex-import-btn',  stateKey: 'taexData',            renderFn: () => { renderTaex(); populateFilters(); } },
+  sap:   { previewId: 'sap-upload-preview',   infoId: 'sap-preview-info',   tableId: 'sap-preview-table',   btnId: 'sap-import-btn',   stateKey: 'prData',              renderFn: () => renderSAP() },
+  po:    { previewId: 'po-upload-preview',     infoId: 'po-preview-info',    tableId: 'po-preview-table',    btnId: 'po-import-btn',    stateKey: 'poData',              renderFn: () => renderPo() },
+  order: { previewId: 'order-upload-preview',  infoId: 'order-preview-info', tableId: 'order-preview-table', btnId: 'order-import-btn', stateKey: 'orderData',           renderFn: () => {} },
+};
+
+// type → backend upload type
+const UPLOAD_TYPE_MAP = { taex: 'taex', sap: 'pr', po: 'po', order: null };
+// type → reload endpoint
+const RELOAD_ENDPOINT = { taex: '/data/taex', sap: '/data/pr', po: '/data/po' };
+// type → state key
+const RELOAD_STATE_KEY = { taex: 'taexData', sap: 'prData', po: 'poData' };
+
+async function processUploadFile(file, type) {
+  const backendType = UPLOAD_TYPE_MAP[type];
+
+  // Order masih diproses di browser (format berbeda, tidak ada backend handler)
+  if (!backendType) {
+    _processUploadFileLegacy(file, type);
+    return;
+  }
+
+  // Tampilkan status "Mengirim file ke server..."
+  setSyncStatus('loading', `⏳ Mengirim file ke server...`);
+  const meta = UPLOAD_META[type];
+  if (meta) {
+    document.getElementById(meta.previewId).style.display = 'block';
+    document.getElementById(meta.btnId).style.display = 'none';
+    document.getElementById(meta.infoId).textContent = `⏳ Mengirim file ke server...`;
+    document.getElementById(meta.tableId).innerHTML = '';
+  }
+
+  try {
+    // 1. Kirim file via FormData — tidak parse di browser
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const uploadRes = await fetch(`${API}/upload/${backendType}`, {
+      method: 'POST',
+      headers: { 'x-api-key': 'Xz5jX1R1bqheB0AcVuM8W7jJlUzJGAIK' },
+      body: formData,
+    });
+    if (!uploadRes.ok) throw new Error(`HTTP ${uploadRes.status}`);
+    const { jobId } = await uploadRes.json();
+
+    // 2. Poll progress setiap 600ms
+    await pollUploadProgress(jobId, type, meta);
+
+  } catch(e) {
+    setSyncStatus('err', '❌ Upload gagal: ' + e.message);
+    toast('Upload gagal: ' + e.message, 'err');
+    if (meta) document.getElementById(meta.infoId).textContent = '❌ Gagal: ' + e.message;
+  }
+}
+
+async function pollUploadProgress(jobId, type, meta) {
+  const bar  = document.getElementById('progress-bar');
+  const wrap = document.getElementById('progress-wrap');
+  const lbl  = document.getElementById('progress-label');
+  if (wrap) wrap.style.display = 'block';
+
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/upload-progress/${jobId}`, {
+          headers: { 'x-api-key': 'Xz5jX1R1bqheB0AcVuM8W7jJlUzJGAIK' }
+        });
+        const job = await res.json();
+
+        // Update progress bar
+        if (bar) bar.style.width = job.pct + '%';
+        if (lbl) { lbl.style.display = 'block'; lbl.textContent = job.msg; }
+        if (meta) document.getElementById(meta.infoId).textContent = job.msg;
+        setSyncStatus('loading', `⏳ ${job.msg}`);
+
+        if (job.done) {
+          clearInterval(interval);
+          if (wrap) wrap.style.display = 'none';
+
+          if (job.error) {
+            setSyncStatus('err', '❌ ' + job.error);
+            toast('Upload gagal: ' + job.error, 'err');
+            reject(new Error(job.error));
+            return;
+          }
+
+          // Sukses — reload data dari server
+          setSyncStatus('loading', '⏳ Memuat data terbaru...');
+          const endpoint = RELOAD_ENDPOINT[type];
+          const stateKey = RELOAD_STATE_KEY[type];
+          if (endpoint && stateKey) {
+            const fresh = await apiFetch(`${endpoint}?page=1&limit=${PAGE_LIMIT}`);
+            state[stateKey] = fresh.data || [];
+            if (fresh.pagination && fresh.pagination.hasMore) {
+              const pages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
+              for (let p = 2; p <= pages; p++) {
+                const more = await apiFetch(`${endpoint}?page=${p}&limit=${PAGE_LIMIT}`);
+                state[stateKey] = state[stateKey].concat(more.data || []);
+              }
+            }
+          }
+
+          const meta2 = UPLOAD_META[type];
+          if (meta2) {
+            meta2.renderFn();
+            document.getElementById(meta2.previewId).style.display = 'none';
+          }
+
+          // Tutup modal
+          const modalMap = { taex:'modal-taex-upload', sap:'modal-sap-upload', po:'modal-po-upload' };
+          if (modalMap[type]) closeModal(modalMap[type]);
+
+          setSyncStatus('ok', `✅ ${job.msg} · ${new Date().toLocaleTimeString('id-ID')}`);
+          toast(job.msg, 'ok');
+          resolve();
+        }
+      } catch(e) {
+        clearInterval(interval);
+        if (wrap) wrap.style.display = 'none';
+        setSyncStatus('err', '❌ Polling gagal: ' + e.message);
+        reject(e);
+      }
+    }, 600);
+  });
+}
+
+// Legacy handler untuk order (masih parse di browser)
+function _processUploadFileLegacy(file, type) {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -2403,10 +2537,7 @@ function processUploadFile(file, type) {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
       if (!rows.length) { toast('File kosong atau format tidak dikenali', 'err'); return; }
-      if (type === 'taex') { taexUploadBuffer = rows; showUploadPreview('taex', rows); }
-      else if (type === 'order') { orderUploadBuffer = rows; showUploadPreview('order', rows); }
-      else if (type === 'po') { poUploadBuffer = rows; showUploadPreview('po', rows); }
-      else { sapUploadBuffer = rows; showUploadPreview('sap', rows); }
+      if (type === 'order') { orderUploadBuffer = rows; showUploadPreview('order', rows); }
     } catch(err) { toast('Gagal membaca file: ' + err.message, 'err'); }
   };
   reader.readAsArrayBuffer(file);
@@ -2422,209 +2553,17 @@ function showUploadPreview(type, rows) {
   </table>`;
 }
 
-// ============================================================
-// IMPORT TA-EX — UPSERT (update PR/Item/Qty_PR/Qty_Stock jika ada, insert jika baru)
-// ============================================================
+// importTaexData — sekarang upload langsung terjadi di processUploadFile (server-side)
+// Fungsi ini tidak lagi dipakai untuk taex, tapi dibiarkan agar tidak error jika dipanggil
 async function importTaexData() {
-  if (!taexUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
-
-  // Helper: ambil nilai dari baris r dengan banyak kemungkinan nama kolom
-  const col = (r, ...keys) => { for (const k of keys) { if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k]; } return null; };
-  const num = (r, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || 0 : null; };
-  const numDef = (r, def, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || def : def; };
-
-  // Parse semua baris dari buffer
-  const parsed = taexUploadBuffer.map(r => ({
-    Order:    String(col(r, 'Order', 'order', 'ORDER') || ''),
-    Material: String(col(r, 'Material', 'material', 'MATERIAL') || ''),
-    Itm:      col(r, 'Itm', 'itm', 'ITM', 'Item_No', 'LineItem'),
-    // 4 kolom yang di-update
-    PR:      col(r, 'PR', 'PurchReq', 'Purchreq', 'purchreq', 'PurchaseReq', 'Purchase_Req'),
-    Item:    col(r, 'Item', 'item', 'PR_Item'),
-    Qty_PR:  num(r, 'Qty_PR', 'qty_pr', 'Qty_PurchReq', 'Qty PurchReq', 'QtyPurchReq', 'Qty Requested', 'Qty_Requested'),
-    Qty_Stock: numDef(r, 0, 'Qty_Stock', 'qty_stock', 'Qty_Reserved', 'Qty Reserved', 'QtyReserved', 'Stock'),
-    // kolom lengkap untuk insert baru
-    Plant:               col(r, 'Plant', 'plant', 'Plnt', 'plnt', 'PLANT'),
-    Equipment:           col(r, 'Equipment', 'equipment') || '',
-    Revision:            col(r, 'Revision', 'revision'),
-    Material_Description: col(r, 'Material_Description', 'Material_description', 'material_description', 'Short Text', 'Short_Text', 'ShortText', 'Description', 'description', 'Deskripsi') || '',
-    Qty_Reqmts:          numDef(r, 0, 'Qty_Reqmts', 'qty_reqmts', 'Reqmts_Qty', 'Reqmts Qty', 'Qty Requested', 'Qty_Requested', 'QtyRequested', 'Quantity'),
-    PO:           col(r, 'PO', 'po'),
-    PO_Date:      col(r, 'PO_Date', 'PO Date', 'PO_date', 'PODate'),
-    Qty_Deliv:    num(r, 'Qty_Deliv', 'qty_deliv', 'Qty Deliv', 'QtyDeliv', 'Qty_Delivered'),
-    Delivery_Date: col(r, 'Delivery_Date', 'Delivery Date', 'DeliveryDate', 'Deliv_Date'),
-    Del: col(r, 'Del', 'del', 'D'),
-    FIs: col(r, 'FIs', 'fis', 'FIS', 'Fis'),
-    Ict: col(r, 'Ict', 'ict', 'ICT', 'ICt'),
-    PG:  col(r, 'PG', 'pg'),
-    PGr: col(r, 'PGr', 'pgr', 'PGR'),
-    SLoc: col(r, 'SLoc', 'sloc', 'SLOC', 'Sloc'),
-    Recipient: col(r, 'Recipient', 'recipient'),
-    Unloading_point: col(r, 'Unloading_point', 'Unloading_Point', 'Unloading Point', 'UnloadingPoint', 'unloading_point'),
-    Reqmts_Date: col(r, 'Reqmts_Date', 'reqmts_date', 'ReqDate', 'Req_Date', 'PR_date', 'PRDate', 'Request_Date'),
-    Qty_f_avail_check: num(r, 'Qty_f_avail_check', 'Qty f avail check', 'Qty_f_Avail_Check', 'QtyFAvailCheck'),
-    Qty_Withdrawn: num(r, 'Qty_Withdrawn', 'Qty Withdrawn', 'QtyWithdrawn', 'qty_withdrawn'),
-    UoM: col(r, 'UoM', 'uom', 'UOM', 'Un', 'Unit', 'unit'),
-    GL_Acct: col(r, 'GL_Acct', 'gl_acct', 'G/L Acct', 'GL Acct', 'GLAcct', 'G_L_Acct', 'GlAcct'),
-    Res_Price: num(r, 'Res_Price', 'res_price', 'Valn Price', 'Valn_Price', 'Valn_price', 'ValPrice', 'Price', 'price'),
-    Res_per:   num(r, 'Res_per', 'res_per', 'Per', 'per', 'ResPer'),
-    Res_Curr:  col(r, 'Res_Curr', 'res_curr', 'Crcy', 'crcy', 'Currency', 'Curr'),
-  }));
-
-  // Upsert: match by Order + Material + Itm
-  let updated = 0, inserted = 0;
-  const maxId = state.taexData.reduce((m, r) => Math.max(m, r.ID || 0), 0);
-  let nextId = maxId + 1;
-
-  const result = [...state.taexData];
-  parsed.forEach(p => {
-    const idx = result.findIndex(e =>
-      String(e.Order) === String(p.Order) &&
-      String(e.Material) === String(p.Material) &&
-      String(e.Itm ?? '') === String(p.Itm ?? '')
-    );
-    if (idx >= 0) {
-      // UPDATE hanya 4 kolom
-      result[idx] = {
-        ...result[idx],
-        PR:        p.PR,
-        Item:      p.Item,
-        Qty_PR:    p.Qty_PR,
-        Qty_Stock: p.Qty_Stock,
-      };
-      updated++;
-    } else {
-      // INSERT baris baru
-      result.push({ ...p, ID: nextId++ });
-      inserted++;
-    }
-  });
-
-  state.taexData = result;
-
-  showLoading('Menyimpan data TA-ex...', true);
-  setSyncStatus('loading', '⏳ Menyimpan data ke server...');
-  const wrap = document.getElementById('progress-wrap');
-  if (wrap) wrap.style.display = 'block';
-  try {
-    const sent = await chunkedReplace('/taex', result, 'TA-ex');
-    // Reload state dari server supaya ID konsisten
-    const fresh = await apiFetch(`/data/taex?page=1&limit=${PAGE_LIMIT}`);
-    state.taexData = fresh.data || [];
-    // Muat sisa halaman jika > PAGE_LIMIT
-    if (fresh.pagination && fresh.pagination.hasMore) {
-      const totalPages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
-      for (let p = 2; p <= totalPages; p++) {
-        const more = await apiFetch(`/data/taex?page=${p}&limit=${PAGE_LIMIT}`);
-        state.taexData = state.taexData.concat(more.data || []);
-      }
-    }
-    if (wrap) wrap.style.display = 'none';
-    hideLoading();
-    closeModal('modal-taex-upload');
-    renderTaex(); populateFilters();
-    taexUploadBuffer = [];
-    const msg = `Upload selesai · ${sent.toLocaleString()} baris tersimpan`;
-    setSyncStatus('ok', `✅ ${msg} · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast(msg, 'ok');
-  } catch(e) {
-    if (wrap) wrap.style.display = 'none';
-    hideLoading();
-    setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
-    toast('Gagal simpan ke server!', 'err');
-  }
+  toast('Upload sudah otomatis saat file dipilih.', 'info');
 }
 
 // ============================================================
-// IMPORT SAP PR — PUSH KE BACKEND ✅
+// IMPORT SAP PR — sekarang upload langsung via processUploadFile (server-side)
 // ============================================================
 async function importSapData() {
-  if (!sapUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
-  const replace = document.getElementById('sap-replace-check').checked;
-  const maxId = replace ? 0 : state.prData.reduce((m,r)=>Math.max(m,r.ID||0),0);
-
-  // Helper: ambil nilai dari baris r dengan banyak kemungkinan nama kolom
-  const col = (r, ...keys) => { for (const k of keys) { if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k]; } return null; };
-  const num = (r, ...keys) => { const v = col(r, ...keys); return v !== null ? parseFloat(v) || null : null; };
-
-  const newRows = sapUploadBuffer.map((r, i) => ({
-    ID: maxId + i + 1,
-
-    Plant: col(r, 'Plant', 'plant', 'Plnt', 'plnt'),
-
-    // PR — SAP export pakai "PurchReq"
-    PR: col(r, 'PR', 'PurchReq', 'Purchreq', 'purchreq', 'No_PR', 'pr', 'PurchaseReq'),
-
-    Item: col(r, 'Item', 'item', 'PR_Item'),
-
-    Material: String(col(r, 'Material', 'material', 'MATERIAL') || ''),
-
-    // Deskripsi — SAP export pakai "Short Text"
-    Material_Description: col(r, 'Material_Description', 'Material_description',
-                               'material_description', 'Short Text', 'Short_Text',
-                               'ShortText', 'Description', 'description') || '',
-
-    // D & R — SAP export pakai "D" dan "R" langsung
-    D: col(r, 'D', 'Del', 'del'),
-    R: col(r, 'R', 'r'),
-
-    PGr: col(r, 'PGr', 'pgr', 'PGR'),
-
-    TrackingNo: col(r, 'TrackingNo', 'Tracking_No', 'Tracking No', 'trackingno'),
-
-    // Qty PR — SAP export pakai "Qty Requested" atau "Qty_Purchreq"
-    Qty_PR: num(r, 'Qty_PR', 'qty_pr', 'Qty_Purchreq', 'Qty_PurchReq',
-                    'Qty PurchReq', 'Qty Requested', 'Qty_Requested', 'QtyPurchreq'),
-
-    // UoM — SAP export pakai "Un"
-    Un: col(r, 'Un', 'UoM', 'uom', 'UOM', 'Unit', 'unit'),
-
-    // Tanggal — SAP export pakai "ReqDate"
-    Req_Date: col(r, 'Req_Date', 'ReqDate', 'Reqdate', 'req_date', 'PR_date', 'Request_Date'),
-
-    // Harga — SAP export pakai "Valn Price"
-    Valn_price: num(r, 'Valn_price', 'Valn Price', 'Valn_Price', 'ValPrice', 'valn_price'),
-
-    // Mata uang — SAP export pakai "Crcy" atau "Curr"
-    PR_Curr: col(r, 'PR_Curr', 'pr_curr', 'Crcy', 'crcy', 'Curr', 'Currency', 'Curr'),
-
-    // Per — SAP export pakai "Per"
-    PR_Per: num(r, 'PR_Per', 'pr_per', 'Per', 'per'),
-
-    Release_Date: col(r, 'Release_Date', 'Release Date', 'ReleaseDate', 'release_date'),
-
-    Tracking: col(r, 'Tracking', 'tracking', 'CodeTracking', 'Code_Tracking',
-                     'TrackingNo', 'Tracking_No'),
-  }));
-
-  showLoading('Mengimport data SAP PR...', true);
-  setSyncStatus('loading', '⏳ Menyimpan data PR ke server...');
-  const wrap = document.getElementById('progress-wrap');
-  if (wrap) wrap.style.display = 'block';
-  try {
-    const sent = await chunkedReplace('/pr', newRows, 'SAP PR');
-    // Reload dari server
-    const fresh = await apiFetch(`/data/pr?page=1&limit=${PAGE_LIMIT}`);
-    state.prData = fresh.data || [];
-    if (fresh.pagination && fresh.pagination.hasMore) {
-      const totalPages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
-      for (let p = 2; p <= totalPages; p++) {
-        const more = await apiFetch(`/data/pr?page=${p}&limit=${PAGE_LIMIT}`);
-        state.prData = state.prData.concat(more.data || []);
-      }
-    }
-    if (wrap) wrap.style.display = 'none';
-    hideLoading();
-    closeModal('modal-sap-upload');
-    renderSAP(); sapUploadBuffer = [];
-    setSyncStatus('ok', `✅ Data SAP PR tersimpan · ${sent.toLocaleString()} baris · ${new Date().toLocaleTimeString('id-ID')}`);
-    toast(`${sent.toLocaleString()} baris berhasil diimport ke SAP PR!`, 'ok');
-  } catch(e) {
-    if (wrap) wrap.style.display = 'none';
-    hideLoading();
-    setSyncStatus('err', '❌ Gagal simpan ke server: ' + e.message);
-    toast('Gagal simpan ke server!', 'err');
-  }
+  toast('Upload sudah otomatis saat file dipilih.', 'info');
 }
 
 // ============================================================

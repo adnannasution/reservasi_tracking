@@ -544,7 +544,166 @@ async function uploadToGCS(buffer, originalname) {
   }
 }
 
-// Proses Excel per batch 500 baris — hemat memory
+// ─────────────────────────────────────────────
+// UPLOAD JOB PROGRESS — in-memory store per jobId
+// ─────────────────────────────────────────────
+const uploadJobs = new Map(); // jobId → { pct, msg, done, error }
+
+function setJobProgress(jobId, pct, msg, done = false, error = null) {
+  uploadJobs.set(jobId, { pct, msg, done, error, ts: Date.now() });
+}
+
+// Cleanup job lama (>10 menit)
+setInterval(() => {
+  const cutoff = Date.now() - 10 * 60 * 1000;
+  for (const [id, job] of uploadJobs) {
+    if (job.ts < cutoff) uploadJobs.delete(id);
+  }
+}, 60_000);
+
+// GET /api/upload-progress/:jobId — polling endpoint
+app.get('/api/upload-progress/:jobId', requireApiKey, (req, res) => {
+  const job = uploadJobs.get(req.params.jobId);
+  if (!job) return res.json({ pct: 0, msg: 'Menunggu...', done: false });
+  res.json(job);
+});
+
+// ─────────────────────────────────────────────
+// UPLOAD EXCEL — server-side parse, no browser freeze
+// POST /api/upload/:type  (type: taex | prisma | pr | po)
+// Multipart form: field "file" = Excel file
+// Returns: { jobId } immediately, client polls /api/upload-progress/:jobId
+// ─────────────────────────────────────────────
+app.post('/api/upload/:type', requireApiKey, upload.single('file'), (req, res) => {
+  const type = req.params.type;
+  if (!['taex','prisma','pr','po'].includes(type))
+    return res.status(400).json({ error: 'Type tidak valid' });
+  if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
+
+  const jobId = `${type}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  setJobProgress(jobId, 0, 'Membaca file Excel...');
+
+  // Jalankan proses di background (tidak block response)
+  res.json({ jobId });
+
+  // Background processing
+  (async () => {
+    try {
+      const buffer = req.file.buffer;
+
+      setJobProgress(jobId, 5, 'Parsing Excel...');
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      if (rows.length === 0) {
+        setJobProgress(jobId, 100, 'File kosong', true, 'File Excel kosong atau format tidak sesuai');
+        return;
+      }
+
+      setJobProgress(jobId, 10, `Parsed ${rows.length.toLocaleString()} baris. Menyimpan ke database...`);
+
+      // Upload ke GCS (tidak kritis, jalan paralel)
+      uploadToGCS(buffer, req.file.originalname).catch(() => {});
+
+      const BATCH = 500;
+      const total = rows.length;
+      let inserted = 0;
+
+      // DELETE dulu di luar transaction batch supaya tidak lock lama
+      const tableMap = { taex:'taex_reservasi', prisma:'prisma_reservasi', pr:'sap_pr', po:'sap_po' };
+      await query(`DELETE FROM ${tableMap[type]}`);
+
+      for (let i = 0; i < total; i += BATCH) {
+        const batch = rows.slice(i, i + BATCH);
+
+        await withTransaction(async (client) => {
+          const vals = [], params = [];
+
+          if (type === 'taex') {
+            batch.forEach((r, idx) => {
+              const b = idx * 31;
+              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31})`);
+              params.push(r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+                r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
+                r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+                r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
+                r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
+                r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
+                r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null);
+            });
+            await client.query(
+              `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr) VALUES ${vals.join(',')}`,
+              params
+            );
+          }
+
+          if (type === 'prisma') {
+            batch.forEach((r, idx) => {
+              const b = idx * 22;
+              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22})`);
+              params.push(r.Plant||null,r.Equipment||null,r.Revision||null,r.Order||null,r.Reservno||null,r.Itm||null,
+                r.Material||null,r.Material_Description||null,
+                r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
+                r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
+                r.Qty_Reqmts||0,r.UoM||null,
+                r.PR_Prisma||null,r.Item_Prisma||null,r.Qty_PR_Prisma??null,
+                r.Qty_StockOnhand??null,r.CodeKertasKerja||null);
+            });
+            await client.query(
+              `INSERT INTO prisma_reservasi (plant,equipment,revision,"order",reservno,itm,material,material_description,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_reqmts,uom,pr_prisma,item_prisma,qty_pr_prisma,qty_stock_onhand,code_kertas_kerja) VALUES ${vals.join(',')}`,
+              params
+            );
+          }
+
+          if (type === 'pr') {
+            batch.forEach((r, idx) => {
+              const b = idx * 17;
+              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17})`);
+              params.push(r.Plant||null,r.PR||r.Purchreq||null,r.Item||null,r.Material||null,r.Material_Description||r.Material_description||null,
+                r.D||null,r.R||null,r.PGr||null,r.TrackingNo||null,
+                r.Qty_PR??r.Qty_Purchreq??null,r.Un||null,r.Req_Date||r.Reqdate||null,
+                r.Valn_price??null,r.PR_Curr||null,r.PR_Per??null,r.Release_Date||null,
+                r.Tracking||r.TrackingNo||null);
+            });
+            await client.query(
+              `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking) VALUES ${vals.join(',')}`,
+              params
+            );
+          }
+
+          if (type === 'po') {
+            batch.forEach((r, idx) => {
+              const b = idx * 18;
+              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18})`);
+              params.push(r.Plnt||null,r.Purchreq||null,r.Item||null,r.Material||null,r.Short_Text||r['Short Text']||null,
+                r.PO||null,r.PO_Item||null,r.D||null,r.DCI||null,r.PGr||null,r.Doc_Date||r['Doc. Date']||null,
+                r.PO_Quantity??r['PO Quantity']??null,r.Qty_Delivered??r['Qty Delivered']??null,
+                r.Deliv_Date||r['Deliv. Date']||null,r.OUn||null,
+                r.Net_Price??r['Net Price']??null,r.Crcy||null,r.Per??null);
+            });
+            await client.query(
+              `INSERT INTO sap_po (plnt,purchreq,item,material,short_text,po,po_item,d,dci,pgr,doc_date,po_quantity,qty_delivered,deliv_date,oun,net_price,crcy,per) VALUES ${vals.join(',')}`,
+              params
+            );
+          }
+        });
+
+        inserted += batch.length;
+        const pct = 10 + Math.round((inserted / total) * 88);
+        setJobProgress(jobId, pct, `Menyimpan... ${inserted.toLocaleString()} / ${total.toLocaleString()} baris`);
+      }
+
+      setJobProgress(jobId, 100, `✅ Selesai! ${total.toLocaleString()} baris tersimpan`, true);
+      console.log(`✅ Upload ${type}: ${total} baris`);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setJobProgress(jobId, 100, '❌ ' + err.message, true, err.message);
+    }
+  })();
+});
+
+// Proses Excel per batch 500 baris — hemat memory (legacy, masih dipakai route lama)
 async function processExcelBatch(buffer, type) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
