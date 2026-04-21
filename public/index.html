@@ -1344,7 +1344,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
       <span class="search-clear" onclick="clearSearch('audit-search','audit')">✕</span>
     </span>
     <label>Kolom berubah:</label>
-    <select id="audit-filter-col" onchange="renderAudit()">
+    <select id="audit-filter-col" onchange="fetchAndRenderAudit()">
       <option value="">Semua</option>
       <option value="Equipment">Equipment</option>
       <option value="Reservno">Reserv.No.</option>
@@ -1360,7 +1360,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
       <option value="Unloading_point">Unloading Point</option>
       <option value="Reqmts_Date">Reqmt Date</option>
     </select>
-    <button class="btn btn-search" onclick="renderAudit()">Cari</button>
+    <button class="btn btn-search" onclick="fetchAndRenderAudit()">Cari</button>
     <button class="btn btn-reset" onclick="auditResetFilter()">Reset</button>
     <button class="btn btn-export" onclick="exportAuditExcel()" style="margin-left:8px">📤 Export Excel</button>
     <span class="filter-right" id="audit-rowCount"></span>
@@ -1904,6 +1904,26 @@ async function chunkedReplace(endpoint, allRows, progressLabel) {
 // ============================================================
 const PAGE_LIMIT = 2000;
 
+// ── PRISMA FULL LOAD — lazy fetch semua data prisma saat dibutuhkan ──
+let _prismaFullyLoaded = false;
+
+async function ensurePrismaLoaded() {
+  if (_prismaFullyLoaded && state.prismaReservasiData.length > 0) return;
+  try {
+    const rows = await apiFetch('/prisma');
+    state.prismaReservasiData = rows || [];
+    state._totalPrisma = state.prismaReservasiData.length;
+    _prismaFullyLoaded = true;
+  } catch(e) {
+    toast('Gagal memuat data PRISMA lengkap: ' + e.message, 'err');
+    throw e;
+  }
+}
+
+function invalidatePrismaCache() {
+  _prismaFullyLoaded = false;
+}
+
 async function init() {
   setInitProgress(10, 'Menghubungkan ke server...');
   setSyncStatus('loading', '⏳ Memuat data dari server...');
@@ -1993,7 +2013,7 @@ function switchApp(app) {
   renderPage(app);
 }
 
-function renderAll() { renderTaex(); renderPrismaReservasi(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); renderAudit(); }
+function renderAll() { renderTaex(); renderPrismaReservasi(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); }
 function renderPage(app) {
   if (app==='taex') renderTaex();
   else if (app==='prisma-reservasi') renderPrismaReservasi();
@@ -2004,17 +2024,26 @@ function renderPage(app) {
   else if (app==='order') renderOrder();
   else if (app==='po') renderPo();
   else if (app==='tracking') renderTracking();
-  else if (app==='audit') renderAudit();
+  else if (app==='audit') fetchAndRenderAudit();
 }
 
 function populateFilters() {
-  // Filter PR taex: dari halaman saat ini (taexFiltered), bukan semua 94rb baris
+  // Filter PR taex: dari halaman saat ini
   const sel1 = document.getElementById('taex-filterPR');
   sel1.innerHTML = '<option value="">Semua</option>';
   [...new Set(taexFiltered.map(r=>r.PR).filter(Boolean))].sort().forEach(p => sel1.innerHTML += `<option value="${p}">${p}</option>`);
-  const sel2 = document.getElementById('pr-filterOrder');
-  sel2.innerHTML = '<option value="">Semua Order</option>';
-  [...new Set(state.prismaReservasiData.map(r=>r.Order).filter(Boolean))].sort().forEach(o => sel2.innerHTML += `<option value="${o}">${o}</option>`);
+  // Filter Order prisma: fetch dari server agar lengkap meski data ribuan baris
+  apiFetch('/prisma/meta').then(meta => {
+    const sel2 = document.getElementById('pr-filterOrder');
+    sel2.innerHTML = '<option value="">Semua Order</option>';
+    (meta.orders || []).forEach(o => sel2.innerHTML += `<option value="${o}">${o}</option>`);
+  }).catch(() => {
+    // fallback ke state jika gagal
+    const sel2 = document.getElementById('pr-filterOrder');
+    sel2.innerHTML = '<option value="">Semua Order</option>';
+    [...new Set(state.prismaReservasiData.map(r=>r.Order).filter(Boolean))].sort()
+      .forEach(o => sel2.innerHTML += `<option value="${o}">${o}</option>`);
+  });
   const sel3 = document.getElementById('ks-filterCode');
   sel3.innerHTML = '<option value="">Semua</option>';
   [...new Set(state.kumpulanData.map(r=>r.CodeTracking).filter(Boolean))].sort().forEach(c => sel3.innerHTML += `<option value="${c}">${c}</option>`);
@@ -2763,6 +2792,10 @@ async function submitAddTaex() {
 async function syncWithTaex() {
   const taex = state.taexCurrentPage || [];
   if (!taex.length) { toast('Data TA-ex kosong! Pastikan halaman TA-ex sudah dimuat.', 'err'); return; }
+  // Pastikan semua data PRISMA dimuat untuk cek duplikat
+  showLoading('Memuat data PRISMA...', true);
+  try { await ensurePrismaLoaded(); } catch(e) { hideLoading(); return; }
+  hideLoading();
 
   // ── FILTER: blokir baris yang mengandung 'x'/'X' di Del atau FIs ──
   // ── FILTER: Ict WAJIB 'L' (case-insensitive tidak berlaku — harus huruf L besar) ──
@@ -2814,6 +2847,7 @@ async function syncWithTaex() {
   setSyncStatus('loading', '⏳ Sinkronisasi ke server...');
   try {
     await apiPut('/prisma', syncedData);
+    invalidatePrismaCache();
     hideLoading();
     renderPrismaReservasi(); populateFilters();
     let msg = `✅ Sinkronisasi selesai · ${newRows.length} baris baru ditambahkan`;
@@ -2844,6 +2878,9 @@ function generateKKCode() {
 }
 
 async function openKertasKerjaModal() {
+  showLoading('Memuat data PRISMA...', true);
+  try { await ensurePrismaLoaded(); } catch(e) { hideLoading(); return; }
+  hideLoading();
   // Generate kode 10 digit alphanumeric, pastikan unik dari kumpulanData
   const existingCodes = new Set([
     ...state.kumpulanData.map(r => r.CodeTracking),
@@ -2853,10 +2890,17 @@ async function openKertasKerjaModal() {
   while (existingCodes.has(code)) code = generateKKCode(); // regenerate jika tabrakan
   document.getElementById('kk-input-code').value = code;
 
-  const pgs = [...new Set(state.prismaReservasiData.map(r=>r.PG).filter(Boolean))].sort();
+  // Fetch PG list dari server (lengkap, bukan hanya data di memori)
   const sel = document.getElementById('kk-input-order');
   sel.innerHTML = '<option value="">Semua PG</option>';
-  pgs.forEach(pg => sel.innerHTML+=`<option value="${pg}">${pg}</option>`);
+  try {
+    const meta = await apiFetch('/prisma/meta');
+    (meta.pgs || []).forEach(pg => sel.innerHTML += `<option value="${pg}">${pg}</option>`);
+  } catch {
+    // fallback ke state
+    [...new Set(state.prismaReservasiData.map(r=>r.PG).filter(Boolean))].sort()
+      .forEach(pg => sel.innerHTML += `<option value="${pg}">${pg}</option>`);
+  }
   openModal('modal-kk');
 }
 
@@ -2915,6 +2959,7 @@ async function submitKertasKerja() {
   try {
     await apiFetch('/state/summary_current', { method:'POST', body:{ value: state.summaryData } });
     await apiPut('/prisma', state.prismaReservasiData);
+    invalidatePrismaCache();
     await apiFetch('/state/kk_current', { method:'POST', body:{ value: { code: null, data: [] } } });
     state.kkData = [];
     state.kkCode = null;
@@ -3004,6 +3049,9 @@ function openPRModal() {
 
 async function submitPR() {
   if (!state.prData.length) { toast('Belum ada data SAP PR!', 'err'); return; }
+  showLoading('Memuat data PRISMA...', true);
+  try { await ensurePrismaLoaded(); } catch(e) { hideLoading(); return; }
+  hideLoading();
 
   // Cocokkan prData ke kumpulanData by Material + Tracking
   let matchCount = 0;
@@ -3043,6 +3091,7 @@ async function submitPR() {
   try {
     await apiPut('/kumpulan', state.kumpulanData);
     await apiPut('/prisma', state.prismaReservasiData);
+    invalidatePrismaCache();
     // Taex: save hanya baris yang berubah di halaman saat ini
     if (state.taexCurrentPage && state.taexCurrentPage.length) {
       await apiPut('/taex', state.taexCurrentPage);
@@ -3233,6 +3282,7 @@ function debounceRender(app) {
   if (app === 'pr')  { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderSAP(), 350); return; }
   if (app === 'po')  { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderPo(), 350); return; }
   if (app === 'kumpulan') { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderKumpulan(), 350); return; }
+  if (app === 'audit')    { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderAudit(), 350); return; }
   clearTimeout(_debounceTimers[app]);
   _debounceTimers[app] = setTimeout(() => {
     resetPg(appToKey(app));
@@ -3246,6 +3296,7 @@ function appToKey(app) {
 function clearSearch(inputId, app) {
   document.getElementById(inputId).value = '';
   if (app === 'taex') { taexApplyFilter(); return; }
+  if (app === 'audit') { resetPg('audit'); fetchAndRenderAudit(); return; }
   resetPg(appToKey(app));
   renderPage(app);
 }
@@ -3332,7 +3383,10 @@ async function exportTaexExcel() {
   }
 }
 
-function exportPrismaExcel() {
+async function exportPrismaExcel() {
+  showLoading('Memuat data PRISMA...', true);
+  try { await ensurePrismaLoaded(); } catch(e) { hideLoading(); return; }
+  hideLoading();
   if (!state.prismaReservasiData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
   const ws = XLSX.utils.json_to_sheet(state.prismaReservasiData.map(r=>({
     Plant:r.Plant||'', Equipment:r.Equipment||'', Revision:r.Revision||'',
@@ -3521,7 +3575,7 @@ function normalizeOrderRow(rawRow) {
   return out;
 }
 
-function importOrderData() {
+async function importOrderData() {
   if (!orderUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
   const replace = document.getElementById('order-replace-check').checked;
   const maxId = replace ? 0 : state.orderData.reduce((m,r)=>Math.max(m,r.ID||0),0);
@@ -3556,9 +3610,22 @@ function importOrderData() {
   if (replace) state.orderData = newRows;
   else state.orderData = [...state.orderData, ...newRows];
   closeModal('modal-order-upload');
-  renderOrder();
   orderUploadBuffer = [];
-  toast(`${newRows.length} baris berhasil diimport ke Order!`, 'ok');
+  renderOrder();
+  updateBadges();
+  // Persist ke server
+  showLoading('Menyimpan data Order...', true);
+  setSyncStatus('loading', '⏳ Menyimpan Order ke server...');
+  try {
+    await apiFetch('/order', { method: 'PUT', body: state.orderData });
+    hideLoading();
+    setSyncStatus('ok', `✅ Order tersimpan · ${state.orderData.length.toLocaleString()} baris · ${new Date().toLocaleTimeString('id-ID')}`);
+    toast(`${newRows.length} baris berhasil diimport dan disimpan!`, 'ok');
+  } catch(e) {
+    hideLoading();
+    setSyncStatus('err', '❌ Gagal simpan Order: ' + e.message);
+    toast(`Import berhasil tapi gagal simpan ke server: ${e.message}`, 'err');
+  }
 }
 
 function downloadOrderTemplate() {
@@ -4557,11 +4624,11 @@ async function saveTabData(tab) {
   try {
     const rows = state[tabStateMap[tab]];
     if (rows.length > 1000) {
-      // Pakai chunkedReplace untuk data besar
       await chunkedReplace(tabApiMap[tab], rows, tab.toUpperCase());
     } else {
       await apiFetch(tabApiMap[tab], { method: 'PUT', body: rows });
     }
+    if (tab === 'prisma') invalidatePrismaCache();
     setSyncStatus('ok', `✅ Data disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Data berhasil disimpan!', 'ok');
   } catch(e) {
@@ -4769,94 +4836,69 @@ async function saveEdit() {
 // ============================================================
 
 // Kolom yang dibandingkan beserta label
-const AUDIT_COLS = [
-  { key: 'Equipment',            label: 'Equipment' },
-  { key: 'Reservno',             label: 'Reserv.No.' },
-  { key: 'Revision',             label: 'Revision' },
-  { key: 'Material_Description', label: 'Material Description' },
-  { key: 'Qty_Reqmts',           label: 'Reqmt Qty' },
-  { key: 'Del',                  label: 'Del' },
-  { key: 'FIs',                  label: 'FIs' },
-  { key: 'Ict',                  label: 'ICt' },
-  { key: 'PG',                   label: 'PG' },
-  { key: 'UoM',                  label: 'BUn' },
-  { key: 'Recipient',            label: 'Recipient' },
-  { key: 'Unloading_point',      label: 'Unloading Point' },
-  { key: 'Reqmts_Date',          label: 'Reqmt Date' },
-];
-
-let auditFiltered = [];
-
-function buildAuditData() {
-  const diffs = [];
-  state.prismaReservasiData.forEach(p => {
-    const key = `${p.Order}||${p.Material}||${String(p.Itm ?? '')}`;
-    const t = taexFiltered.find(e =>
-      String(e.Order) === String(p.Order) &&
-      String(e.Material) === String(p.Material) &&
-      String(e.Itm ?? '') === String(p.Itm ?? '')
-    );
-    if (!t) return; // tidak ada di taex, skip
-
-    AUDIT_COLS.forEach(col => {
-      const vPrisma = String(p[col.key] ?? '').trim();
-      const vTaex   = String(t[col.key] ?? '').trim();
-      if (vPrisma !== vTaex) {
-        diffs.push({
-          Order:    p.Order,
-          Material: p.Material,
-          Itm:      p.Itm,
-          col_key:  col.key,
-          col_label: col.label,
-          val_prisma: p[col.key],
-          val_taex:   t[col.key],
-        });
-      }
-    });
-  });
-  return diffs;
-}
+// ── AUDIT — server-side (full DB JOIN, bukan hanya halaman saat ini) ──
+let auditServerMeta = { total: 0, totalPages: 1, page: 1, limit: 100, changedRows: 0 };
+let auditData = [];  // current page dari server
+let _auditDebounce = null;
 
 function auditResetFilter() {
   document.getElementById('audit-search').value = '';
   document.getElementById('audit-filter-col').value = '';
-  renderAudit();
+  pgState['audit'] = { page: 1, size: getPg('audit').size };
+  fetchAndRenderAudit();
+}
+
+function debounceRenderAudit() {
+  clearTimeout(_auditDebounce);
+  _auditDebounce = setTimeout(() => fetchAndRenderAudit(), 350);
+}
+
+async function fetchAndRenderAudit() {
+  const q    = (document.getElementById('audit-search')?.value || '').trim();
+  const fCol = document.getElementById('audit-filter-col')?.value || '';
+  const pg   = getPg('audit');
+
+  const params = new URLSearchParams({ page: pg.page, limit: pg.size });
+  if (q)    params.set('q', q);
+  if (fCol) params.set('col', fCol);
+
+  const tbody = document.getElementById('audit-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6">⏳ Memuat audit dari server...</td></tr>';
+
+  try {
+    const result = await apiFetch('/audit?' + params.toString());
+    auditData = result.data || [];
+    auditServerMeta = {
+      ...result.pagination,
+      changedRows: result.changedRows || 0,
+    };
+
+    // Update info bar
+    document.getElementById('audit-total').textContent       = auditServerMeta.total + ' perbedaan';
+    document.getElementById('audit-taex-count').textContent  = taexServerMeta.total || '—';
+    document.getElementById('audit-prisma-count').textContent = state._totalPrisma || prServerMeta?.total || '—';
+    document.getElementById('audit-changed-label').textContent = auditServerMeta.changedRows + ' baris berubah';
+    document.getElementById('badge-audit').textContent = auditServerMeta.changedRows;
+    document.getElementById('audit-rowCount').textContent = auditServerMeta.total + ' perbedaan';
+
+    renderAudit();
+  } catch(e) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="6">❌ Gagal memuat audit: ${e.message}</td></tr>`;
+  }
 }
 
 function renderAudit() {
-  const allDiffs = buildAuditData();
-  const q      = (document.getElementById('audit-search').value || '').toLowerCase();
-  const fCol   = document.getElementById('audit-filter-col').value;
-
-  let filtered = allDiffs.filter(d => {
-    const mq  = !q || [d.Order, d.Material, d.Itm, d.col_label].some(v => String(v||'').toLowerCase().includes(q));
-    const mc  = !fCol || d.col_key === fCol;
-    return mq && mc;
-  });
-
-  auditFiltered = filtered;
-
-  // Update info bar
-  const changedRows = new Set(allDiffs.map(d => `${d.Order}||${d.Material}||${d.Itm}`)).size;
-  document.getElementById('audit-total').textContent      = allDiffs.length + ' perbedaan';
-  document.getElementById('audit-taex-count').textContent = taexServerMeta.total || 0;
-  document.getElementById('audit-prisma-count').textContent = state.prismaReservasiData.length;
-  document.getElementById('audit-changed-label').textContent = changedRows + ' baris berubah';
-  document.getElementById('badge-audit').textContent = changedRows;
-
   const tbody = document.getElementById('audit-tbody');
-  document.getElementById('audit-rowCount').textContent = filtered.length + ' perbedaan';
 
-  if (!filtered.length) {
-    tbody.innerHTML = allDiffs.length === 0
+  if (!auditData.length) {
+    tbody.innerHTML = auditServerMeta.total === 0
       ? '<tr class="loading-row"><td colspan="6">✅ Tidak ada perbedaan — data TA-ex dan PRISMA konsisten.</td></tr>'
       : '<tr class="loading-row"><td colspan="6">Tidak ada hasil untuk filter ini.</td></tr>';
-    renderPagination('audit-pagination','audit',0,1,1,100,renderAudit);
+    renderPagination('audit-pagination','audit',0,1,1,100,fetchAndRenderAudit);
     return;
   }
 
-  const pg = paginate(filtered, 'audit');
-  tbody.innerHTML = pg.rows.map(d => `<tr>
+  tbody.innerHTML = auditData.map(d => `<tr>
     <td class="mono" style="color:#1a56db;font-weight:700">${D(d.Order)}</td>
     <td class="mono">${D(d.Material)}</td>
     <td class="center mono">${D(d.Itm)}</td>
@@ -4865,27 +4907,41 @@ function renderAudit() {
     <td><span class="audit-changed-new">${d.val_taex ?? '—'}</span></td>
   </tr>`).join('');
 
-  renderPagination('audit-pagination','audit',pg.total,pg.page,pg.totalPages,pg.size,renderAudit);
+  renderPagination('audit-pagination','audit',
+    auditServerMeta.total, auditServerMeta.page,
+    auditServerMeta.totalPages, auditServerMeta.limit,
+    fetchAndRenderAudit);
 }
 
-function exportAuditExcel() {
-  const data = buildAuditData();
-  if (!data.length) { toast('Tidak ada perbedaan untuk diekspor', 'info'); return; }
-  const rows = data.map(d => ({
-    Order:         d.Order || '',
-    Material:      d.Material || '',
-    Itm:           d.Itm ?? '',
-    Kolom:         d.col_label,
-    Nilai_PRISMA:  d.val_prisma ?? '',
-    Nilai_TAex:    d.val_taex ?? '',
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:14},{wch:16},{wch:6},{wch:22},{wch:30},{wch:30}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Audit');
-  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  XLSX.writeFile(wb, `Audit_TAex_PRISMA_${ts}.xlsx`);
-  toast('Export Audit berhasil!', 'ok');
+async function exportAuditExcel() {
+  toast('Mengambil semua data audit untuk export...', 'info');
+  try {
+    const q    = (document.getElementById('audit-search')?.value || '').trim();
+    const fCol = document.getElementById('audit-filter-col')?.value || '';
+    const params = new URLSearchParams({ page: 1, limit: 5000 });
+    if (q)    params.set('q', q);
+    if (fCol) params.set('col', fCol);
+    const result = await apiFetch('/audit?' + params.toString());
+    const data = result.data || [];
+    if (!data.length) { toast('Tidak ada perbedaan untuk diekspor', 'info'); return; }
+    const rows = data.map(d => ({
+      Order:         d.Order || '',
+      Material:      d.Material || '',
+      Itm:           d.Itm ?? '',
+      Kolom:         d.col_label,
+      Nilai_PRISMA:  d.val_prisma ?? '',
+      Nilai_TAex:    d.val_taex ?? '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:14},{wch:16},{wch:6},{wch:22},{wch:30},{wch:30}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Audit');
+    const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    XLSX.writeFile(wb, `Audit_TAex_PRISMA_${ts}.xlsx`);
+    toast('Export Audit berhasil!', 'ok');
+  } catch(e) {
+    toast('Export Audit gagal: ' + e.message, 'err');
+  }
 }
 
 // ============================================================

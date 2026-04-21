@@ -290,6 +290,59 @@ async function migrate() {
 
 
   await query(`
+    CREATE TABLE IF NOT EXISTS work_order (
+      id                 SERIAL PRIMARY KEY,
+      plant              TEXT,
+      "order"            TEXT,
+      superior_order     TEXT,
+      notification       TEXT,
+      created_on         TEXT,
+      description        TEXT,
+      revision           TEXT,
+      equipment          TEXT,
+      system_status      TEXT,
+      user_status        TEXT,
+      funct_location     TEXT,
+      location           TEXT,
+      wbs_ord_header     TEXT,
+      cost_center        TEXT,
+      total_plan_cost    NUMERIC,
+      total_act_cost     NUMERIC,
+      planner_group      TEXT,
+      main_work_ctr      TEXT,
+      entry_by           TEXT,
+      changed_by         TEXT,
+      basic_start_date   TEXT,
+      basic_finish_date  TEXT,
+      actual_release     TEXT,
+      created_at         TIMESTAMPTZ DEFAULT NOW(),
+      updated_at         TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // ALTER TABLE work_order — migrasi DB lama
+  const woMigrations = [
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS plant TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS superior_order TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS notification TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS created_on TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS funct_location TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS location TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS wbs_ord_header TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS cost_center TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS total_plan_cost NUMERIC`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS total_act_cost NUMERIC`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS planner_group TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS main_work_ctr TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS entry_by TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS changed_by TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS basic_start_date TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS basic_finish_date TEXT`,
+    `ALTER TABLE work_order ADD COLUMN IF NOT EXISTS actual_release TEXT`,
+  ];
+  for (const sql of woMigrations) { await query(sql); }
+
+  await query(`
     CREATE TABLE IF NOT EXISTS app_state (
       key        TEXT PRIMARY KEY,
       value      TEXT,
@@ -514,6 +567,63 @@ const mapSAP = r => ({
   Tracking: r.tracking,
 });
 
+
+// ── ORDER HEADER ALIAS MAP ──
+const ORDER_HEADER_MAP_SRV = {
+  'plant':'Plant','order':'Order',
+  'superior order':'Superior_Order','superior_order':'Superior_Order',
+  'notification':'Notification',
+  'created on':'Created_On','created_on':'Created_On','createdon':'Created_On',
+  'description':'Description','revision':'Revision','equipment':'Equipment',
+  'system status':'System_Status','system_status':'System_Status',
+  'user status':'User_Status','user_status':'User_Status',
+  'functional loc.':'FunctLocation','functional loc':'FunctLocation',
+  'functlocation':'FunctLocation','funct location':'FunctLocation',
+  'funct. location':'FunctLocation','functional location':'FunctLocation',
+  'location':'Location',
+  'wbs ord. header':'WBS_Ord_header','wbs ord header':'WBS_Ord_header',
+  'wbs_ord_header':'WBS_Ord_header','wbsordheader':'WBS_Ord_header',
+  'cost center':'CostCenter','costcenter':'CostCenter','cost_center':'CostCenter',
+  'totalplnndcosts':'Total_Plan_Cost','total plan cost':'Total_Plan_Cost',
+  'total_plan_cost':'Total_Plan_Cost','total plnd costs':'Total_Plan_Cost',
+  'total act.costs':'Total_Act_Cost','total act costs':'Total_Act_Cost',
+  'total_act_cost':'Total_Act_Cost','totalactcosts':'Total_Act_Cost',
+  'planner group':'Planner_Group','planner_group':'Planner_Group','plannergroup':'Planner_Group',
+  'main workctr':'MainWorkCtr','main_workctr':'MainWorkCtr','mainworkctr':'MainWorkCtr',
+  'main work ctr':'MainWorkCtr','main work center':'MainWorkCtr',
+  'entered by':'Entry_by','enteredby':'Entry_by','entry_by':'Entry_by','entry by':'Entry_by',
+  'changed by':'Changed_by','changedby':'Changed_by','changed_by':'Changed_by',
+  'bas. start date':'Basic_start_date','bas start date':'Basic_start_date',
+  'basic start date':'Basic_start_date','basic_start_date':'Basic_start_date',
+  'basic fin. date':'Basic_finish_date','basic fin date':'Basic_finish_date',
+  'basic finish date':'Basic_finish_date','basic_finish_date':'Basic_finish_date',
+  'actual release':'Actual_Release','actual_release':'Actual_Release',
+};
+
+function normalizeOrderRow(rawRow) {
+  const out = {};
+  for (const [rawKey, val] of Object.entries(rawRow)) {
+    const normalized = ORDER_HEADER_MAP_SRV[rawKey.trim().toLowerCase()];
+    if (normalized) out[normalized] = val;
+    else out[rawKey] = val;
+  }
+  return out;
+}
+
+const mapOrder = r => ({
+  ID: r.id, Plant: r.plant, Order: r.order,
+  Superior_Order: r.superior_order, Notification: r.notification,
+  Created_On: r.created_on, Description: r.description,
+  Revision: r.revision, Equipment: r.equipment,
+  System_Status: r.system_status, User_Status: r.user_status,
+  FunctLocation: r.funct_location, Location: r.location,
+  WBS_Ord_header: r.wbs_ord_header, CostCenter: r.cost_center,
+  Total_Plan_Cost: n(r.total_plan_cost), Total_Act_Cost: n(r.total_act_cost),
+  Planner_Group: r.planner_group, MainWorkCtr: r.main_work_ctr,
+  Entry_by: r.entry_by, Changed_by: r.changed_by,
+  Basic_start_date: r.basic_start_date, Basic_finish_date: r.basic_finish_date,
+  Actual_Release: r.actual_release,
+});
 
 const mapPO = r => ({
   ID: r.id, Plnt: r.plnt,
@@ -988,7 +1098,7 @@ app.get('/api/data', requireApiKey, async (req, res) => {
     const limit = Math.min(5000, Math.max(1, parseInt(req.query.limit) || 2000));
     const offset = (page - 1) * limit;
 
-    const [taex, prisma, kumpulan, pr, po,
+    const [taex, prisma, kumpulan, pr, po, order,
            taexCount, prismaCount, kumpulanCount, prCount, poCount,
            kkCurrent, kkCounter, prCounter, summaryData] = await Promise.all([
       query('SELECT * FROM taex_reservasi ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
@@ -996,6 +1106,7 @@ app.get('/api/data', requireApiKey, async (req, res) => {
       query('SELECT * FROM kumpulan_summary ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
       query('SELECT * FROM sap_pr ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
       query('SELECT * FROM sap_po ORDER BY id LIMIT $1 OFFSET $2', [limit, offset]),
+      query('SELECT * FROM work_order ORDER BY id'),
       query('SELECT COUNT(*) AS c FROM taex_reservasi'),
       query('SELECT COUNT(*) AS c FROM prisma_reservasi'),
       query('SELECT COUNT(*) AS c FROM kumpulan_summary'),
@@ -1013,7 +1124,7 @@ app.get('/api/data', requireApiKey, async (req, res) => {
       prismaReservasiData: prisma.rows.map(mapPrisma),
       kumpulanData:        kumpulan.rows.map(mapKumpulan),
       prData:              pr.rows.map(mapSAP),
-      orderData:           [],
+      orderData:           order.rows.map(mapOrder),
       poData:              po.rows.map(mapPO),
       kkData:              kkCurrent ? kkCurrent.data : [],
       kkCode:              kkCurrent ? kkCurrent.code : null,
@@ -1040,6 +1151,135 @@ app.get('/api/data', requireApiKey, async (req, res) => {
       lastUpdated: new Date().toISOString(),
     });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal memuat data' }); }
+});
+
+// ─────────────────────────────────────────────
+// AUDIT ENDPOINT — server-side JOIN taex vs prisma
+// Pendekatan UNION ALL per kolom — tidak ada nested backtick
+// GET /api/audit?page=1&limit=100&q=...&col=...
+// ─────────────────────────────────────────────
+const AUDIT_COLS_DEF = [
+  { key: 'equipment',            label: 'Equipment',         numeric: false },
+  { key: 'reservno',             label: 'Reserv.No.',        numeric: false },
+  { key: 'revision',             label: 'Revision',          numeric: false },
+  { key: 'material_description', label: 'Material Desc',     numeric: false },
+  { key: 'qty_reqmts',           label: 'Reqmt Qty',         numeric: true  },
+  { key: 'del',                  label: 'Del',               numeric: false },
+  { key: 'fis',                  label: 'FIs',               numeric: false },
+  { key: 'ict',                  label: 'ICt',               numeric: false },
+  { key: 'pg',                   label: 'PG',                numeric: false },
+  { key: 'uom',                  label: 'BUn',               numeric: false },
+  { key: 'recipient',            label: 'Recipient',         numeric: false },
+  { key: 'unloading_point',      label: 'Unloading Point',   numeric: false },
+  { key: 'reqmts_date',          label: 'Reqmt Date',        numeric: false },
+];
+
+app.get('/api/audit', requireApiKey, async (req, res) => {
+  try {
+    const AUDIT_COLS = [
+      { key: 'equipment',            label: 'Equipment' },
+      { key: 'reservno',             label: 'Reserv.No.' },
+      { key: 'revision',             label: 'Revision' },
+      { key: 'material_description', label: 'Material Description' },
+      { key: 'qty_reqmts',           label: 'Reqmt Qty', numeric: true },
+      { key: 'del',                  label: 'Del' },
+      { key: 'fis',                  label: 'FIs' },
+      { key: 'ict',                  label: 'ICt' },
+      { key: 'pg',                   label: 'PG' },
+      { key: 'uom',                  label: 'BUn' },
+      { key: 'recipient',            label: 'Recipient' },
+      { key: 'unloading_point',      label: 'Unloading Point' },
+      { key: 'reqmts_date',          label: 'Reqmt Date' },
+    ];
+
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));
+    const q     = (req.query.q   || '').trim();
+    const fCol  = (req.query.col || '').trim();
+
+    // Validate fCol against allowed keys to prevent SQL injection
+    const validCol = fCol && AUDIT_COLS.some(c => c.key === fCol) ? fCol : null;
+
+    // Build WHERE for the JOIN query
+    const params = [];
+    const extraConds = [];
+    if (q) {
+      params.push(`%${q}%`);
+      const pi = params.length;
+      extraConds.push(`(t."order" ILIKE $${pi} OR t.material ILIKE $${pi} OR t.itm::text ILIKE $${pi})`);
+    }
+    const extraSQL = extraConds.length ? ' AND ' + extraConds.join(' AND ') : '';
+
+    // Build per-column CASE SQL — simple SELECT with one column per row using UNION ALL
+    // For each audited col: emit a row only when p.col IS DISTINCT FROM t.col
+    const colSelects = AUDIT_COLS
+      .filter(c => !validCol || c.key === validCol)
+      .map(c => {
+        const pVal = c.numeric
+          ? `COALESCE(p.${c.key}::text, '')`
+          : `COALESCE(p.${c.key}, '')`;
+        const tVal = c.numeric
+          ? `COALESCE(t.${c.key}::text, '')`
+          : `COALESCE(t.${c.key}, '')`;
+        return `
+    SELECT t."order" AS order_val, t.material, t.itm,
+           '${c.key}'   AS col_key,
+           '${c.label}' AS col_label,
+           ${pVal} AS val_prisma,
+           ${tVal} AS val_taex
+    FROM prisma_reservasi p
+    JOIN taex_reservasi t
+      ON p."order" = t."order" AND p.material = t.material AND p.itm = t.itm
+    WHERE p.${c.key} IS DISTINCT FROM t.${c.key}${extraSQL}`;
+      }).join(' UNION ALL ');
+
+    // Count query
+    const countSQL = `SELECT COUNT(*) AS c FROM (${colSelects}
+) sub`;
+
+    // Data query with pagination
+    const dataSQL = `
+    SELECT * FROM (${colSelects}
+) sub
+    ORDER BY order_val, material, itm, col_key
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+
+    // Changed rows count (always all cols, no col filter)
+    const allColDiff = AUDIT_COLS.map(c => `p.${c.key} IS DISTINCT FROM t.${c.key}`).join(' OR ');
+    const changedSQL = `
+    SELECT COUNT(DISTINCT (t."order", t.material, t.itm)) AS c
+    FROM prisma_reservasi p
+    JOIN taex_reservasi t
+      ON p."order" = t."order" AND p.material = t.material AND p.itm = t.itm
+    WHERE ${allColDiff}${extraSQL}`;
+
+    const [countRes, dataRes, changedRes] = await Promise.all([
+      query(countSQL, params),
+      query(dataSQL, [...params, limit, (page - 1) * limit]),
+      query(changedSQL, params),
+    ]);
+
+    res.json({
+      data: dataRes.rows.map(r => ({
+        Order:      r.order_val,
+        Material:   r.material,
+        Itm:        r.itm,
+        col_key:    r.col_key,
+        col_label:  r.col_label,
+        val_prisma: r.val_prisma || null,
+        val_taex:   r.val_taex   || null,
+      })),
+      pagination: {
+        page, limit,
+        total: parseInt(countRes.rows[0].c),
+        totalPages: Math.ceil(parseInt(countRes.rows[0].c) / limit) || 1,
+      },
+      changedRows: parseInt(changedRes.rows[0].c),
+    });
+  } catch(e) {
+    console.error('Audit error:', e);
+    res.status(500).json({ error: 'Gagal audit: ' + e.message });
+  }
 });
 
 // Endpoint tambahan: load satu tabel secara paginated (lebih efisien)
@@ -1217,6 +1457,16 @@ app.get('/api/prisma', requireApiKey, async (req, res) => {
   try { const { rows } = await query('SELECT * FROM prisma_reservasi ORDER BY id'); res.json(rows.map(mapPrisma)); }
   catch(e) { res.status(500).json({ error: 'Gagal memuat data prisma' }); }
 });
+// GET /api/prisma/meta — distinct orders & PGs for filters
+app.get('/api/prisma/meta', requireApiKey, async (req, res) => {
+  try {
+    const [orders, pgs] = await Promise.all([
+      query('SELECT DISTINCT "order" FROM prisma_reservasi WHERE "order" IS NOT NULL ORDER BY "order"'),
+      query('SELECT DISTINCT pg FROM prisma_reservasi WHERE pg IS NOT NULL ORDER BY pg'),
+    ]);
+    res.json({ orders: orders.rows.map(r => r.order), pgs: pgs.rows.map(r => r.pg) });
+  } catch(e) { res.status(500).json({ error: 'Gagal memuat meta prisma' }); }
+});
 app.put('/api/prisma', requireApiKey, async (req, res) => {
   try {
     const rows = req.body;
@@ -1301,6 +1551,55 @@ app.post('/api/pr/upload', requireApiKey, upload.single('file'), async (req, res
   } catch(e) { console.error(e); res.status(500).json({ error: e.message || 'Gagal upload file SAP PR' }); }
 });
 
+
+// ── WORK ORDER ──
+app.get('/api/order', requireApiKey, async (req, res) => {
+  try { const { rows } = await query('SELECT * FROM work_order ORDER BY id'); res.json(rows.map(mapOrder)); }
+  catch(e) { res.status(500).json({ error: 'Gagal memuat data Order' }); }
+});
+app.put('/api/order', requireApiKey, async (req, res) => {
+  try {
+    const rows = req.body;
+    if (!Array.isArray(rows)) return res.status(400).json({ error: 'Body harus array' });
+    await withTransaction(async (client) => {
+      await client.query('DELETE FROM work_order');
+      const CHUNK = 500;
+      for (let i = 0; i < rows.length; i += CHUNK) {
+        const batch = rows.slice(i, i + CHUNK);
+        const vals = [], params = [];
+        batch.forEach((rawR, idx) => {
+          const r = normalizeOrderRow(rawR);
+          const b = idx * 23;
+          vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23})`);
+          params.push(
+            r.Plant||null, r.Order ? String(r.Order) : null,
+            r.Superior_Order||null, r.Notification||null, r.Created_On||null,
+            r.Description||null, r.Revision||null, r.Equipment||null,
+            r.System_Status||null, r.User_Status!=null?String(r.User_Status):null,
+            r.FunctLocation||null, r.Location||null, r.WBS_Ord_header||null,
+            r.CostCenter||null,
+            r.Total_Plan_Cost!=null&&r.Total_Plan_Cost!==''?parseFloat(r.Total_Plan_Cost):null,
+            r.Total_Act_Cost!=null&&r.Total_Act_Cost!==''?parseFloat(r.Total_Act_Cost):null,
+            r.Planner_Group||null, r.MainWorkCtr||null,
+            r.Entry_by||null, r.Changed_by||null,
+            r.Basic_start_date||null, r.Basic_finish_date||null, r.Actual_Release||null
+          );
+        });
+        await client.query(
+          `INSERT INTO work_order (plant,"order",superior_order,notification,created_on,description,revision,equipment,system_status,user_status,funct_location,location,wbs_ord_header,cost_center,total_plan_cost,total_act_cost,planner_group,main_work_ctr,entry_by,changed_by,basic_start_date,basic_finish_date,actual_release) VALUES ${vals.join(',')}`,
+          params
+        );
+      }
+    });
+    res.json({ ok: true, count: rows.length });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal simpan data Order: ' + e.message }); }
+});
+app.delete('/api/order/:id', requireApiKey, async (req, res) => {
+  try {
+    await query('DELETE FROM work_order WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: 'Gagal hapus data Order' }); }
+});
 
 // ── SAP PO ──
 app.get('/api/po', requireApiKey, async (req, res) => {
