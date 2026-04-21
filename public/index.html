@@ -2244,7 +2244,7 @@ function renderPrismaReservasi() {
       <td>${r.CodeKertasKerja?`<span class="badge badge-purple">${r.CodeKertasKerja}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td class="td-actions">
         <button class="btn-act btn-act-edit" onclick="openEditModal('prisma',${i})">✏ Edit</button>
-        <button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${i})" style="margin-left:4px">↩ Return</button>
+        ${!r.CodeKertasKerja ? `<button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${i})" style="margin-left:4px">↩ Return</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -2514,7 +2514,7 @@ function handleFileSelect(e, type) {
 const UPLOAD_META = {
   taex:  { previewId: 'taex-upload-preview',  infoId: 'taex-preview-info',  tableId: 'taex-preview-table',  stateKey: 'taexData',  renderFn: () => { fetchAndRenderTaex(); populateFilters(); } },
   sap:   { previewId: 'sap-upload-preview',   infoId: 'sap-preview-info',   tableId: 'sap-preview-table',   stateKey: 'prData',    renderFn: () => fetchAndRenderSAP() },
-  po:    { previewId: 'po-upload-preview',     infoId: 'po-preview-info',    tableId: 'po-preview-table',    stateKey: 'poData',    renderFn: () => renderPo() },
+  po:    { previewId: 'po-upload-preview',     infoId: 'po-preview-info',    tableId: 'po-preview-table',    stateKey: 'poData',    renderFn: () => fetchAndRenderPo() },
   order: { previewId: 'order-upload-preview',  infoId: 'order-preview-info', tableId: 'order-preview-table', stateKey: 'orderData', renderFn: () => {} },
 };
 
