@@ -2019,7 +2019,7 @@ function renderPage(app) {
   else if (app==='prisma-reservasi') fetchAndRenderPrisma();
   else if (app==='kertas-kerja') renderKK();
   else if (app==='summary') renderSummary();
-  else if (app==='kumpulan') renderKumpulan();
+  else if (app==='kumpulan') fetchAndRenderKumpulan();
   else if (app==='pr') renderSAP();
   else if (app==='order') renderOrder();
   else if (app==='po') renderPo();
@@ -2963,11 +2963,14 @@ async function submitKertasKerja() {
     invalidatePrismaCache();
     await apiFetch('/state/kk_current', { method:'POST', body:{ value: { code: null, data: [] } } });
     state.kkData = [];
-    state.kkCode = null;
+    // Jangan null-kan kkCode dulu — renderSummary masih butuh untuk tampilkan kode
     hideLoading();
     setSyncStatus('ok', `✅ Kertas Kerja disubmit · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Kertas Kerja disubmit! Summary dibuat.', 'ok');
     switchApp('summary');
+    renderSummary();
+    // Null-kan kkCode setelah render
+    state.kkCode = null;
   } catch(e) {
     hideLoading();
     setSyncStatus('err', '❌ Gagal submit: ' + e.message);
@@ -2994,6 +2997,7 @@ async function submitSummary() {
     setSyncStatus('ok', `✅ Summary tersimpan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast('Summary tersimpan di Kumpulan Summary!', 'ok');
     switchApp('kumpulan');
+    await fetchAndRenderKumpulan();
   } catch(e) {
     hideLoading();
     setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
