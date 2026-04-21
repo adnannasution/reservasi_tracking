@@ -3016,7 +3016,7 @@ function openPRModal() {
   const matched = [];
   const unmatched = [];
   state.kumpulanData.forEach(k => {
-    const prItem = state.prData.find(p => p.Material === k.Material && p.Tracking === k.CodeTracking);
+    const prItem = state.prData.find(p => p.Material === k.Material && (p.TrackingNo === k.CodeTracking || p.Tracking === k.CodeTracking));
     if (prItem) matched.push({ ...k, _prNum: prItem.PR, _prItem: prItem.Item, _prQty: prItem.Qty_PR });
     else unmatched.push(k);
   });
@@ -3061,7 +3061,7 @@ async function submitPR() {
   // Cocokkan prData ke kumpulanData by Material + Tracking
   let matchCount = 0;
   state.kumpulanData = state.kumpulanData.map(k => {
-    const prItem = state.prData.find(p => p.Material === k.Material && p.Tracking === k.CodeTracking);
+    const prItem = state.prData.find(p => p.Material === k.Material && (p.TrackingNo === k.CodeTracking || p.Tracking === k.CodeTracking));
     if (prItem) { matchCount++; return { ...k, Qty_PR: prItem.Qty_PR, Qty_To_PR: Math.max(0,(k.Qty_Req||0)-(k.Qty_Stock||0)-(prItem.Qty_PR||0)) }; }
     return k;
   });
@@ -3070,7 +3070,7 @@ async function submitPR() {
 
   // Update prismaReservasi dengan nomor PR dari SAP PR
   state.prismaReservasiData = state.prismaReservasiData.map(r => {
-    const prItem = state.prData.find(p => p.Material === r.Material && p.Tracking === r.CodeKertasKerja);
+    const prItem = state.prData.find(p => p.Material === r.Material && (p.TrackingNo === r.CodeKertasKerja || p.Tracking === r.CodeKertasKerja));
     if (prItem) return { ...r, PR_Prisma: prItem.PR, Item_Prisma: prItem.Item, Qty_PR_Prisma: prItem.Qty_PR };
     return r;
   });
