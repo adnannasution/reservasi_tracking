@@ -2016,7 +2016,7 @@ function switchApp(app) {
 function renderAll() { renderTaex(); fetchAndRenderPrisma(); renderKK(); renderSummary(); renderKumpulan(); renderSAP(); renderOrder(); renderPo(); renderTracking(); }
 function renderPage(app) {
   if (app==='taex') renderTaex();
-  else if (app==='prisma-reservasi') fetchAndRenderPrisma();
+  else if (app==='prisma-reservasi') { if (!prFiltered.length) fetchAndRenderPrisma(); }
   else if (app==='kertas-kerja') renderKK();
   else if (app==='summary') renderSummary();
   else if (app==='kumpulan') fetchAndRenderKumpulan();
@@ -2513,7 +2513,7 @@ function handleFileSelect(e, type) {
 // Map type → preview element ids
 const UPLOAD_META = {
   taex:  { previewId: 'taex-upload-preview',  infoId: 'taex-preview-info',  tableId: 'taex-preview-table',  stateKey: 'taexData',  renderFn: () => { fetchAndRenderTaex(); populateFilters(); } },
-  sap:   { previewId: 'sap-upload-preview',   infoId: 'sap-preview-info',   tableId: 'sap-preview-table',   stateKey: 'prData',    renderFn: () => renderSAP() },
+  sap:   { previewId: 'sap-upload-preview',   infoId: 'sap-preview-info',   tableId: 'sap-preview-table',   stateKey: 'prData',    renderFn: () => fetchAndRenderSAP() },
   po:    { previewId: 'po-upload-preview',     infoId: 'po-preview-info',    tableId: 'po-preview-table',    stateKey: 'poData',    renderFn: () => renderPo() },
   order: { previewId: 'order-upload-preview',  infoId: 'order-preview-info', tableId: 'order-preview-table', stateKey: 'orderData', renderFn: () => {} },
 };
