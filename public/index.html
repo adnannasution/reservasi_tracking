@@ -2512,10 +2512,10 @@ function handleFileSelect(e, type) {
 
 // Map type → preview element ids
 const UPLOAD_META = {
-  taex:  { previewId: 'taex-upload-preview',  infoId: 'taex-preview-info',  tableId: 'taex-preview-table',  btnId: 'taex-import-btn',  stateKey: 'taexData',            renderFn: () => { fetchAndRenderTaex(); populateFilters(); } },
-  sap:   { previewId: 'sap-upload-preview',   infoId: 'sap-preview-info',   tableId: 'sap-preview-table',   btnId: 'sap-import-btn',   stateKey: 'prData',              renderFn: () => renderSAP() },
-  po:    { previewId: 'po-upload-preview',     infoId: 'po-preview-info',    tableId: 'po-preview-table',    btnId: 'po-import-btn',    stateKey: 'poData',              renderFn: () => renderPo() },
-  order: { previewId: 'order-upload-preview',  infoId: 'order-preview-info', tableId: 'order-preview-table', btnId: 'order-import-btn', stateKey: 'orderData',           renderFn: () => {} },
+  taex:  { previewId: 'taex-upload-preview',  infoId: 'taex-preview-info',  tableId: 'taex-preview-table',  stateKey: 'taexData',  renderFn: () => { fetchAndRenderTaex(); populateFilters(); } },
+  sap:   { previewId: 'sap-upload-preview',   infoId: 'sap-preview-info',   tableId: 'sap-preview-table',   stateKey: 'prData',    renderFn: () => renderSAP() },
+  po:    { previewId: 'po-upload-preview',     infoId: 'po-preview-info',    tableId: 'po-preview-table',    stateKey: 'poData',    renderFn: () => renderPo() },
+  order: { previewId: 'order-upload-preview',  infoId: 'order-preview-info', tableId: 'order-preview-table', stateKey: 'orderData', renderFn: () => {} },
 };
 
 // type → backend upload type
@@ -2538,10 +2538,9 @@ async function processUploadFile(file, type) {
   setSyncStatus('loading', `⏳ Mengirim file ke server...`);
   const meta = UPLOAD_META[type];
   if (meta) {
-    document.getElementById(meta.previewId).style.display = 'block';
-    document.getElementById(meta.btnId).style.display = 'none';
-    document.getElementById(meta.infoId).textContent = `⏳ Mengirim file ke server...`;
-    document.getElementById(meta.tableId).innerHTML = '';
+    const _prev = document.getElementById(meta.previewId); if (_prev) _prev.style.display = 'block';
+    const _info = document.getElementById(meta.infoId);    if (_info) _info.textContent   = '⏳ Mengirim file ke server...';
+    const _tbl  = document.getElementById(meta.tableId);   if (_tbl)  _tbl.innerHTML      = '';
   }
 
   try {
@@ -2625,7 +2624,7 @@ async function pollUploadProgress(jobId, type, meta) {
 
         // Update sync bar juga
         setSyncStatus('loading', `⏳ ${job.msg}`);
-        if (meta) document.getElementById(meta.infoId).textContent = job.msg;
+        if (meta) { const _i = document.getElementById(meta.infoId); if (_i) _i.textContent = job.msg; }
 
         if (job.done) {
           clearInterval(interval);
@@ -2674,7 +2673,7 @@ async function pollUploadProgress(jobId, type, meta) {
             const meta2 = UPLOAD_META[type];
             if (meta2) {
               meta2.renderFn();
-              document.getElementById(meta2.previewId).style.display = 'none';
+              const _p2 = document.getElementById(meta2.previewId); if (_p2) _p2.style.display = 'none';
             }
             if (panel) panel.style.display = 'none';
             // Reset bar
@@ -3142,8 +3141,15 @@ async function confirmResetAll() {
 // ============================================================
 // HELPERS
 // ============================================================
-function openModal(id) { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (!el) { console.error('openModal: element not found:', id); return; }
+  el.classList.add('show');
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
 
 function toast(msg, type='ok') {
   const el = document.getElementById('toast');
@@ -3162,17 +3168,23 @@ function toggleSidebar() {
 }
 
 function openTaexUploadModal() {
-  document.getElementById('taex-upload-preview').style.display = 'none';
-  document.getElementById('taex-import-btn').style.display = 'none';
-  document.getElementById('taex-file-input').value = '';
-  taexUploadBuffer = [];
+  try {
+    const prev = document.getElementById('taex-upload-preview');
+    if (prev) prev.style.display = 'none';
+    const fi = document.getElementById('taex-file-input');
+    if (fi) fi.value = '';
+    taexUploadBuffer = [];
+  } catch(e) { console.warn('openTaexUploadModal reset error:', e); }
   openModal('modal-taex-upload');
 }
 function openSapUploadModal() {
-  document.getElementById('sap-upload-preview').style.display = 'none';
-  document.getElementById('sap-import-btn').style.display = 'none';
-  document.getElementById('sap-file-input').value = '';
-  sapUploadBuffer = [];
+  try {
+    const prev = document.getElementById('sap-upload-preview');
+    if (prev) prev.style.display = 'none';
+    const fi = document.getElementById('sap-file-input');
+    if (fi) fi.value = '';
+    sapUploadBuffer = [];
+  } catch(e) { console.warn('openSapUploadModal reset error:', e); }
   openModal('modal-sap-upload');
 }
 
@@ -3724,10 +3736,13 @@ function renderPo() {
 }
 
 function openPoUploadModal() {
-  document.getElementById('po-upload-preview').style.display = 'none';
-  document.getElementById('po-import-btn').style.display = 'none';
-  document.getElementById('po-file-input').value = '';
-  poUploadBuffer = [];
+  try {
+    const prev = document.getElementById('po-upload-preview');
+    if (prev) prev.style.display = 'none';
+    const fi = document.getElementById('po-file-input');
+    if (fi) fi.value = '';
+    poUploadBuffer = [];
+  } catch(e) { console.warn('openPoUploadModal reset error:', e); }
   openModal('modal-po-upload');
 }
 
@@ -4948,10 +4963,14 @@ async function exportAuditExcel() {
 // BOOT
 // ============================================================
 init().then(() => {
-  switchApp('taex');
-  initAllResizable();
-  initColVisibility();
-  initFreezeListeners();
+  try { switchApp('taex'); } catch(e) { console.error('switchApp error:', e); }
+  try { initAllResizable(); } catch(e) { console.error('initAllResizable error:', e); }
+  try { initColVisibility(); } catch(e) { console.error('initColVisibility error:', e); }
+  try { initFreezeListeners(); } catch(e) { console.error('initFreezeListeners error:', e); }
+}).catch(e => {
+  console.error('init() rejected:', e);
+  // Pastikan init-loading tersembunyi meski init gagal
+  try { hideInitLoading(); } catch(_) {}
 });
 
 </script>
