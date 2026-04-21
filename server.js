@@ -974,6 +974,13 @@ app.put('/api/taex', requireApiKey, async (req, res) => {
     res.json({ ok: true });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal update data' }); }
 });
+// DELETE single row by ID
+app.delete('/api/taex/:id', requireApiKey, async (req, res) => {
+  try {
+    await query('DELETE FROM taex_reservasi WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal hapus data' }); }
+});
 // Upload Excel TA-ex via GCS
 app.post('/api/taex/upload', requireApiKey, upload.single('file'), async (req, res) => {
   try {

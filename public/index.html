@@ -1427,10 +1427,23 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         </div>
         <div class="preview-wrap" id="po-preview-table"></div>
       </div>
+      <!-- PROGRESS PANEL -->
+      <div id="po-progress-panel" style="display:none;margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span id="po-progress-msg" style="font-size:12px;color:#374151;font-weight:600;"></span>
+          <span id="po-progress-pct" style="font-size:13px;font-weight:700;color:#059669;"></span>
+        </div>
+        <div style="background:#e5e7eb;border-radius:99px;height:12px;overflow:hidden;">
+          <div id="po-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#059669,#10b981);border-radius:99px;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span id="po-progress-rows" style="font-size:11px;color:#6b7280;"></span>
+          <span id="po-progress-eta" style="font-size:11px;color:#6b7280;"></span>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-reset" onclick="closeModal('modal-po-upload')">Batal</button>
-      <button class="btn btn-success" id="po-import-btn" onclick="importPoData()" style="display:none">✅ Import Data</button>
+      <button class="btn btn-reset" id="po-cancel-btn" onclick="closeModal('modal-po-upload')">Batal</button>
     </div>
   </div>
 </div>
@@ -1458,10 +1471,23 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         </div>
         <div class="preview-wrap" id="taex-preview-table"></div>
       </div>
+      <!-- PROGRESS PANEL -->
+      <div id="taex-progress-panel" style="display:none;margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span id="taex-progress-msg" style="font-size:12px;color:#374151;font-weight:600;"></span>
+          <span id="taex-progress-pct" style="font-size:13px;font-weight:700;color:#0891b2;"></span>
+        </div>
+        <div style="background:#e5e7eb;border-radius:99px;height:12px;overflow:hidden;">
+          <div id="taex-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#0891b2,#06b6d4);border-radius:99px;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span id="taex-progress-rows" style="font-size:11px;color:#6b7280;"></span>
+          <span id="taex-progress-eta" style="font-size:11px;color:#6b7280;"></span>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-reset" onclick="closeModal('modal-taex-upload')">Batal</button>
-      <button class="btn btn-teal" id="taex-import-btn" onclick="importTaexData()" style="display:none">🔄 Upsert Data</button>
+      <button class="btn btn-reset" id="taex-cancel-btn" onclick="closeModal('modal-taex-upload')">Batal</button>
     </div>
   </div>
 </div>
@@ -1492,10 +1518,23 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         </div>
         <div class="preview-wrap" id="sap-preview-table"></div>
       </div>
+      <!-- PROGRESS PANEL -->
+      <div id="sap-progress-panel" style="display:none;margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span id="sap-progress-msg" style="font-size:12px;color:#374151;font-weight:600;"></span>
+          <span id="sap-progress-pct" style="font-size:13px;font-weight:700;color:#0891b2;"></span>
+        </div>
+        <div style="background:#e5e7eb;border-radius:99px;height:12px;overflow:hidden;">
+          <div id="sap-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#0891b2,#06b6d4);border-radius:99px;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span id="sap-progress-rows" style="font-size:11px;color:#6b7280;"></span>
+          <span id="sap-progress-eta" style="font-size:11px;color:#6b7280;"></span>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-reset" onclick="closeModal('modal-sap-upload')">Batal</button>
-      <button class="btn btn-teal" id="sap-import-btn" onclick="importSapData()" style="display:none">✅ Import Data</button>
+      <button class="btn btn-reset" id="sap-cancel-btn" onclick="closeModal('modal-sap-upload')">Batal</button>
     </div>
   </div>
 </div>
@@ -1875,12 +1914,13 @@ async function init() {
   setInitProgress(10, 'Menghubungkan ke server...');
   setSyncStatus('loading', '⏳ Memuat data dari server...');
   try {
-    setInitProgress(20, 'Mengambil data halaman pertama...');
-    // Load halaman 1 dulu — cepat, tidak OOM
+    setInitProgress(20, 'Mengambil data referensi...');
+    // Taex TIDAK dimuat di sini — akan di-fetch per halaman via fetchAndRenderTaex()
+    // Hanya muat tabel kecil: prisma, kumpulan, pr, po, state
     const data = await apiFetch(`/data?page=1&limit=${PAGE_LIMIT}`);
 
     setInitProgress(50, 'Memproses data...');
-    state.taexData            = data.taexData            || [];
+    state.taexData            = [];  // tidak dipakai untuk render
     state.prismaReservasiData = data.prismaReservasiData || [];
     state.kkData              = data.kkData              || [];
     state.kkCode              = data.kkCode              || null;
@@ -1892,30 +1932,31 @@ async function init() {
     state.orderData           = data.orderData           || [];
     state.poData              = data.poData              || [];
 
-    // Jika ada lebih banyak halaman, muat semuanya di background
+    // Load sisa halaman tabel referensi (prisma, kumpulan, pr, po) — bukan taex
     const pg = data.pagination;
     if (pg && pg.hasMore) {
-      const maxTotal = Math.max(pg.totalTaex||0, pg.totalPrisma||0, pg.totalKumpulan||0, pg.totalPR||0, pg.totalPO||0);
-      const totalPages = Math.ceil(maxTotal / PAGE_LIMIT);
-
-      setInitProgress(60, `Memuat sisa data (${maxTotal.toLocaleString()} baris total)...`);
-      setSyncStatus('loading', `⏳ Memuat ${maxTotal.toLocaleString()} baris...`);
-
-      for (let page = 2; page <= totalPages; page++) {
-        const more = await apiFetch(`/data?page=${page}&limit=${PAGE_LIMIT}`);
-        state.taexData            = state.taexData.concat(more.taexData            || []);
-        state.prismaReservasiData = state.prismaReservasiData.concat(more.prismaReservasiData || []);
-        state.kumpulanData        = state.kumpulanData.concat(more.kumpulanData    || []);
-        state.prData              = state.prData.concat(more.prData                || []);
-        state.poData              = state.poData.concat(more.poData                || []);
-
-        const pct = 60 + Math.round((page / totalPages) * 35);
-        setInitProgress(pct, `Memuat halaman ${page}/${totalPages}...`);
+      const maxRef = Math.max(pg.totalPrisma||0, pg.totalKumpulan||0, pg.totalPR||0, pg.totalPO||0);
+      if (maxRef > PAGE_LIMIT) {
+        const totalPages = Math.ceil(maxRef / PAGE_LIMIT);
+        setInitProgress(55, `Memuat data referensi...`);
+        for (let page = 2; page <= totalPages; page++) {
+          const more = await apiFetch(`/data?page=${page}&limit=${PAGE_LIMIT}`);
+          state.prismaReservasiData = state.prismaReservasiData.concat(more.prismaReservasiData || []);
+          state.kumpulanData        = state.kumpulanData.concat(more.kumpulanData    || []);
+          state.prData              = state.prData.concat(more.prData                || []);
+          state.poData              = state.poData.concat(more.poData                || []);
+          setInitProgress(55 + Math.round((page/totalPages)*25), `Memuat halaman ${page}/${totalPages}...`);
+        }
       }
     }
 
+    setInitProgress(82, 'Memuat tabel TA-ex...');
+    // Taex: hanya fetch halaman pertama dari server (cepat, <1 detik)
+    await fetchAndRenderTaex();
+
     setInitProgress(95, 'Menyiapkan tampilan...');
-    setSyncStatus('ok', `✅ Terhubung · ${state.taexData.length.toLocaleString()} baris TA-ex · Terakhir sync: ${new Date().toLocaleTimeString('id-ID')}`);
+    const taexTotal = taexServerMeta.total || 0;
+    setSyncStatus('ok', `✅ Terhubung · ${taexTotal.toLocaleString()} baris TA-ex · Terakhir sync: ${new Date().toLocaleTimeString('id-ID')}`);
     renderAll();
     populateFilters();
 
@@ -1986,9 +2027,10 @@ function renderPage(app) {
 }
 
 function populateFilters() {
+  // Filter PR taex: dari halaman saat ini (taexFiltered), bukan semua 94rb baris
   const sel1 = document.getElementById('taex-filterPR');
   sel1.innerHTML = '<option value="">Semua</option>';
-  [...new Set(state.taexData.map(r=>r.PR).filter(Boolean))].sort().forEach(p => sel1.innerHTML += `<option value="${p}">${p}</option>`);
+  [...new Set(taexFiltered.map(r=>r.PR).filter(Boolean))].sort().forEach(p => sel1.innerHTML += `<option value="${p}">${p}</option>`);
   const sel2 = document.getElementById('pr-filterOrder');
   sel2.innerHTML = '<option value="">Semua Order</option>';
   [...new Set(state.prismaReservasiData.map(r=>r.Order).filter(Boolean))].sort().forEach(o => sel2.innerHTML += `<option value="${o}">${o}</option>`);
@@ -2002,53 +2044,89 @@ const N = v => (v===null||v===undefined)?'<span style="color:#d1d5db">—</span>
 const badge = (v,cls) => v?`<span class="badge badge-${cls}">${v}</span>`:'<span style="color:#d1d5db">—</span>';
 
 // ============================================================
-// TA-EX PAGE
+// TA-EX — SERVER-SIDE SEARCH, FILTER, SORT, PAGINATION
+// Browser tidak pegang 94rb baris — semua query ke server
 // ============================================================
 let taexFiltered = [];
-function taexSort(key) { setSort('taex',key); renderTaex(); }
-function taexApplyFilter() { resetPg('taex'); renderTaex(); }
+let taexServerMeta = { total: 0, totalPages: 1, page: 1, limit: 100 };
+let taexSortKey = 'id', taexSortDir = 'asc';
+let _taexDebounce = null;
+
+function taexApplyFilter() { pgState['taex'] = { page: 1, size: getPg('taex').size }; fetchAndRenderTaex(); }
 function taexResetFilter() {
   document.getElementById('taex-search').value = '';
   document.getElementById('taex-filterPR').value = '';
   document.getElementById('taex-filterPO').value = '';
-  renderTaex();
+  taexApplyFilter();
 }
-function renderTaex() {
-  const q = document.getElementById('taex-search').value.toLowerCase();
-  const pr = document.getElementById('taex-filterPR').value;
-  const po = document.getElementById('taex-filterPO').value;
-  let data = state.taexData.filter(r => {
-    const mq = !q || Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q));
-    const mpr = !pr || r.PR===pr;
-    const mpo = !po || (po==='with'?r.PO:!r.PO);
-    return mq && mpr && mpo;
+function taexSort(col) {
+  const colMap = { 'ID':'id','Equipment':'equipment','Order':'"order"','Revision':'revision',
+    'Material':'material','Itm':'itm','Qty_Reqmts':'qty_reqmts','Qty_Stock':'qty_stock',
+    'PR':'pr','PO':'po','Qty_f_avail_check':'qty_f_avail_check','Qty_Withdrawn':'qty_withdrawn',
+    'Res_Price':'res_price' };
+  const dbCol = colMap[col] || 'id';
+  if (taexSortKey === dbCol) taexSortDir = taexSortDir === 'asc' ? 'desc' : 'asc';
+  else { taexSortKey = dbCol; taexSortDir = 'asc'; }
+  fetchAndRenderTaex();
+}
+
+async function fetchAndRenderTaex() {
+  const q   = (document.getElementById('taex-search')?.value || '').trim();
+  const pr  = document.getElementById('taex-filterPR')?.value || '';
+  const po  = document.getElementById('taex-filterPO')?.value || '';
+  const pg  = getPg('taex');
+
+  const params = new URLSearchParams({
+    page:      pg.page,
+    limit:     pg.size,
+    order_by:  taexSortKey,
+    order_dir: taexSortDir,
   });
-  taexFiltered = applySort(data, 'taex');
+  if (q)  params.set('q', q);
+  if (pr) params.set('pr', pr);
+  if (po) params.set('po', po);
+
   const tbody = document.getElementById('taex-tbody');
-  if (!taexFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="34">Tidak ada data</td></tr>'; document.getElementById('taex-rowCount').textContent='0 baris'; renderPagination('taex-pagination','taex',0,1,1,100,renderTaex); return; }
-  const pg = paginate(taexFiltered, 'taex');
-  // Build lookup: key → CodeKertasKerja dari prismaReservasiData
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="34">⏳ Memuat data...</td></tr>';
+
+  try {
+    const result = await apiFetch('/data/taex?' + params.toString());
+    taexFiltered = result.data || [];
+    taexServerMeta = result.pagination || { total: 0, totalPages: 1, page: pg.page, limit: pg.size };
+    state.taexCurrentPage = taexFiltered;
+    renderTaex();
+  } catch(e) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="34">❌ Gagal memuat: ${e.message}</td></tr>`;
+  }
+}
+
+function renderTaex() {
   const prismaKKMap = {};
   (state.prismaReservasiData || []).forEach(p => {
     if (p.CodeKertasKerja) prismaKKMap[`${p.Order}||${p.Material}||${p.Itm}`] = p.CodeKertasKerja;
   });
-  // Build set dari kkData aktif
   const kkKeySet = new Set((state.kkData || []).map(k => `${k.Order}||${k.Material}||${k.Itm}`));
-  // Build set material dari kumpulanData
-  const kumpulanMaterials = new Set((state.kumpulanData || []).map(k => k.Material));
-  tbody.innerHTML = pg.rows.map(r => {
-    const origIdx = state.taexData.indexOf(r);
+
+  const data = taexFiltered;
+  const tbody = document.getElementById('taex-tbody');
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="34">Tidak ada data</td></tr>';
+    document.getElementById('taex-rowCount').textContent = '0 baris';
+    renderPagination('taex-pagination','taex',0,1,1,100,fetchAndRenderTaex);
+    return;
+  }
+
+  tbody.innerHTML = data.map((r, pageIdx) => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     const locked = isTaexRowLocked(r);
-    const rowCls = (locked ? 'row-locked' : (r.PO ? 'has-po' : r.PR ? 'has-pr' : ''));
-    // Ambil kode KK dari mana saja yang tersedia
+    const rowCls = locked ? 'row-locked' : (r.PO ? 'has-po' : r.PR ? 'has-pr' : '');
     const kkCode = locked ? (
       kkKeySet.has(`${r.Order}||${r.Material}||${r.Itm}`) ? (state.kkCode || 'KK Aktif') :
-      prismaKKMap[`${r.Order}||${r.Material}||${r.Itm}`] ||
-      'Sudah diproses'
+      prismaKKMap[`${r.Order}||${r.Material}||${r.Itm}`] || 'Sudah diproses'
     ) : '';
-    return `<tr class="${rowCls}" data-idx="${origIdx}">
-      <td class="td-check"><input type="checkbox" class="row-check" data-tab="taex" data-idx="${origIdx}" onchange="onCheckChange('taex')" ${locked ? 'disabled title="Tidak bisa dipilih: sudah masuk Kertas Kerja"' : ''}></td>
+    return `<tr class="${rowCls}" data-idx="${pageIdx}">
+      <td class="td-check"><input type="checkbox" class="row-check" data-tab="taex" data-idx="${pageIdx}" onchange="onCheckChange('taex')" ${locked?'disabled title="Tidak bisa dipilih: sudah masuk Kertas Kerja"':''}></td>
       <td class="center mono">${r.ID}</td>
       <td class="mono">${D(r.Plant)}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
@@ -2084,14 +2162,17 @@ function renderTaex() {
       <td class="td-actions">
         ${locked
           ? `<span class="lock-badge" title="Sudah masuk Kertas Kerja: ${kkCode}">🔒 KK: ${kkCode}</span>`
-          : `<button class="btn-act btn-act-edit" onclick="openEditModal('taex',${origIdx})">✏ Edit</button>
-             <button class="btn-act btn-act-del" onclick="deleteRow('taex',${origIdx})">🗑</button>`
+          : `<button class="btn-act btn-act-edit" onclick="openEditModal('taex',${pageIdx})">✏ Edit</button>
+             <button class="btn-act btn-act-del" onclick="deleteRow('taex',${pageIdx})">🗑</button>`
         }
       </td>
     </tr>`;
   }).join('');
-  document.getElementById('taex-rowCount').textContent = taexFiltered.length+' dari '+state.taexData.length+' baris';
-  renderPagination('taex-pagination','taex',pg.total,pg.page,pg.totalPages,pg.size,renderTaex);
+
+  const meta = taexServerMeta;
+  document.getElementById('taex-rowCount').textContent =
+    `${meta.total.toLocaleString()} baris${document.getElementById('taex-search')?.value ? ' (filter aktif)' : ''}`;
+  renderPagination('taex-pagination','taex', meta.total, meta.page, meta.totalPages, meta.limit, fetchAndRenderTaex);
   updateBadges();
   reapplyColAfterRender('taex');
 }
@@ -2401,7 +2482,7 @@ function handleFileSelect(e, type) {
 
 // Map type → preview element ids
 const UPLOAD_META = {
-  taex:  { previewId: 'taex-upload-preview',  infoId: 'taex-preview-info',  tableId: 'taex-preview-table',  btnId: 'taex-import-btn',  stateKey: 'taexData',            renderFn: () => { renderTaex(); populateFilters(); } },
+  taex:  { previewId: 'taex-upload-preview',  infoId: 'taex-preview-info',  tableId: 'taex-preview-table',  btnId: 'taex-import-btn',  stateKey: 'taexData',            renderFn: () => { fetchAndRenderTaex(); populateFilters(); } },
   sap:   { previewId: 'sap-upload-preview',   infoId: 'sap-preview-info',   tableId: 'sap-preview-table',   btnId: 'sap-import-btn',   stateKey: 'prData',              renderFn: () => renderSAP() },
   po:    { previewId: 'po-upload-preview',     infoId: 'po-preview-info',    tableId: 'po-preview-table',    btnId: 'po-import-btn',    stateKey: 'poData',              renderFn: () => renderPo() },
   order: { previewId: 'order-upload-preview',  infoId: 'order-preview-info', tableId: 'order-preview-table', btnId: 'order-import-btn', stateKey: 'orderData',           renderFn: () => {} },
@@ -2457,10 +2538,27 @@ async function processUploadFile(file, type) {
 }
 
 async function pollUploadProgress(jobId, type, meta) {
-  const bar  = document.getElementById('progress-bar');
-  const wrap = document.getElementById('progress-wrap');
-  const lbl  = document.getElementById('progress-label');
-  if (wrap) wrap.style.display = 'block';
+  // Panel elemen per modal
+  const panelId  = type + '-progress-panel';
+  const barId    = type + '-progress-bar';
+  const msgId    = type + '-progress-msg';
+  const pctId    = type + '-progress-pct';
+  const rowsId   = type + '-progress-rows';
+  const etaId    = type + '-progress-eta';
+  const cancelId = type + '-cancel-btn';
+
+  const panel  = document.getElementById(panelId);
+  const bar    = document.getElementById(barId);
+  const msgEl  = document.getElementById(msgId);
+  const pctEl  = document.getElementById(pctId);
+  const rowsEl = document.getElementById(rowsId);
+  const etaEl  = document.getElementById(etaId);
+  const cancelBtn = document.getElementById(cancelId);
+
+  if (panel) panel.style.display = 'block';
+  if (cancelBtn) cancelBtn.disabled = true;
+
+  const startTime = Date.now();
 
   return new Promise((resolve, reject) => {
     const interval = setInterval(async () => {
@@ -2470,56 +2568,102 @@ async function pollUploadProgress(jobId, type, meta) {
         });
         const job = await res.json();
 
-        // Update progress bar
-        if (bar) bar.style.width = job.pct + '%';
-        if (lbl) { lbl.style.display = 'block'; lbl.textContent = job.msg; }
-        if (meta) document.getElementById(meta.infoId).textContent = job.msg;
+        const pct = job.pct || 0;
+
+        // Update bar
+        if (bar) bar.style.width = pct + '%';
+        if (pctEl) pctEl.textContent = pct + '%';
+        if (msgEl) msgEl.textContent = job.msg || '';
+
+        // Parse baris dari msg "Menyimpan... X / Y baris"
+        const rowMatch = (job.msg || '').match(/([\d.,]+)\s*\/\s*([\d.,]+)/);
+        if (rowsEl && rowMatch) {
+          rowsEl.textContent = `${rowMatch[1]} dari ${rowMatch[2]} baris`;
+        }
+
+        // ETA
+        if (etaEl && pct > 5 && pct < 100) {
+          const elapsed = (Date.now() - startTime) / 1000;
+          const rate = pct / elapsed; // pct per detik
+          const remaining = (100 - pct) / rate;
+          if (remaining < 60) {
+            etaEl.textContent = `Estimasi: ~${Math.ceil(remaining)} detik lagi`;
+          } else {
+            etaEl.textContent = `Estimasi: ~${Math.ceil(remaining/60)} menit lagi`;
+          }
+        }
+
+        // Update sync bar juga
         setSyncStatus('loading', `⏳ ${job.msg}`);
+        if (meta) document.getElementById(meta.infoId).textContent = job.msg;
 
         if (job.done) {
           clearInterval(interval);
-          if (wrap) wrap.style.display = 'none';
+          if (cancelBtn) cancelBtn.disabled = false;
 
           if (job.error) {
+            // Tampilkan error di panel
+            if (bar) bar.style.background = 'linear-gradient(90deg,#ef4444,#f87171)';
+            if (msgEl) msgEl.style.color = '#ef4444';
+            if (etaEl) etaEl.textContent = '';
             setSyncStatus('err', '❌ ' + job.error);
             toast('Upload gagal: ' + job.error, 'err');
             reject(new Error(job.error));
             return;
           }
 
-          // Sukses — reload data dari server
+          // Sukses — ubah bar ke hijau
+          if (bar) bar.style.background = 'linear-gradient(90deg,#16a34a,#22c55e)';
+          if (pctEl) pctEl.style.color = '#16a34a';
+          if (etaEl) etaEl.textContent = '✅ Selesai!';
+
+          // Reload data dari server
           setSyncStatus('loading', '⏳ Memuat data terbaru...');
-          const endpoint = RELOAD_ENDPOINT[type];
-          const stateKey = RELOAD_STATE_KEY[type];
-          if (endpoint && stateKey) {
-            const fresh = await apiFetch(`${endpoint}?page=1&limit=${PAGE_LIMIT}`);
-            state[stateKey] = fresh.data || [];
-            if (fresh.pagination && fresh.pagination.hasMore) {
-              const pages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
-              for (let p = 2; p <= pages; p++) {
-                const more = await apiFetch(`${endpoint}?page=${p}&limit=${PAGE_LIMIT}`);
-                state[stateKey] = state[stateKey].concat(more.data || []);
+          if (type === 'taex') {
+            // Taex: server-side, cukup fetch halaman 1
+            resetPg('taex');
+            await fetchAndRenderTaex();
+          } else {
+            const endpoint = RELOAD_ENDPOINT[type];
+            const stateKey = RELOAD_STATE_KEY[type];
+            if (endpoint && stateKey) {
+              const fresh = await apiFetch(`${endpoint}?page=1&limit=${PAGE_LIMIT}`);
+              state[stateKey] = fresh.data || [];
+              if (fresh.pagination && fresh.pagination.hasMore) {
+                const pages = Math.ceil(fresh.pagination.total / PAGE_LIMIT);
+                for (let p = 2; p <= pages; p++) {
+                  const more = await apiFetch(`${endpoint}?page=${p}&limit=${PAGE_LIMIT}`);
+                  state[stateKey] = state[stateKey].concat(more.data || []);
+                }
               }
             }
           }
 
-          const meta2 = UPLOAD_META[type];
-          if (meta2) {
-            meta2.renderFn();
-            document.getElementById(meta2.previewId).style.display = 'none';
-          }
+          // Render + tutup modal setelah 800ms biar user sempat lihat 100%
+          setTimeout(() => {
+            const meta2 = UPLOAD_META[type];
+            if (meta2) {
+              meta2.renderFn();
+              document.getElementById(meta2.previewId).style.display = 'none';
+            }
+            if (panel) panel.style.display = 'none';
+            // Reset bar
+            if (bar) { bar.style.width = '0%'; bar.style.background = 'linear-gradient(90deg,#0891b2,#06b6d4)'; }
+            if (pctEl) { pctEl.textContent = ''; pctEl.style.color = ''; }
+            if (etaEl) etaEl.textContent = '';
 
-          // Tutup modal
-          const modalMap = { taex:'modal-taex-upload', sap:'modal-sap-upload', po:'modal-po-upload' };
-          if (modalMap[type]) closeModal(modalMap[type]);
+            const modalMap = { taex:'modal-taex-upload', sap:'modal-sap-upload', po:'modal-po-upload' };
+            if (modalMap[type]) closeModal(modalMap[type]);
 
-          setSyncStatus('ok', `✅ ${job.msg} · ${new Date().toLocaleTimeString('id-ID')}`);
-          toast(job.msg, 'ok');
-          resolve();
+            setSyncStatus('ok', `✅ ${job.msg} · ${new Date().toLocaleTimeString('id-ID')}`);
+            toast(job.msg, 'ok');
+            resolve();
+          }, 800);
         }
       } catch(e) {
         clearInterval(interval);
-        if (wrap) wrap.style.display = 'none';
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (panel) panel.style.display = 'none';
         setSyncStatus('err', '❌ Polling gagal: ' + e.message);
         reject(e);
       }
@@ -2594,10 +2738,10 @@ async function submitAddTaex() {
   try {
     const result = await apiFetch('/taex', { method: 'POST', body: newRow });
     newRow.ID = result.id;
-    state.taexData.push(newRow);
+    state.taexCurrentPage = state.taexCurrentPage || []; state.taexCurrentPage.push(newRow);
     hideLoading();
     closeModal('modal-add-taex');
-    renderTaex(); populateFilters();
+    fetchAndRenderTaex(); populateFilters();
     setSyncStatus('ok', `✅ Data berhasil ditambahkan · ${new Date().toLocaleTimeString('id-ID')}`);
     toast(`Data berhasil ditambahkan!`, 'ok');
   } catch(e) {
@@ -2611,8 +2755,8 @@ async function submitAddTaex() {
 // SINKRON KE PRISMA RESERVASI
 // ============================================================
 async function syncWithTaex() {
-  const taex = state.taexData;
-  if (!taex || taex.length === 0) { toast('Data TA-ex kosong!', 'err'); return; }
+  const taex = state.taexCurrentPage || [];
+  if (!taex.length) { toast('Data TA-ex kosong! Pastikan halaman TA-ex sudah dimuat.', 'err'); return; }
 
   // ── FILTER: blokir baris yang mengandung 'x'/'X' di Del atau FIs ──
   // ── FILTER: Ict WAJIB 'L' (case-insensitive tidak berlaku — harus huruf L besar) ──
@@ -2872,34 +3016,38 @@ async function submitPR() {
     return r;
   });
 
-  // Update taex dengan nomor PR dari prismaReservasi
-  state.taexData = state.taexData.map(tr => {
+  // Update taex dengan nomor PR dari prismaReservasi — hanya halaman saat ini di-update lokal
+  // Server akan di-update via apiPut dengan data dari prisma yang sudah di-sync
+  const updatedTaexPage = (state.taexCurrentPage || []).map(tr => {
     const matchingRows = state.prismaReservasiData.filter(r => r.Order===tr.Order && r.Material===tr.Material && r.PR_Prisma);
     const match = matchingRows.find(r => r.Itm === tr.Itm) || matchingRows[0];
-  
-    if (match) return { 
-  ...tr, 
-  PR: match.PR_Prisma, 
-  Item: match.Item_Prisma, 
-  Qty_PR: match.Qty_PR_Prisma,
-  Qty_Stock: match.Qty_StockOnhand !== null ? match.Qty_StockOnhand : tr.Qty_Stock,
-};
-    
+    if (match) return {
+      ...tr,
+      PR: match.PR_Prisma,
+      Item: match.Item_Prisma,
+      Qty_PR: match.Qty_PR_Prisma,
+      Qty_Stock: match.Qty_StockOnhand !== null ? match.Qty_StockOnhand : tr.Qty_Stock,
+    };
     return tr;
   });
+  state.taexCurrentPage = updatedTaexPage;
 
   showLoading('Sinkronisasi PR dari SAP PR...', true);
   setSyncStatus('loading', '⏳ Sinkronisasi PR ke server...');
   try {
     await apiPut('/kumpulan', state.kumpulanData);
     await apiPut('/prisma', state.prismaReservasiData);
-    await apiPut('/taex', state.taexData);
+    // Taex: save hanya baris yang berubah di halaman saat ini
+    if (state.taexCurrentPage && state.taexCurrentPage.length) {
+      await apiPut('/taex', state.taexCurrentPage);
+    }
     hideLoading();
     closeModal('modal-pr');
     setSyncStatus('ok', `✅ Singkron PR selesai · ${matchCount} material diupdate · ${new Date().toLocaleTimeString('id-ID')}`);
     toast(`Singkron PR selesai! ${matchCount} material diupdate.`, 'ok');
     populateFilters();
     renderAll();
+    fetchAndRenderTaex(); // refresh taex dari server
   } catch(e) {
     hideLoading();
     setSyncStatus('err', '❌ Gagal singkron PR: ' + e.message);
@@ -3055,7 +3203,7 @@ function changePageSize(key, size) {
 }
 
 function renderPageByKey(key) {
-  if (key==='taex') renderTaex();
+  if (key==='taex') fetchAndRenderTaex();
   else if (key==='prisma') renderPrismaReservasi();
   else if (key==='kk') renderKK();
   else if (key==='sum') renderSummary();
@@ -3069,6 +3217,11 @@ function renderPageByKey(key) {
 // ============================================================
 const _debounceTimers = {};
 function debounceRender(app) {
+  if (app === 'taex') {
+    clearTimeout(_taexDebounce);
+    _taexDebounce = setTimeout(() => taexApplyFilter(), 350);
+    return;
+  }
   clearTimeout(_debounceTimers[app]);
   _debounceTimers[app] = setTimeout(() => {
     resetPg(appToKey(app));
@@ -3081,6 +3234,7 @@ function appToKey(app) {
 }
 function clearSearch(inputId, app) {
   document.getElementById(inputId).value = '';
+  if (app === 'taex') { taexApplyFilter(); return; }
   resetPg(appToKey(app));
   renderPage(app);
 }
@@ -3090,7 +3244,7 @@ function clearSearch(inputId, app) {
 // ============================================================
 function updateBadges() {
   const set = (id, n) => { const el=document.getElementById(id); if(el) el.textContent=n; };
-  set('badge-taex',   state.taexData.length);
+  set('badge-taex',   taexServerMeta.total || 0);  // total dari server, bukan array lokal
   set('badge-prisma', state.prismaReservasiData.length);
   set('badge-kk',     state.kkData.length);
   set('badge-sum',    state.summaryData.length);
@@ -3098,7 +3252,7 @@ function updateBadges() {
   set('badge-pr',     state.prData.length);
   set('badge-order',  state.orderData.length);
   set('badge-po',     state.poData.length);
-  set('badge-tracking', state.taexData.length);
+  set('badge-tracking', taexServerMeta.total || 0);
   // badge audit = jumlah baris yang berubah
   const auditCount = new Set(buildAuditData().map(d => `${d.Order}||${d.Material}||${d.Itm}`)).size;
   set('badge-audit', auditCount || '');
@@ -3120,26 +3274,50 @@ function skeletonRows(tbodyId, cols) {
 // ============================================================
 // EXPORT FUNCTIONS (semua tab)
 // ============================================================
-function exportTaexExcel() {
-  if (!state.taexData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
-  const ws = XLSX.utils.json_to_sheet(state.taexData.map(r=>({
-    ID:r.ID, Plant:r.Plant||'', Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
-    Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
-    Qty_Reqmts:r.Qty_Reqmts??'', Qty_Stock:r.Qty_Stock??'',
-    PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'',
-    PO:r.PO||'', PO_Date:r.PO_Date||'', Qty_Deliv:r.Qty_Deliv??'', Delivery_Date:r.Delivery_Date||'',
-    SLoc:r.SLoc||'', Del:r.Del||'', FIs:r.FIs||'', Ict:r.Ict||'', PG:r.PG||'',
-    Recipient:r.Recipient||'', Unloading_point:r.Unloading_point||'',
-    Reqmts_Date:r.Reqmts_Date||'',
-    Qty_f_avail_check:r.Qty_f_avail_check??'', Qty_Withdrawn:r.Qty_Withdrawn??'',
-    UoM:r.UoM||'', GL_Acct:r.GL_Acct||'',
-    Res_Price:r.Res_Price??'', Res_per:r.Res_per??'', Res_Curr:r.Res_Curr||''
-  })));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'TA-ex Reservasi');
-  const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  XLSX.writeFile(wb, `TAex_Reservasi_${ts}.xlsx`);
-  toast('Export TA-ex berhasil!', 'ok');
+async function exportTaexExcel() {
+  if (!(taexServerMeta.total > 0)) { toast('Tidak ada data untuk diekspor', 'err'); return; }
+  toast('Mengambil data untuk export...', 'info');
+  setSyncStatus('loading', '⏳ Menyiapkan export...');
+  try {
+    // Fetch semua data dari server dengan limit besar
+    const EXPORT_LIMIT = 5000;
+    const total = taexServerMeta.total;
+    const pages = Math.ceil(total / EXPORT_LIMIT);
+    let allRows = [];
+    for (let p = 1; p <= pages; p++) {
+      const q   = (document.getElementById('taex-search')?.value || '').trim();
+      const pr  = document.getElementById('taex-filterPR')?.value || '';
+      const po  = document.getElementById('taex-filterPO')?.value || '';
+      const params = new URLSearchParams({ page: p, limit: EXPORT_LIMIT, order_by: taexSortKey, order_dir: taexSortDir });
+      if (q) params.set('q', q);
+      if (pr) params.set('pr', pr);
+      if (po) params.set('po', po);
+      const result = await apiFetch('/data/taex?' + params.toString());
+      allRows = allRows.concat(result.data || []);
+    }
+    const ws = XLSX.utils.json_to_sheet(allRows.map(r=>({
+      ID:r.ID, Plant:r.Plant||'', Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
+      Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
+      Qty_Reqmts:r.Qty_Reqmts??'', Qty_Stock:r.Qty_Stock??'',
+      PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'',
+      PO:r.PO||'', PO_Date:r.PO_Date||'', Qty_Deliv:r.Qty_Deliv??'', Delivery_Date:r.Delivery_Date||'',
+      SLoc:r.SLoc||'', Del:r.Del||'', FIs:r.FIs||'', Ict:r.Ict||'', PG:r.PG||'',
+      Recipient:r.Recipient||'', Unloading_point:r.Unloading_point||'',
+      Reqmts_Date:r.Reqmts_Date||'',
+      Qty_f_avail_check:r.Qty_f_avail_check??'', Qty_Withdrawn:r.Qty_Withdrawn??'',
+      UoM:r.UoM||'', GL_Acct:r.GL_Acct||'',
+      Res_Price:r.Res_Price??'', Res_per:r.Res_per??'', Res_Curr:r.Res_Curr||''
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'TA-ex Reservasi');
+    const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    XLSX.writeFile(wb, `TAex_Reservasi_${ts}.xlsx`);
+    setSyncStatus('ok', `✅ Export selesai · ${allRows.length.toLocaleString()} baris`);
+    toast(`Export TA-ex berhasil! ${allRows.length.toLocaleString()} baris`, 'ok');
+  } catch(e) {
+    setSyncStatus('err', '❌ Export gagal: ' + e.message);
+    toast('Export gagal: ' + e.message, 'err');
+  }
 }
 
 function exportPrismaExcel() {
@@ -3604,8 +3782,9 @@ function buildTrackingData() {
     }
   });
 
-  // Build per-taex-row enriched record — hanya baris yang punya Material
-  const rows = state.taexData.filter(t => t.Material && String(t.Material).trim() !== '').map(t => {
+  // Build per-taex-row enriched record — pakai taexFiltered (halaman saat ini)
+  // Untuk export semua tracking, gunakan tombol Export di tab TA-ex
+  const rows = taexFiltered.filter(t => t.Material && String(t.Material).trim() !== '').map(t => {
     const orderKey = String(t.Order || '');
     const prKey    = String(t.PR    || '');
     const ord = orderMap[orderKey] || {};
@@ -4170,7 +4349,8 @@ function isTaexRowLocked(r) {
 }
 
 async function deleteRow(tab, idx) {
-  const r = state[tabStateMap[tab]][idx];
+  // Untuk taex: pakai taexFiltered (halaman saat ini), bukan state.taexData
+  const r = tab === 'taex' ? taexFiltered[idx] : state[tabStateMap[tab]][idx];
   if (tab === 'taex' && isTaexRowLocked(r)) {
     toast(`🔒 "${r.Material}" sudah masuk Kertas Kerja (${state.kkCode||'—'}), tidak bisa dihapus!`, 'err');
     return;
@@ -4183,6 +4363,20 @@ async function deleteRow(tab, idx) {
     icon: '🗑',
   });
   if (!ok) return;
+
+  if (tab === 'taex') {
+    // Server-side delete by ID
+    try {
+      await apiFetch(`/taex/${r.ID}`, { method: 'DELETE' });
+      clearChecks(tab);
+      await fetchAndRenderTaex();
+      toast(`${label} berhasil dihapus.`, 'ok');
+    } catch(e) {
+      toast('Gagal hapus: ' + e.message, 'err');
+    }
+    return;
+  }
+
   state[tabStateMap[tab]].splice(idx, 1);
   clearChecks(tab);
   await saveTabData(tab);
@@ -4193,8 +4387,8 @@ async function bulkDelete(tab) {
   if (!idxs.length) return;
   // Filter out locked rows for taex
   if (tab === 'taex') {
-    const locked = idxs.filter(i => isTaexRowLocked(state.taexData[i]));
-    idxs = idxs.filter(i => !isTaexRowLocked(state.taexData[i]));
+    const locked = idxs.filter(i => isTaexRowLocked(taexFiltered[i]));
+    idxs = idxs.filter(i => !isTaexRowLocked(taexFiltered[i]));
     if (locked.length) toast(`🔒 ${locked.length} baris diskip (sudah masuk Kertas Kerja)`, 'info');
     if (!idxs.length) return;
   }
@@ -4205,6 +4399,27 @@ async function bulkDelete(tab) {
     icon: '🗑',
   });
   if (!ok) return;
+
+  if (tab === 'taex') {
+    // Taex server-side: delete by ID via API, lalu refresh
+    const rowsToDelete = idxs.map(i => taexFiltered[i]).filter(Boolean);
+    const ids = rowsToDelete.map(r => r.ID).filter(Boolean);
+    try {
+      // DELETE satu per satu via existing single-delete endpoint
+      for (const id of ids) {
+        await apiFetch(`/taex/${id}`, { method: 'DELETE' });
+      }
+    } catch(e) {
+      // Fallback: hapus via replace dengan data halaman dikurangi baris yang dihapus
+      const remaining = taexFiltered.filter((_, i) => !idxs.includes(i));
+      await apiPut('/taex', remaining);
+    }
+    clearChecks(tab);
+    await fetchAndRenderTaex();
+    toast(`${ids.length} baris berhasil dihapus.`, 'ok');
+    return;
+  }
+
   idxs.forEach(i => state[tabStateMap[tab]].splice(i, 1));
   clearChecks(tab);
   await saveTabData(tab);
@@ -4318,6 +4533,7 @@ const editFields = {
 };
 
 function getEditData(tab, idx) {
+  if (tab === 'taex')   return taexFiltered[idx];
   if (tab === 'prisma') return state.prismaReservasiData[idx];
   return state[tabStateMap[tab]]?.[idx];
 }
@@ -4399,7 +4615,18 @@ async function saveEdit() {
   changes.forEach(c => { r[c.key] = c.new; });
 
   // Simpan ke backend
-  if (tab === 'prisma') {
+  if (tab === 'taex') {
+    try {
+      // Update single row via PUT /taex (row sudah dimodifikasi via changes.forEach di atas)
+      await apiFetch(`/taex`, { method: 'PUT', body: taexFiltered });
+      await fetchAndRenderTaex();
+      setSyncStatus('ok', `✅ TA-ex disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
+      toast('Perubahan TA-ex berhasil disimpan!', 'ok');
+    } catch(e) {
+      setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
+      toast('Gagal simpan ke server!', 'err');
+    }
+  } else if (tab === 'prisma') {
     try {
       await apiPut('/prisma', state.prismaReservasiData);
       renderPrismaReservasi();
@@ -4437,7 +4664,7 @@ function buildAuditData() {
   const diffs = [];
   state.prismaReservasiData.forEach(p => {
     const key = `${p.Order}||${p.Material}||${String(p.Itm ?? '')}`;
-    const t = state.taexData.find(e =>
+    const t = taexFiltered.find(e =>
       String(e.Order) === String(p.Order) &&
       String(e.Material) === String(p.Material) &&
       String(e.Itm ?? '') === String(p.Itm ?? '')
@@ -4485,7 +4712,7 @@ function renderAudit() {
   // Update info bar
   const changedRows = new Set(allDiffs.map(d => `${d.Order}||${d.Material}||${d.Itm}`)).size;
   document.getElementById('audit-total').textContent      = allDiffs.length + ' perbedaan';
-  document.getElementById('audit-taex-count').textContent = state.taexData.length;
+  document.getElementById('audit-taex-count').textContent = taexServerMeta.total || 0;
   document.getElementById('audit-prisma-count').textContent = state.prismaReservasiData.length;
   document.getElementById('audit-changed-label').textContent = changedRows + ' baris berubah';
   document.getElementById('badge-audit').textContent = changedRows;
