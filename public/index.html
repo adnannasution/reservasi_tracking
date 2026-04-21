@@ -626,12 +626,6 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <span class="search-wrap"><input type="text" id="taex-search" placeholder="Material, deskripsi, order..." oninput="debounceRender('taex')"><span class="search-clear" onclick="clearSearch('taex-search','taex')">✕</span></span>
     <label>PR:</label>
     <select id="taex-filterPR"><option value="">Semua</option></select>
-    <label>Status PO:</label>
-    <select id="taex-filterPO">
-      <option value="">Semua</option>
-      <option value="with">Ada PO</option>
-      <option value="without">Tanpa PO</option>
-    </select>
     <button class="btn btn-search" onclick="taexApplyFilter()">Cari</button>
     <button class="btn btn-reset" onclick="taexResetFilter()">Reset</button>
     <button class="btn btn-teal" onclick="openTaexUploadModal()" style="margin-left:8px">📥 Upload Excel</button>
@@ -640,88 +634,78 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <button class="col-toggle-btn" onclick="toggleColPanel('taex')" style="margin-left:4px">⚙ Kolom</button>
     <span class="filter-right" id="taex-rowCount"></span>
   </div>
-  <div class="bulk-bar" id="bulk-bar-taex">
-    <span>Terpilih: <span class="bulk-count" id="bulk-count-taex">0</span> baris</span>
-    <button class="btn-bulk-del" onclick="bulkDelete('taex')">🗑 Hapus yang dipilih</button>
-    <button class="btn btn-reset" onclick="clearChecks('taex')" style="padding:4px 12px;font-size:12px">✕ Batal</button>
-  </div>
+
   <!-- Panel pilih kolom TA-ex -->
   <div class="col-panel" id="col-panel-taex">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('taex')">Reset</span></div>
     <label><input type="checkbox" data-tab="taex" data-col="1" onchange="applyColVisibility('taex')"> ID</label>
-    <label><input type="checkbox" data-tab="taex" data-col="2" onchange="applyColVisibility('taex')" checked> Plant</label>
+    <label><input type="checkbox" data-tab="taex" data-col="2" onchange="applyColVisibility('taex')" checked> PlPl</label>
     <label><input type="checkbox" data-tab="taex" data-col="3" onchange="applyColVisibility('taex')" checked> Equipment</label>
     <label><input type="checkbox" data-tab="taex" data-col="4" onchange="applyColVisibility('taex')" checked> Order</label>
-    <label><input type="checkbox" data-tab="taex" data-col="5" onchange="applyColVisibility('taex')" checked> Revision</label>
-    <label><input type="checkbox" data-tab="taex" data-col="6" onchange="applyColVisibility('taex')" checked> Material</label>
-    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')" checked> Itm</label>
-    <label><input type="checkbox" data-tab="taex" data-col="8" onchange="applyColVisibility('taex')" checked> Material Description</label>
-    <label><input type="checkbox" data-tab="taex" data-col="9" onchange="applyColVisibility('taex')" checked> Qty Reqmts</label>
-    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')" checked> Qty Stock</label>
-    <label><input type="checkbox" data-tab="taex" data-col="11" onchange="applyColVisibility('taex')" checked> PR</label>
-    <label><input type="checkbox" data-tab="taex" data-col="12" onchange="applyColVisibility('taex')"> Item</label>
-    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')" checked> Qty PR</label>
-    <label><input type="checkbox" data-tab="taex" data-col="14" onchange="applyColVisibility('taex')" checked> PO</label>
-    <label><input type="checkbox" data-tab="taex" data-col="15" onchange="applyColVisibility('taex')"> PO Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="16" onchange="applyColVisibility('taex')"> Qty Deliv</label>
-    <label><input type="checkbox" data-tab="taex" data-col="17" onchange="applyColVisibility('taex')"> Delivery Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="18" onchange="applyColVisibility('taex')"> SLoc</label>
-    <label><input type="checkbox" data-tab="taex" data-col="19" onchange="applyColVisibility('taex')" checked> Del</label>
-    <label><input type="checkbox" data-tab="taex" data-col="20" onchange="applyColVisibility('taex')" checked> FIs</label>
-    <label><input type="checkbox" data-tab="taex" data-col="21" onchange="applyColVisibility('taex')" checked> Ict</label>
-    <label><input type="checkbox" data-tab="taex" data-col="22" onchange="applyColVisibility('taex')" checked> PG</label>
-    <label><input type="checkbox" data-tab="taex" data-col="23" onchange="applyColVisibility('taex')"> Recipient</label>
-    <label><input type="checkbox" data-tab="taex" data-col="24" onchange="applyColVisibility('taex')"> Unloading Point</label>
-    <label><input type="checkbox" data-tab="taex" data-col="25" onchange="applyColVisibility('taex')"> Reqmts Date</label>
-    <label><input type="checkbox" data-tab="taex" data-col="26" onchange="applyColVisibility('taex')"> Qty Avail</label>
-    <label><input type="checkbox" data-tab="taex" data-col="27" onchange="applyColVisibility('taex')"> Qty Withdrawn</label>
-    <label><input type="checkbox" data-tab="taex" data-col="28" onchange="applyColVisibility('taex')"> UoM</label>
-    <label><input type="checkbox" data-tab="taex" data-col="29" onchange="applyColVisibility('taex')"> GL Acct</label>
-    <label><input type="checkbox" data-tab="taex" data-col="30" onchange="applyColVisibility('taex')"> Res Price</label>
-    <label><input type="checkbox" data-tab="taex" data-col="31" onchange="applyColVisibility('taex')"> Res Per</label>
-    <label><input type="checkbox" data-tab="taex" data-col="32" onchange="applyColVisibility('taex')"> Res Curr</label>
-    <label><input type="checkbox" data-tab="taex" data-col="33" onchange="applyColVisibility('taex')" checked> Aksi</label>
+    <label><input type="checkbox" data-tab="taex" data-col="5" onchange="applyColVisibility('taex')"> Reserv.No.</label>
+    <label><input type="checkbox" data-tab="taex" data-col="6" onchange="applyColVisibility('taex')" checked> Revision</label>
+    <label><input type="checkbox" data-tab="taex" data-col="7" onchange="applyColVisibility('taex')" checked> Material</label>
+    <label><input type="checkbox" data-tab="taex" data-col="8" onchange="applyColVisibility('taex')" checked> Itm</label>
+    <label><input type="checkbox" data-tab="taex" data-col="9" onchange="applyColVisibility('taex')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="taex" data-col="10" onchange="applyColVisibility('taex')" checked> Reqmt Qty</label>
+    <label><input type="checkbox" data-tab="taex" data-col="11" onchange="applyColVisibility('taex')" checked> Qty_Stock</label>
+    <label><input type="checkbox" data-tab="taex" data-col="12" onchange="applyColVisibility('taex')" checked> PR</label>
+    <label><input type="checkbox" data-tab="taex" data-col="13" onchange="applyColVisibility('taex')"> Item</label>
+    <label><input type="checkbox" data-tab="taex" data-col="14" onchange="applyColVisibility('taex')" checked> Qty_PR</label>
+    <label><input type="checkbox" data-tab="taex" data-col="15" onchange="applyColVisibility('taex')"> Cost Ctrs</label>
+    <label><input type="checkbox" data-tab="taex" data-col="16" onchange="applyColVisibility('taex')"> SLoc</label>
+    <label><input type="checkbox" data-tab="taex" data-col="17" onchange="applyColVisibility('taex')" checked> Del</label>
+    <label><input type="checkbox" data-tab="taex" data-col="18" onchange="applyColVisibility('taex')" checked> FIs</label>
+    <label><input type="checkbox" data-tab="taex" data-col="19" onchange="applyColVisibility('taex')" checked> ICt</label>
+    <label><input type="checkbox" data-tab="taex" data-col="20" onchange="applyColVisibility('taex')" checked> PG</label>
+    <label><input type="checkbox" data-tab="taex" data-col="21" onchange="applyColVisibility('taex')"> Recipient</label>
+    <label><input type="checkbox" data-tab="taex" data-col="22" onchange="applyColVisibility('taex')"> Unloading Point</label>
+    <label><input type="checkbox" data-tab="taex" data-col="23" onchange="applyColVisibility('taex')"> Reqmt Date</label>
+    <label><input type="checkbox" data-tab="taex" data-col="24" onchange="applyColVisibility('taex')"> Qty. f. avail.check</label>
+    <label><input type="checkbox" data-tab="taex" data-col="25" onchange="applyColVisibility('taex')"> Qty Withdrawn</label>
+    <label><input type="checkbox" data-tab="taex" data-col="26" onchange="applyColVisibility('taex')"> BUn</label>
+    <label><input type="checkbox" data-tab="taex" data-col="27" onchange="applyColVisibility('taex')"> G/L Acct</label>
+    <label><input type="checkbox" data-tab="taex" data-col="28" onchange="applyColVisibility('taex')"> Price</label>
+    <label><input type="checkbox" data-tab="taex" data-col="29" onchange="applyColVisibility('taex')"> per</label>
+    <label><input type="checkbox" data-tab="taex" data-col="30" onchange="applyColVisibility('taex')"> Crcy</label>
+
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th class="th-check no-sort"><input type="checkbox" class="row-check" id="chk-all-taex" onchange="toggleAllChecks('taex',this.checked)"></th>
         <th onclick="taexSort('ID')">ID</th>
-        <th class="no-sort">Plant</th>
+        <th class="no-sort">PlPl</th>
         <th onclick="taexSort('Equipment')">Equipment</th>
         <th onclick="taexSort('Order')">Order</th>
+        <th onclick="taexSort('Reservno')">Reserv.No.</th>
         <th onclick="taexSort('Revision')">Revision</th>
         <th onclick="taexSort('Material')">Material</th>
         <th onclick="taexSort('Itm')">Itm</th>
         <th class="no-sort">Material Description</th>
-        <th onclick="taexSort('Qty_Reqmts')"><span class="th-wrap">Qty_Reqmts<span class="tooltip-icon" data-tip="Total kebutuhan material">ⓘ</span></span></th>
+        <th onclick="taexSort('Qty_Reqmts')"><span class="th-wrap">Reqmt Qty<span class="tooltip-icon" data-tip="Total kebutuhan material">ⓘ</span></span></th>
         <th onclick="taexSort('Qty_Stock')"><span class="th-wrap">Qty_Stock<span class="tooltip-icon" data-tip="Stok tersedia di gudang">ⓘ</span></span></th>
         <th onclick="taexSort('PR')"><span class="th-wrap">PR<span class="tooltip-icon" data-tip="Nomor Purchase Request SAP">ⓘ</span></span></th>
         <th onclick="taexSort('Item')">Item</th>
-        <th onclick="taexSort('Qty_PR')"><span class="th-wrap">Qty PR<span class="tooltip-icon" data-tip="Qty yang sudah di-PR">ⓘ</span></span></th>
-        <th onclick="taexSort('PO')">PO</th>
-        <th class="no-sort">PO Date</th>
-        <th onclick="taexSort('Qty_Deliv')">Qty Deliv</th>
-        <th class="no-sort">Delivery Date</th>
+        <th onclick="taexSort('Qty_PR')"><span class="th-wrap">Qty_PR<span class="tooltip-icon" data-tip="Qty yang sudah di-PR">ⓘ</span></span></th>
+        <th class="no-sort">Cost Ctrs</th>
         <th class="no-sort">SLoc</th>
         <th class="no-sort">Del</th>
         <th class="no-sort">FIs</th>
-        <th class="no-sort">Ict</th>
+        <th class="no-sort">ICt</th>
         <th class="no-sort">PG</th>
         <th class="no-sort">Recipient</th>
         <th class="no-sort">Unloading Point</th>
-        <th class="no-sort">Reqmts Date</th>
-        <th onclick="taexSort('Qty_f_avail_check')"><span class="th-wrap">Qty Avail<span class="tooltip-icon" data-tip="Qty tersedia untuk avail check">ⓘ</span></span></th>
+        <th class="no-sort">Reqmt Date</th>
+        <th onclick="taexSort('Qty_f_avail_check')"><span class="th-wrap">Qty. f. avail.check<span class="tooltip-icon" data-tip="Qty tersedia untuk avail check">ⓘ</span></span></th>
         <th onclick="taexSort('Qty_Withdrawn')"><span class="th-wrap">Qty Withdrawn<span class="tooltip-icon" data-tip="Qty yang sudah diambil/withdrawn">ⓘ</span></span></th>
-        <th class="no-sort">UoM</th>
-        <th class="no-sort">GL Acct</th>
-        <th onclick="taexSort('Res_Price')">Res Price</th>
-        <th onclick="taexSort('Res_per')">Res Per</th>
-        <th class="no-sort">Res Curr</th>
-        <th class="no-sort">Aksi</th>
+        <th class="no-sort">BUn</th>
+        <th class="no-sort">G/L Acct</th>
+        <th onclick="taexSort('Res_Price')">Price</th>
+        <th onclick="taexSort('Res_per')">per</th>
+        <th class="no-sort">Crcy</th>
       </tr></thead>
-      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="34">Memuat data dari server...</td></tr></tbody>
+      <tbody id="taex-tbody"><tr class="loading-row"><td colspan="30">Memuat data dari server...</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="taex-pagination"></div>
@@ -1009,23 +993,23 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
   <div class="col-panel" id="col-panel-sap">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('sap')">Reset</span></div>
     <label><input type="checkbox" data-tab="sap" data-col="1" onchange="applyColVisibility('sap')"> ID</label>
-    <label><input type="checkbox" data-tab="sap" data-col="2" onchange="applyColVisibility('sap')"> Plant</label>
-    <label><input type="checkbox" data-tab="sap" data-col="3" onchange="applyColVisibility('sap')" checked> PR</label>
+    <label><input type="checkbox" data-tab="sap" data-col="2" onchange="applyColVisibility('sap')" checked> Plnt</label>
+    <label><input type="checkbox" data-tab="sap" data-col="3" onchange="applyColVisibility('sap')" checked> Purch.Req.</label>
     <label><input type="checkbox" data-tab="sap" data-col="4" onchange="applyColVisibility('sap')" checked> Item</label>
     <label><input type="checkbox" data-tab="sap" data-col="5" onchange="applyColVisibility('sap')" checked> Material</label>
     <label><input type="checkbox" data-tab="sap" data-col="6" onchange="applyColVisibility('sap')" checked> Material Description</label>
     <label><input type="checkbox" data-tab="sap" data-col="7" onchange="applyColVisibility('sap')"> D</label>
-    <label><input type="checkbox" data-tab="sap" data-col="8" onchange="applyColVisibility('sap')"> R</label>
+    <label><input type="checkbox" data-tab="sap" data-col="8" onchange="applyColVisibility('sap')"> Rel</label>
     <label><input type="checkbox" data-tab="sap" data-col="9" onchange="applyColVisibility('sap')"> PGr</label>
-    <label><input type="checkbox" data-tab="sap" data-col="10" onchange="applyColVisibility('sap')"> TrackingNo</label>
-    <label><input type="checkbox" data-tab="sap" data-col="11" onchange="applyColVisibility('sap')" checked> Qty PR</label>
-    <label><input type="checkbox" data-tab="sap" data-col="12" onchange="applyColVisibility('sap')"> Un</label>
-    <label><input type="checkbox" data-tab="sap" data-col="13" onchange="applyColVisibility('sap')" checked> Req Date</label>
-    <label><input type="checkbox" data-tab="sap" data-col="14" onchange="applyColVisibility('sap')"> Valn Price</label>
-    <label><input type="checkbox" data-tab="sap" data-col="15" onchange="applyColVisibility('sap')"> PR Curr</label>
-    <label><input type="checkbox" data-tab="sap" data-col="16" onchange="applyColVisibility('sap')"> PR Per</label>
-    <label><input type="checkbox" data-tab="sap" data-col="17" onchange="applyColVisibility('sap')"> Release Date</label>
-    <label><input type="checkbox" data-tab="sap" data-col="18" onchange="applyColVisibility('sap')" checked> Tracking</label>
+    <label><input type="checkbox" data-tab="sap" data-col="10" onchange="applyColVisibility('sap')"> S</label>
+    <label><input type="checkbox" data-tab="sap" data-col="11" onchange="applyColVisibility('sap')"> TrackingNo</label>
+    <label><input type="checkbox" data-tab="sap" data-col="12" onchange="applyColVisibility('sap')" checked> Qty Requested</label>
+    <label><input type="checkbox" data-tab="sap" data-col="13" onchange="applyColVisibility('sap')"> Un</label>
+    <label><input type="checkbox" data-tab="sap" data-col="14" onchange="applyColVisibility('sap')" checked> Req.Date</label>
+    <label><input type="checkbox" data-tab="sap" data-col="15" onchange="applyColVisibility('sap')"> Valn Price</label>
+    <label><input type="checkbox" data-tab="sap" data-col="16" onchange="applyColVisibility('sap')"> Crcy</label>
+    <label><input type="checkbox" data-tab="sap" data-col="17" onchange="applyColVisibility('sap')"> Per</label>
+    <label><input type="checkbox" data-tab="sap" data-col="18" onchange="applyColVisibility('sap')"> Release Dt</label>
     <label><input type="checkbox" data-tab="sap" data-col="19" onchange="applyColVisibility('sap')" checked> Aksi</label>
   </div>
   <div class="table-container">
@@ -1034,23 +1018,23 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
       <thead><tr>
         <th class="th-check no-sort"><input type="checkbox" class="row-check" id="chk-all-sap" onchange="toggleAllChecks('sap',this.checked)"></th>
         <th onclick="sapSort('ID')">ID</th>
-        <th class="no-sort">Plant</th>
-        <th onclick="sapSort('PR')">Purchreq</th>
+        <th class="no-sort">Plnt</th>
+        <th onclick="sapSort('PR')">Purch.Req.</th>
         <th onclick="sapSort('Item')">Item</th>
         <th onclick="sapSort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
         <th class="no-sort">D</th>
-        <th class="no-sort">R</th>
+        <th class="no-sort">Rel</th>
         <th class="no-sort">PGr</th>
+        <th class="no-sort">S</th>
         <th onclick="sapSort('TrackingNo')">TrackingNo</th>
-        <th class="no-sort" style="text-align:right"><span class="th-wrap">Qty Purchreq<span class="tooltip-icon" data-tip="Qty pada Purchase Request">ⓘ</span></span></th>
+        <th class="no-sort" style="text-align:right"><span class="th-wrap">Qty Requested<span class="tooltip-icon" data-tip="Qty pada Purchase Request">ⓘ</span></span></th>
         <th class="no-sort">Un</th>
-        <th class="no-sort">Reqdate</th>
+        <th class="no-sort">Req.Date</th>
         <th class="no-sort" style="text-align:right">Valn Price</th>
-        <th class="no-sort">PR Curr</th>
-        <th class="no-sort" style="text-align:right">PR Per</th>
-        <th class="no-sort">Release Date</th>
-        <th onclick="sapSort('Tracking')">Tracking</th>
+        <th class="no-sort">Crcy</th>
+        <th class="no-sort" style="text-align:right">Per</th>
+        <th class="no-sort">Release Dt</th>
         <th class="no-sort">Aksi</th>
       </tr></thead>
       <tbody id="sap-tbody"><tr class="loading-row"><td colspan="20">Belum ada data PR</td></tr></tbody>
@@ -1083,27 +1067,27 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('order')">Reset</span></div>
     <label><input type="checkbox" data-tab="order" data-col="1" onchange="applyColVisibility('order')" checked> Plant</label>
     <label><input type="checkbox" data-tab="order" data-col="2" onchange="applyColVisibility('order')" checked> Order</label>
-    <label><input type="checkbox" data-tab="order" data-col="3" onchange="applyColVisibility('order')"> Superior Order</label>
+    <label><input type="checkbox" data-tab="order" data-col="3" onchange="applyColVisibility('order')"> Superior order</label>
     <label><input type="checkbox" data-tab="order" data-col="4" onchange="applyColVisibility('order')"> Notification</label>
-    <label><input type="checkbox" data-tab="order" data-col="5" onchange="applyColVisibility('order')"> Created On</label>
+    <label><input type="checkbox" data-tab="order" data-col="5" onchange="applyColVisibility('order')"> Created on</label>
     <label><input type="checkbox" data-tab="order" data-col="6" onchange="applyColVisibility('order')" checked> Description</label>
     <label><input type="checkbox" data-tab="order" data-col="7" onchange="applyColVisibility('order')" checked> Revision</label>
     <label><input type="checkbox" data-tab="order" data-col="8" onchange="applyColVisibility('order')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="order" data-col="9" onchange="applyColVisibility('order')" checked> System Status</label>
-    <label><input type="checkbox" data-tab="order" data-col="10" onchange="applyColVisibility('order')"> User Status</label>
-    <label><input type="checkbox" data-tab="order" data-col="11" onchange="applyColVisibility('order')"> Funct Location</label>
+    <label><input type="checkbox" data-tab="order" data-col="9" onchange="applyColVisibility('order')" checked> System status</label>
+    <label><input type="checkbox" data-tab="order" data-col="10" onchange="applyColVisibility('order')"> User status</label>
+    <label><input type="checkbox" data-tab="order" data-col="11" onchange="applyColVisibility('order')"> Functional Loc.</label>
     <label><input type="checkbox" data-tab="order" data-col="12" onchange="applyColVisibility('order')"> Location</label>
-    <label><input type="checkbox" data-tab="order" data-col="13" onchange="applyColVisibility('order')"> WBS Ord Header</label>
+    <label><input type="checkbox" data-tab="order" data-col="13" onchange="applyColVisibility('order')"> WBS ord. header</label>
     <label><input type="checkbox" data-tab="order" data-col="14" onchange="applyColVisibility('order')"> Cost Center</label>
-    <label><input type="checkbox" data-tab="order" data-col="15" onchange="applyColVisibility('order')"> Total Plan Cost</label>
-    <label><input type="checkbox" data-tab="order" data-col="16" onchange="applyColVisibility('order')"> Total Act Cost</label>
-    <label><input type="checkbox" data-tab="order" data-col="17" onchange="applyColVisibility('order')"> Planner Group</label>
+    <label><input type="checkbox" data-tab="order" data-col="15" onchange="applyColVisibility('order')"> TotalPlnndCosts</label>
+    <label><input type="checkbox" data-tab="order" data-col="16" onchange="applyColVisibility('order')"> Total act.costs</label>
+    <label><input type="checkbox" data-tab="order" data-col="17" onchange="applyColVisibility('order')"> Planner group</label>
     <label><input type="checkbox" data-tab="order" data-col="18" onchange="applyColVisibility('order')"> Main WorkCtr</label>
-    <label><input type="checkbox" data-tab="order" data-col="19" onchange="applyColVisibility('order')"> Entry By</label>
-    <label><input type="checkbox" data-tab="order" data-col="20" onchange="applyColVisibility('order')"> Changed By</label>
-    <label><input type="checkbox" data-tab="order" data-col="21" onchange="applyColVisibility('order')" checked> Basic Start Date</label>
-    <label><input type="checkbox" data-tab="order" data-col="22" onchange="applyColVisibility('order')" checked> Basic Finish Date</label>
-    <label><input type="checkbox" data-tab="order" data-col="23" onchange="applyColVisibility('order')"> Actual Release</label>
+    <label><input type="checkbox" data-tab="order" data-col="19" onchange="applyColVisibility('order')"> Entered by</label>
+    <label><input type="checkbox" data-tab="order" data-col="20" onchange="applyColVisibility('order')"> Changed by</label>
+    <label><input type="checkbox" data-tab="order" data-col="21" onchange="applyColVisibility('order')" checked> Bas. start date</label>
+    <label><input type="checkbox" data-tab="order" data-col="22" onchange="applyColVisibility('order')" checked> Basic fin. date</label>
+    <label><input type="checkbox" data-tab="order" data-col="23" onchange="applyColVisibility('order')"> Actual release</label>
     <label><input type="checkbox" data-tab="order" data-col="24" onchange="applyColVisibility('order')" checked> Aksi</label>
   </div>
   <div class="table-container">
@@ -1113,27 +1097,27 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         <th class="th-check no-sort"><input type="checkbox" class="row-check" id="chk-all-order" onchange="toggleAllChecks('order',this.checked)"></th>
         <th class="no-sort">Plant</th>
         <th onclick="orderSort('Order')">Order</th>
-        <th onclick="orderSort('Superior_Order')">Superior Order</th>
+        <th onclick="orderSort('Superior_Order')">Superior order</th>
         <th onclick="orderSort('Notification')">Notification</th>
-        <th class="no-sort">Created On</th>
+        <th class="no-sort">Created on</th>
         <th class="no-sort">Description</th>
         <th onclick="orderSort('Revision')">Revision</th>
         <th onclick="orderSort('Equipment')">Equipment</th>
-        <th class="no-sort">System Status</th>
-        <th class="no-sort">User Status</th>
-        <th class="no-sort">Funct Location</th>
+        <th class="no-sort">System status</th>
+        <th class="no-sort">User status</th>
+        <th class="no-sort">Functional Loc.</th>
         <th class="no-sort">Location</th>
-        <th class="no-sort">WBS Ord Header</th>
+        <th class="no-sort">WBS ord. header</th>
         <th class="no-sort">Cost Center</th>
-        <th onclick="orderSort('Total_Plan_Cost')" style="text-align:right">Total Plan Cost</th>
-        <th onclick="orderSort('Total_Act_Cost')" style="text-align:right">Total Act Cost</th>
-        <th class="no-sort">Planner Group</th>
+        <th onclick="orderSort('Total_Plan_Cost')" style="text-align:right">TotalPlnndCosts</th>
+        <th onclick="orderSort('Total_Act_Cost')" style="text-align:right">Total act.costs</th>
+        <th class="no-sort">Planner group</th>
         <th class="no-sort">Main WorkCtr</th>
-        <th class="no-sort">Entry By</th>
-        <th class="no-sort">Changed By</th>
-        <th class="no-sort">Basic Start Date</th>
-        <th class="no-sort">Basic Finish Date</th>
-        <th class="no-sort">Actual Release</th>
+        <th class="no-sort">Entered by</th>
+        <th class="no-sort">Changed by</th>
+        <th class="no-sort">Bas. start date</th>
+        <th class="no-sort">Basic fin. date</th>
+        <th class="no-sort">Actual release</th>
         <th class="no-sort">Aksi</th>
       </tr></thead>
       <tbody id="order-tbody"><tr class="loading-row"><td colspan="25">Belum ada data Order. Upload Excel untuk memulai.</td></tr></tbody>
@@ -1363,14 +1347,18 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <select id="audit-filter-col" onchange="renderAudit()">
       <option value="">Semua</option>
       <option value="Equipment">Equipment</option>
+      <option value="Reservno">Reserv.No.</option>
       <option value="Revision">Revision</option>
       <option value="Material_Description">Material Description</option>
-      <option value="Qty_Reqmts">Qty Reqmts</option>
+      <option value="Qty_Reqmts">Reqmt Qty</option>
       <option value="Del">Del</option>
       <option value="FIs">FIs</option>
-      <option value="Ict">Ict</option>
+      <option value="Ict">ICt</option>
       <option value="PG">PG</option>
-      <option value="UoM">UoM</option>
+      <option value="UoM">BUn</option>
+      <option value="Recipient">Recipient</option>
+      <option value="Unloading_point">Unloading Point</option>
+      <option value="Reqmts_Date">Reqmt Date</option>
     </select>
     <button class="btn btn-search" onclick="renderAudit()">Cari</button>
     <button class="btn btn-reset" onclick="auditResetFilter()">Reset</button>
@@ -1457,7 +1445,8 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     </div>
     <div class="modal-body">
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;">
-        <b>Mode Upsert:</b> Baris yang cocok (Order + Material + Itm) akan di-update kolom <b>PR, Item, Qty PR, Qty Stock</b> saja. Baris baru akan ditambahkan otomatis.
+        <b>Kolom yang didukung (format baru):</b> PlPl, Equipment, Order, Reserv.No., Revision, Material, Itm, Material Description, Reqmt Qty, Qty_Stock, PR, Item, Qty_PR, Cost Ctrs, SLoc, Del, FIs, ICt, PG, Recipient, Unloading Point, Reqmt Date, Qty. f. avail.check, Qty Withdrawn, BUn, G/L Acct, Price, per, Crcy<br>
+        <span style="color:#6b7280;margin-top:4px;display:block"><b>Format lama juga diterima</b> — header lama seperti Plant, Qty_Reqmts, UoM, GL_Acct, dll otomatis dipetakan.</span>
       </div>
       <div class="upload-zone" id="taex-upload-zone" onclick="document.getElementById('taex-file-input').click()" ondragover="handleDrag(event,'taex-upload-zone')" ondragleave="handleDragLeave(event,'taex-upload-zone')" ondrop="handleDrop(event,'taex')">
         <input type="file" id="taex-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'taex')">
@@ -1501,7 +1490,8 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     </div>
     <div class="modal-body">
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e40af;">
-        <b>Kolom yang didukung:</b> No_PR, Material, Material_Description, PR, Item, Qty_PR, Tracking
+        <b>Kolom yang didukung (format baru):</b> Plnt, Purch.Req., Item, Material, Material Description, D, Rel, PGr, S, TrackingNo, Qty Requested, Un, Req.Date, Valn Price, Crcy, Per, Release Dt<br>
+        <span style="color:#6b7280;margin-top:4px;display:block"><b>Format lama juga diterima</b> — header lama seperti Plant, Purchreq, R, Qty_PR, Reqdate, PR_Curr, PR_Per, Release_Date, dll otomatis dipetakan.</span>
       </div>
       <div class="upload-zone" id="sap-upload-zone" onclick="document.getElementById('sap-file-input').click()" ondragover="handleDrag(event,'sap-upload-zone')" ondragleave="handleDragLeave(event,'sap-upload-zone')" ondrop="handleDrop(event,'sap')">
         <input type="file" id="sap-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'sap')">
@@ -1548,7 +1538,8 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     </div>
     <div class="modal-body">
       <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#4c1d95;">
-        <b>Kolom yang didukung:</b> Plant, Order, Superior_Order, Notification, Created_On, Description, Revision, Equipment, System_Status, User_Status, FunctLocation, Location, WBS_Ord_header, CostCenter, Total_Plan_Cost, Total_Act_Cost, Planner_Group, MainWorkCtr, Entry_by, Changed_by, Basic_start_date, Basic_finish_date, Actual_Release
+        <b>Kolom yang didukung (format baru):</b> Plant, Order, Superior order, Notification, Created on, Description, Revision, Equipment, System status, User status, Functional Loc., Location, WBS ord. header, Cost Center, TotalPlnndCosts, Total act.costs, Planner group, Main WorkCtr, Entered by, Changed by, Bas. start date, Basic fin. date, Actual release<br>
+        <span style="color:#6b7280;margin-top:4px;display:block"><b>Format lama juga diterima</b> — header lama seperti Superior_Order, FunctLocation, Total_Plan_Cost, Entry_by, dll otomatis dipetakan.</span>
       </div>
       <div class="upload-zone" id="order-upload-zone" onclick="document.getElementById('order-file-input').click()" ondragover="handleDrag(event,'order-upload-zone')" ondragleave="handleDragLeave(event,'order-upload-zone')" ondrop="handleDrop(event,'order')">
         <input type="file" id="order-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'order')">
@@ -1582,14 +1573,17 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     </div>
     <div class="modal-body">
       <div class="form-grid">
+        <div class="form-group"><label>PlPl</label><input type="text" id="taex-add-plant" placeholder="cth: 1000"></div>
         <div class="form-group"><label>Equipment</label><input type="text" id="taex-add-equipment" placeholder="cth: 701-H-1/00"></div>
         <div class="form-group"><label>Order</label><input type="text" id="taex-add-order" placeholder="cth: 8302345979"></div>
+        <div class="form-group"><label>Reserv.No.</label><input type="text" id="taex-add-reservno" placeholder="cth: 0001234567"></div>
         <div class="form-group"><label>Revision</label><input type="text" id="taex-add-revision" placeholder="cth: RU21025"></div>
         <div class="form-group"><label>Itm</label><input type="text" id="taex-add-itm" placeholder="cth: 0010"></div>
         <div class="form-group"><label>Material</label><input type="text" id="taex-add-material" placeholder="cth: J200750428"></div>
-        <div class="form-group"><label>Qty Reqmts</label><input type="number" id="taex-add-qty-reqmts" placeholder="0" min="0"></div>
+        <div class="form-group"><label>Reqmt Qty</label><input type="number" id="taex-add-qty-reqmts" placeholder="0" min="0"></div>
         <div class="form-group full"><label>Material Description</label><input type="text" id="taex-add-description" placeholder="cth: GASKET,SPW,316L,GRAP,8IN,300"></div>
         <div class="form-group"><label>Qty Stock</label><input type="number" id="taex-add-qty-stock" placeholder="0" min="0"></div>
+        <div class="form-group"><label>Cost Ctrs</label><input type="text" id="taex-add-cost-ctrs" placeholder="cth: CC123456"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1914,13 +1908,13 @@ async function init() {
   setInitProgress(10, 'Menghubungkan ke server...');
   setSyncStatus('loading', '⏳ Memuat data dari server...');
   try {
-    setInitProgress(20, 'Mengambil data referensi...');
-    // Taex TIDAK dimuat di sini — akan di-fetch per halaman via fetchAndRenderTaex()
-    // Hanya muat tabel kecil: prisma, kumpulan, pr, po, state
+    setInitProgress(30, 'Mengambil data dari server...');
+    // Hanya load halaman 1 — cukup untuk semua tabel
+    // Tidak ada loop halaman — semua tabel lazy load saat dibutuhkan
     const data = await apiFetch(`/data?page=1&limit=${PAGE_LIMIT}`);
 
-    setInitProgress(50, 'Memproses data...');
-    state.taexData            = [];  // tidak dipakai untuk render
+    setInitProgress(60, 'Memproses data...');
+    state.taexData            = [];
     state.prismaReservasiData = data.prismaReservasiData || [];
     state.kkData              = data.kkData              || [];
     state.kkCode              = data.kkCode              || null;
@@ -1931,27 +1925,14 @@ async function init() {
     state.prCounter           = data.prCounter           || 0;
     state.orderData           = data.orderData           || [];
     state.poData              = data.poData              || [];
-
-    // Load sisa halaman tabel referensi (prisma, kumpulan, pr, po) — bukan taex
-    const pg = data.pagination;
-    if (pg && pg.hasMore) {
-      const maxRef = Math.max(pg.totalPrisma||0, pg.totalKumpulan||0, pg.totalPR||0, pg.totalPO||0);
-      if (maxRef > PAGE_LIMIT) {
-        const totalPages = Math.ceil(maxRef / PAGE_LIMIT);
-        setInitProgress(55, `Memuat data referensi...`);
-        for (let page = 2; page <= totalPages; page++) {
-          const more = await apiFetch(`/data?page=${page}&limit=${PAGE_LIMIT}`);
-          state.prismaReservasiData = state.prismaReservasiData.concat(more.prismaReservasiData || []);
-          state.kumpulanData        = state.kumpulanData.concat(more.kumpulanData    || []);
-          state.prData              = state.prData.concat(more.prData                || []);
-          state.poData              = state.poData.concat(more.poData                || []);
-          setInitProgress(55 + Math.round((page/totalPages)*25), `Memuat halaman ${page}/${totalPages}...`);
-        }
-      }
-    }
+    // Simpan info total untuk badge
+    const pg = data.pagination || {};
+    state._totalPrisma   = pg.totalPrisma   || state.prismaReservasiData.length;
+    state._totalKumpulan = pg.totalKumpulan || state.kumpulanData.length;
+    state._totalPR       = pg.totalPR       || state.prData.length;
+    state._totalPO       = pg.totalPO       || state.poData.length;
 
     setInitProgress(82, 'Memuat tabel TA-ex...');
-    // Taex: hanya fetch halaman pertama dari server (cepat, <1 detik)
     await fetchAndRenderTaex();
 
     setInitProgress(95, 'Menyiapkan tampilan...');
@@ -2056,14 +2037,14 @@ function taexApplyFilter() { pgState['taex'] = { page: 1, size: getPg('taex').si
 function taexResetFilter() {
   document.getElementById('taex-search').value = '';
   document.getElementById('taex-filterPR').value = '';
-  document.getElementById('taex-filterPO').value = '';
   taexApplyFilter();
 }
 function taexSort(col) {
   const colMap = { 'ID':'id','Equipment':'equipment','Order':'"order"','Revision':'revision',
     'Material':'material','Itm':'itm','Qty_Reqmts':'qty_reqmts','Qty_Stock':'qty_stock',
-    'PR':'pr','PO':'po','Qty_f_avail_check':'qty_f_avail_check','Qty_Withdrawn':'qty_withdrawn',
-    'Res_Price':'res_price' };
+    'PR':'pr','Item':'item','Qty_PR':'qty_pr','Reservno':'reservno',
+    'Qty_f_avail_check':'qty_f_avail_check','Qty_Withdrawn':'qty_withdrawn',
+    'Res_Price':'res_price','Res_per':'res_per' };
   const dbCol = colMap[col] || 'id';
   if (taexSortKey === dbCol) taexSortDir = taexSortDir === 'asc' ? 'desc' : 'asc';
   else { taexSortKey = dbCol; taexSortDir = 'asc'; }
@@ -2073,7 +2054,6 @@ function taexSort(col) {
 async function fetchAndRenderTaex() {
   const q   = (document.getElementById('taex-search')?.value || '').trim();
   const pr  = document.getElementById('taex-filterPR')?.value || '';
-  const po  = document.getElementById('taex-filterPO')?.value || '';
   const pg  = getPg('taex');
 
   const params = new URLSearchParams({
@@ -2084,10 +2064,9 @@ async function fetchAndRenderTaex() {
   });
   if (q)  params.set('q', q);
   if (pr) params.set('pr', pr);
-  if (po) params.set('po', po);
 
   const tbody = document.getElementById('taex-tbody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="34">⏳ Memuat data...</td></tr>';
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="30">⏳ Memuat data...</td></tr>';
 
   try {
     const result = await apiFetch('/data/taex?' + params.toString());
@@ -2096,7 +2075,7 @@ async function fetchAndRenderTaex() {
     state.taexCurrentPage = taexFiltered;
     renderTaex();
   } catch(e) {
-    tbody.innerHTML = `<tr class="loading-row"><td colspan="34">❌ Gagal memuat: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="30">❌ Gagal memuat: ${e.message}</td></tr>`;
   }
 }
 
@@ -2111,7 +2090,7 @@ function renderTaex() {
   const tbody = document.getElementById('taex-tbody');
 
   if (!data.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="34">Tidak ada data</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="30">Tidak ada data</td></tr>';
     document.getElementById('taex-rowCount').textContent = '0 baris';
     renderPagination('taex-pagination','taex',0,1,1,100,fetchAndRenderTaex);
     return;
@@ -2120,17 +2099,17 @@ function renderTaex() {
   tbody.innerHTML = data.map((r, pageIdx) => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
     const locked = isTaexRowLocked(r);
-    const rowCls = locked ? 'row-locked' : (r.PO ? 'has-po' : r.PR ? 'has-pr' : '');
+    const rowCls = locked ? 'row-locked' : (r.PR ? 'has-pr' : '');
     const kkCode = locked ? (
       kkKeySet.has(`${r.Order}||${r.Material}||${r.Itm}`) ? (state.kkCode || 'KK Aktif') :
       prismaKKMap[`${r.Order}||${r.Material}||${r.Itm}`] || 'Sudah diproses'
     ) : '';
     return `<tr class="${rowCls}" data-idx="${pageIdx}">
-      <td class="td-check"><input type="checkbox" class="row-check" data-tab="taex" data-idx="${pageIdx}" onchange="onCheckChange('taex')" ${locked?'disabled title="Tidak bisa dipilih: sudah masuk Kertas Kerja"':''}></td>
       <td class="center mono">${r.ID}</td>
       <td class="mono">${D(r.Plant)}</td>
       <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
       <td class="mono">${D(r.Order)}</td>
+      <td class="mono">${D(r.Reservno)}</td>
       <td class="mono">${D(r.Revision)}</td>
       <td class="mono">${D(r.Material)}</td>
       <td class="center mono">${D(r.Itm)}</td>
@@ -2140,10 +2119,7 @@ function renderTaex() {
       <td>${badge(r.PR,'blue')}</td>
       <td class="center mono">${D(r.Item)}</td>
       <td class="num">${N(r.Qty_PR)}</td>
-      <td>${badge(r.PO,'green')}</td>
-      <td class="mono">${D(r.PO_Date)}</td>
-      <td class="num">${N(r.Qty_Deliv)}</td>
-      <td class="mono">${D(r.Delivery_Date)}</td>
+      <td class="mono">${D(r.Cost_Ctrs)}</td>
       <td class="mono">${D(r.SLoc)}</td>
       <td class="center mono">${D(r.Del)}</td>
       <td class="center mono">${D(r.FIs)}</td>
@@ -2159,13 +2135,7 @@ function renderTaex() {
       <td class="num">${N(r.Res_Price)}</td>
       <td class="num">${N(r.Res_per)}</td>
       <td class="mono">${D(r.Res_Curr)}</td>
-      <td class="td-actions">
-        ${locked
-          ? `<span class="lock-badge" title="Sudah masuk Kertas Kerja: ${kkCode}">🔒 KK: ${kkCode}</span>`
-          : `<button class="btn-act btn-act-edit" onclick="openEditModal('taex',${pageIdx})">✏ Edit</button>
-             <button class="btn-act btn-act-del" onclick="deleteRow('taex',${pageIdx})">🗑</button>`
-        }
-      </td>
+
     </tr>`;
   }).join('');
 
@@ -2177,34 +2147,48 @@ function renderTaex() {
   reapplyColAfterRender('taex');
 }
 
-// ============================================================
-// PRISMA RESERVASI
-// ============================================================
-let prFiltered = [];
-function prismaReservasiSort(key) { setSort('pr-res',key); renderPrismaReservasi(); }
-function prismaReservasiApplyFilter() { resetPg('prisma'); renderPrismaReservasi(); }
-function prismaReservasiResetFilter() { document.getElementById('pr-search').value=''; document.getElementById('pr-filterOrder').value=''; renderPrismaReservasi(); }
+// ── PRISMA — server-side ──
+let prFiltered = [], prServerMeta = { total:0, totalPages:1, page:1, limit:100 };
+let prSortKey = 'id', prSortDir = 'asc';
+let _prDebounce = null;
+function prismaReservasiSort(key) {
+  const m = { 'Order':'"order"','Material':'material','Equipment':'equipment','Qty_Reqmts':'qty_reqmts','PR_Prisma':'pr_prisma' };
+  const db = m[key]||'id';
+  if(prSortKey===db) prSortDir=prSortDir==='asc'?'desc':'asc'; else{prSortKey=db;prSortDir='asc';}
+  fetchAndRenderPrisma();
+}
+function prismaReservasiApplyFilter() { resetPg('prisma'); fetchAndRenderPrisma(); }
+function prismaReservasiResetFilter() { document.getElementById('pr-search').value=''; document.getElementById('pr-filterOrder').value=''; fetchAndRenderPrisma(); }
+
+async function fetchAndRenderPrisma() {
+  const q   = (document.getElementById('pr-search')?.value||'').trim();
+  const ord = document.getElementById('pr-filterOrder')?.value||'';
+  const pg  = getPg('prisma');
+  const params = new URLSearchParams({ page:pg.page, limit:pg.size, order_by:prSortKey, order_dir:prSortDir });
+  if(q)   params.set('q', q);
+  if(ord) params.set('order', ord);
+  const tbody = document.getElementById('pr-tbody');
+  tbody.innerHTML='<tr class="loading-row"><td colspan="23">⏳ Memuat data...</td></tr>';
+  try {
+    const result = await apiFetch('/data/prisma?'+params.toString());
+    prFiltered = result.data||[];
+    prServerMeta = result.pagination||{ total:0,totalPages:1,page:pg.page,limit:pg.size };
+    state._totalPrisma = prServerMeta.total;
+    renderPrismaReservasi();
+  } catch(e) { tbody.innerHTML=`<tr class="loading-row"><td colspan="23">❌ ${e.message}</td></tr>`; }
+}
+
 function renderPrismaReservasi() {
-  const isEmpty = !state.prismaReservasiData || state.prismaReservasiData.length === 0;
+  const isEmpty = prServerMeta.total === 0 && !prFiltered.length;
   document.getElementById('pr-empty-state').style.display = isEmpty ? 'flex' : 'none';
-  document.getElementById('pr-filter-bar').style.display = isEmpty ? 'none' : 'flex';
-  document.getElementById('pr-table-wrap').style.display = isEmpty ? 'none' : 'flex';
+  document.getElementById('pr-filter-bar').style.display  = isEmpty ? 'none' : 'flex';
+  document.getElementById('pr-table-wrap').style.display  = isEmpty ? 'none' : 'flex';
   if (isEmpty) return;
-  const q = document.getElementById('pr-search').value.toLowerCase();
-  const ord = document.getElementById('pr-filterOrder').value;
-  let data = state.prismaReservasiData.filter(r => {
-    const mq = !q || Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q));
-    const mo = !ord || r.Order===ord;
-    return mq && mo;
-  });
-  prFiltered = applySort(data,'pr-res');
   const tbody = document.getElementById('pr-tbody');
   if (!prFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="23">Tidak ada data</td></tr>'; document.getElementById('pr-rowCount').textContent='0 baris'; return; }
-  const pgPr = paginate(prFiltered, 'prisma');
-  tbody.innerHTML = pgPr.rows.map(r => {
-    const origIdx = state.prismaReservasiData.indexOf(r);
+  tbody.innerHTML = prFiltered.map((r,i) => {
     const qc = r.Qty_Reqmts>=16?'badge-red':r.Qty_Reqmts>=8?'badge-amber':'badge-green';
-    const rowCls = r.PR_Prisma ? 'has-pr' : '';
+    const rowCls = r.PR_Prisma?'has-pr':'';
     return `<tr class="${rowCls}">
       <td class="center mono">${r.ID}</td>
       <td class="mono">${D(r.Plant)}</td>
@@ -2230,13 +2214,13 @@ function renderPrismaReservasi() {
       <td class="num">${r.Qty_PR_Prisma!==null?`<span class="badge badge-green">${r.Qty_PR_Prisma}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td>${r.CodeKertasKerja?`<span class="badge badge-purple">${r.CodeKertasKerja}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
       <td class="td-actions">
-        <button class="btn-act btn-act-edit" onclick="openEditModal('prisma',${origIdx})">✏ Edit</button>
-        <button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${origIdx})" style="margin-left:4px">↩ Return</button>
+        <button class="btn-act btn-act-edit" onclick="openEditModal('prisma',${i})">✏ Edit</button>
+        <button class="btn-act btn-act-ret" onclick="returnPrismaToTaex(${i})" style="margin-left:4px">↩ Return</button>
       </td>
     </tr>`;
   }).join('');
-  document.getElementById('pr-rowCount').textContent = prFiltered.length+' dari '+state.prismaReservasiData.length+' baris';
-  renderPagination('prisma-pagination','prisma',pgPr.total,pgPr.page,pgPr.totalPages,pgPr.size,renderPrismaReservasi);
+  document.getElementById('pr-rowCount').textContent = `${prServerMeta.total.toLocaleString()} baris`;
+  renderPagination('prisma-pagination','prisma',prServerMeta.total,prServerMeta.page,prServerMeta.totalPages,prServerMeta.limit,fetchAndRenderPrisma);
   updateBadges();
   reapplyColAfterRender('prisma');
 }
@@ -2327,27 +2311,35 @@ function renderSummary() {
   reapplyColAfterRender('sum');
 }
 
-// ============================================================
-// KUMPULAN SUMMARY
-// ============================================================
-let ksFiltered = [];
-function ksSort(key) { setSort('ks',key); renderKumpulan(); }
-function ksApplyFilter() { resetPg('ks'); renderKumpulan(); }
-function ksResetFilter() { document.getElementById('ks-search').value=''; document.getElementById('ks-filterCode').value=''; renderKumpulan(); }
-function renderKumpulan() {
-  const q = document.getElementById('ks-search').value.toLowerCase();
-  const code = document.getElementById('ks-filterCode').value;
-  let data = state.kumpulanData.filter(r => {
-    const mq = !q || Object.values(r).some(v => v && String(v).toLowerCase().includes(q));
-    const mc = !code || r.CodeTracking === code;
-    return mq && mc;
-  });
-  ksFiltered = applySort(data, 'ks');
+// ── KUMPULAN SUMMARY — server-side ──
+let ksFiltered = [], ksServerMeta = { total:0, totalPages:1, page:1, limit:100 };
+function ksSort(key) { resetPg('ks'); fetchAndRenderKumpulan(); }
+function ksApplyFilter() { resetPg('ks'); fetchAndRenderKumpulan(); }
+function ksResetFilter() { document.getElementById('ks-search').value=''; document.getElementById('ks-filterCode').value=''; fetchAndRenderKumpulan(); }
+
+async function fetchAndRenderKumpulan() {
+  const q    = (document.getElementById('ks-search')?.value||'').trim();
+  const code = document.getElementById('ks-filterCode')?.value||'';
+  const pg   = getPg('ks');
+  const params = new URLSearchParams({ page:pg.page, limit:pg.size });
+  if(q)    params.set('q', q);
+  if(code) params.set('code_tracking', code);
   const tbody = document.getElementById('ks-tbody');
-  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,renderKumpulan); return; }
-  const pgKs = paginate(ksFiltered, 'ks');
-  tbody.innerHTML = pgKs.rows.map(r => {
-    const rowCls = (r.Qty_PR && r.Qty_PR > 0) ? 'has-pr' : '';
+  tbody.innerHTML='<tr class="loading-row"><td colspan="13">⏳ Memuat data...</td></tr>';
+  try {
+    const result = await apiFetch('/data/kumpulan?'+params.toString());
+    ksFiltered = result.data||[];
+    ksServerMeta = result.pagination||{ total:0,totalPages:1,page:pg.page,limit:pg.size };
+    state._totalKumpulan = ksServerMeta.total;
+    renderKumpulan();
+  } catch(e) { tbody.innerHTML=`<tr class="loading-row"><td colspan="13">❌ ${e.message}</td></tr>`; }
+}
+
+function renderKumpulan() {
+  const tbody = document.getElementById('ks-tbody');
+  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,fetchAndRenderKumpulan); return; }
+  tbody.innerHTML = ksFiltered.map(r => {
+    const rowCls = (r.Qty_PR&&r.Qty_PR>0)?'has-pr':'';
     return `<tr class="${rowCls}">
     <td class="mono">${D(r.Plant)}</td>
     <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
@@ -2363,30 +2355,39 @@ function renderKumpulan() {
     <td class="num">${r.Qty_To_PR!==null?`<span class="badge badge-amber">${r.Qty_To_PR}</span>`:'<span style="color:#d1d5db">—</span>'}</td>
     <td><span class="badge badge-purple">${r.CodeTracking||'—'}</span></td>
   </tr>`;}).join('');
-  document.getElementById('ks-rowCount').textContent = ksFiltered.length+' dari '+state.kumpulanData.length+' baris';
-  renderPagination('ks-pagination','ks',pgKs.total,pgKs.page,pgKs.totalPages,pgKs.size,renderKumpulan);
+  document.getElementById('ks-rowCount').textContent = `${ksServerMeta.total.toLocaleString()} baris`;
+  renderPagination('ks-pagination','ks',ksServerMeta.total,ksServerMeta.page,ksServerMeta.totalPages,ksServerMeta.limit,fetchAndRenderKumpulan);
   updateBadges();
   reapplyColAfterRender('ks');
 }
 
-// ============================================================
-// SAP PR
-// ============================================================
-let sapFiltered = [];
-function sapSort(key) { setSort('sap',key); renderSAP(); }
-function sapApplyFilter() { resetPg('sap'); renderSAP(); }
-function sapResetFilter() { document.getElementById('sap-search').value=''; renderSAP(); }
-function renderSAP() {
-  const q = document.getElementById('sap-search').value.toLowerCase();
-  let data = state.prData.filter(r=> !q||Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
-  sapFiltered = applySort(data,'sap');
+// ── SAP PR — server-side ──
+let sapFiltered = [], sapServerMeta = { total:0, totalPages:1, page:1, limit:100 };
+function sapSort(key) { resetPg('sap'); fetchAndRenderSAP(); }
+function sapApplyFilter() { resetPg('sap'); fetchAndRenderSAP(); }
+function sapResetFilter() { document.getElementById('sap-search').value=''; fetchAndRenderSAP(); }
+
+async function fetchAndRenderSAP() {
+  const q  = (document.getElementById('sap-search')?.value||'').trim();
+  const pg = getPg('sap');
+  const params = new URLSearchParams({ page:pg.page, limit:pg.size });
+  if(q) params.set('q', q);
   const tbody = document.getElementById('sap-tbody');
-  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="20">Belum ada data PR</td></tr>'; renderPagination('sap-pagination','sap',0,1,1,100,renderSAP); return; }
-  const pgSap = paginate(sapFiltered, 'sap');
-  tbody.innerHTML = pgSap.rows.map(r=>{
-    const origIdx = state.prData.indexOf(r);
-    return `<tr data-idx="${origIdx}">
-    <td class="td-check"><input type="checkbox" class="row-check" data-tab="sap" data-idx="${origIdx}" onchange="onCheckChange('sap')"></td>
+  tbody.innerHTML='<tr class="loading-row"><td colspan="20">⏳ Memuat data...</td></tr>';
+  try {
+    const result = await apiFetch('/data/pr?'+params.toString());
+    sapFiltered = result.data||[];
+    sapServerMeta = result.pagination||{ total:0,totalPages:1,page:pg.page,limit:pg.size };
+    state._totalPR = sapServerMeta.total;
+    renderSAP();
+  } catch(e) { tbody.innerHTML=`<tr class="loading-row"><td colspan="20">❌ ${e.message}</td></tr>`; }
+}
+
+function renderSAP() {
+  const tbody = document.getElementById('sap-tbody');
+  if (!sapFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="20">Belum ada data PR</td></tr>'; renderPagination('sap-pagination','sap',0,1,1,100,fetchAndRenderSAP); return; }
+  tbody.innerHTML = sapFiltered.map((r,i)=>`<tr data-idx="${i}">
+    <td class="td-check"><input type="checkbox" class="row-check" data-tab="sap" data-idx="${i}" onchange="onCheckChange('sap')"></td>
     <td class="center mono">${r.ID}</td>
     <td class="mono">${D(r.Plant)}</td>
     <td>${badge(r.PR,'blue')}</td>
@@ -2396,6 +2397,7 @@ function renderSAP() {
     <td class="center mono">${D(r.D)}</td>
     <td class="center mono">${D(r.R)}</td>
     <td class="mono">${D(r.PGr)}</td>
+    <td class="center mono">${D(r.S)}</td>
     <td class="mono">${D(r.TrackingNo)}</td>
     <td class="num"><span class="badge badge-green">${N(r.Qty_PR)}</span></td>
     <td class="center">${D(r.Un)}</td>
@@ -2404,14 +2406,13 @@ function renderSAP() {
     <td class="mono">${D(r.PR_Curr)}</td>
     <td class="num">${N(r.PR_Per)}</td>
     <td class="mono">${D(r.Release_Date)}</td>
-    <td><span class="badge badge-purple">${r.Tracking||'—'}</span></td>
     <td class="td-actions">
-      <button class="btn-act btn-act-edit" onclick="openEditModal('sap',${origIdx})">✏ Edit</button>
-      <button class="btn-act btn-act-del" onclick="deleteRow('sap',${origIdx})">🗑</button>
+      <button class="btn-act btn-act-edit" onclick="openEditModal('sap',${i})">✏ Edit</button>
+      <button class="btn-act btn-act-del" onclick="deleteRow('sap',${i})">🗑</button>
     </td>
-  </tr>`;}).join('');
-  document.getElementById('sap-rowCount').textContent = sapFiltered.length+' baris';
-  renderPagination('sap-pagination','sap',pgSap.total,pgSap.page,pgSap.totalPages,pgSap.size,renderSAP);
+  </tr>`).join('');
+  document.getElementById('sap-rowCount').textContent = `${sapServerMeta.total.toLocaleString()} baris`;
+  renderPagination('sap-pagination','sap',sapServerMeta.total,sapServerMeta.page,sapServerMeta.totalPages,sapServerMeta.limit,fetchAndRenderSAP);
   updateBadges();
   reapplyColAfterRender('sap');
 }
@@ -2440,18 +2441,18 @@ function exportKumpulanExcel() {
 // DOWNLOAD TEMPLATES
 // ============================================================
 function downloadTaexTemplate() {
-  const headers = [['Plant','Equipment','Order','Revision','Material','Itm','Material_Description','Qty_Reqmts','Qty_Stock','PR','Item','Qty_PR','PO','PO_Date','Qty_Deliv','Delivery_Date','SLoc','Del','FIs','Ict','PG','Recipient','Unloading_point','Reqmts_Date','Qty_f_avail_check','Qty_Withdrawn','UoM','GL_Acct','Res_Price','Res_per','Res_Curr']];
+  const headers = [['PlPl','Equipment','Order','Reserv.No.','Revision','Material','Itm','Material Description','Reqmt Qty','Qty_Stock','PR','Item','Qty_PR','Cost Ctrs','SLoc','Del','FIs','ICt','PG','Recipient','Unloading Point','Reqmt Date','Qty. f. avail.check','Qty Withdrawn','BUn','G/L Acct','Price','per','Crcy']];
   const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{wch:8},{wch:14},{wch:14},{wch:10},{wch:14},{wch:6},{wch:45},{wch:12},{wch:12},{wch:14},{wch:8},{wch:8},{wch:14},{wch:12},{wch:10},{wch:14},{wch:8},{wch:6},{wch:6},{wch:6},{wch:8},{wch:18},{wch:18},{wch:14},{wch:14},{wch:14},{wch:8},{wch:14},{wch:12},{wch:10},{wch:10}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:6},{wch:45},{wch:12},{wch:12},{wch:14},{wch:8},{wch:8},{wch:14},{wch:8},{wch:6},{wch:6},{wch:6},{wch:8},{wch:18},{wch:18},{wch:14},{wch:18},{wch:14},{wch:8},{wch:14},{wch:12},{wch:8},{wch:10}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template TA-ex');
   XLSX.writeFile(wb, 'Template_TAex_Reservasi.xlsx');
   toast('Template berhasil diunduh!', 'ok');
 }
 function downloadSapTemplate() {
-  const headers = [['Plant','Purchreq','Item','Material','Material_Description','D','R','PGr','TrackingNo','Qty_PR','Un','Req_Date','Valn_price','PR_Curr','PR_Per','Release_Date','Tracking']];
+  const headers = [['Plnt','Purch.Req.','Item','Material','Material Description','D','Rel','PGr','S','TrackingNo','Qty Requested','Un','Req.Date','Valn Price','Crcy','Per','Release Dt']];
   const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{wch:8},{wch:14},{wch:8},{wch:16},{wch:45},{wch:5},{wch:5},{wch:8},{wch:14},{wch:12},{wch:6},{wch:12},{wch:14},{wch:10},{wch:8},{wch:14},{wch:18}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:8},{wch:16},{wch:45},{wch:5},{wch:5},{wch:8},{wch:5},{wch:14},{wch:14},{wch:6},{wch:12},{wch:12},{wch:8},{wch:8},{wch:12}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template SAP PR');
   XLSX.writeFile(wb, 'Template_SAP_PR.xlsx');
@@ -2718,20 +2719,25 @@ function openAddTaexModal() {
   openModal('modal-add-taex');
 }
 function resetAddTaexForm() {
-  ['taex-add-equipment','taex-add-order','taex-add-revision','taex-add-itm','taex-add-material','taex-add-description','taex-add-qty-reqmts','taex-add-qty-stock']
+  ['taex-add-plant','taex-add-equipment','taex-add-order','taex-add-reservno','taex-add-revision',
+   'taex-add-itm','taex-add-material','taex-add-description','taex-add-qty-reqmts',
+   'taex-add-qty-stock','taex-add-cost-ctrs']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
 }
 async function submitAddTaex() {
   const newRow = {
+    Plant: document.getElementById('taex-add-plant').value.trim()||null,
     Equipment: document.getElementById('taex-add-equipment').value.trim()||null,
     Order: document.getElementById('taex-add-order').value.trim()||null,
+    Reservno: document.getElementById('taex-add-reservno').value.trim()||null,
     Revision: document.getElementById('taex-add-revision').value.trim()||null,
     Itm: document.getElementById('taex-add-itm').value.trim()||null,
     Material: document.getElementById('taex-add-material').value.trim()||null,
     Material_Description: document.getElementById('taex-add-description').value.trim()||null,
     Qty_Reqmts: parseFloat(document.getElementById('taex-add-qty-reqmts').value)||0,
     Qty_Stock: parseFloat(document.getElementById('taex-add-qty-stock').value)||0,
-    PR:null, Item:null, Qty_PR:null, PO:null, PO_Date:null, Qty_Deliv:null, Delivery_Date:null,
+    Cost_Ctrs: document.getElementById('taex-add-cost-ctrs').value.trim()||null,
+    PR:null, Item:null, Qty_PR:null,
   };
   showLoading('Menyimpan data baru...');
   setSyncStatus('loading', '⏳ Menyimpan...');
@@ -2779,32 +2785,30 @@ async function syncWithTaex() {
 
   const existingMap = {};
   state.prismaReservasiData.forEach(r => { existingMap[`${r.Order}-${r.Material}-${r.Itm}`] = r; });
-  const syncedData = eligible.map(r => {
-    const key = `${r.Order}-${r.Material}-${r.Itm}`;
-    const existing = existingMap[key];
-    if (existing) return {
-      ...existing,
-      Qty_Reqmts: r.Qty_Reqmts, Equipment: r.Equipment, Revision: r.Revision,
-      Material_Description: r.Material_Description,
-      Del: r.Del ?? existing.Del, FIs: r.FIs ?? existing.FIs,
-      Ict: r.Ict ?? existing.Ict, PG: r.PG ?? existing.PG,
-      Recipient: r.Recipient ?? existing.Recipient,
-      Unloading_point: r.Unloading_point ?? existing.Unloading_point,
-      Reqmts_Date: r.Reqmts_Date ?? existing.Reqmts_Date,
-      UoM: r.UoM ?? existing.UoM,
-    };
-    return {
-      Plant: r.Plant||null, Equipment: r.Equipment, Revision: r.Revision,
-      Order: r.Order, Reservno: null, Itm: r.Itm,
-      Material: r.Material, Material_Description: r.Material_Description,
-      Del: r.Del||null, FIs: r.FIs||null, Ict: r.Ict||null, PG: r.PG||null,
-      Recipient: r.Recipient||null, Unloading_point: r.Unloading_point||null,
-      Reqmts_Date: r.Reqmts_Date||null,
-      Qty_Reqmts: r.Qty_Reqmts, UoM: r.UoM||null,
-      PR_Prisma: null, Item_Prisma: null, Qty_PR_Prisma: null,
-      Qty_StockOnhand: null, CodeKertasKerja: null,
-    };
-  });
+
+  // Hanya ambil data TAEX yang BELUM ada di Prisma
+  const newOnly = eligible.filter(r => !existingMap[`${r.Order}-${r.Material}-${r.Itm}`]);
+  const skippedExisting = eligible.length - newOnly.length;
+
+  if (!newOnly.length) {
+    toast(`Semua data sudah ada di Prisma (${skippedExisting} baris diskip).`, 'err');
+    return;
+  }
+
+  const newRows = newOnly.map(r => ({
+    Plant: r.Plant||null, Equipment: r.Equipment, Revision: r.Revision,
+    Order: r.Order, Reservno: r.Reservno||null, Itm: r.Itm,
+    Material: r.Material, Material_Description: r.Material_Description,
+    Del: r.Del||null, FIs: r.FIs||null, Ict: r.Ict||null, PG: r.PG||null,
+    Recipient: r.Recipient||null, Unloading_point: r.Unloading_point||null,
+    Reqmts_Date: r.Reqmts_Date||null,
+    Qty_Reqmts: r.Qty_Reqmts, UoM: r.UoM||null,
+    PR_Prisma: null, Item_Prisma: null, Qty_PR_Prisma: null,
+    Qty_StockOnhand: null, CodeKertasKerja: null,
+  }));
+
+  // Gabungkan data existing + data baru
+  const syncedData = [...state.prismaReservasiData, ...newRows];
   state.prismaReservasiData = syncedData;
   showLoading('Sinkronisasi data...', true);
   setSyncStatus('loading', '⏳ Sinkronisasi ke server...');
@@ -2812,12 +2816,14 @@ async function syncWithTaex() {
     await apiPut('/prisma', syncedData);
     hideLoading();
     renderPrismaReservasi(); populateFilters();
-    let msg = `✅ Sinkronisasi selesai · ${eligible.length} baris`;
-    if (skippedX > 0)   msg += ` · ${skippedX} diskip (Del/FIs=X)`;
-    if (skippedIct > 0) msg += ` · ${skippedIct} diskip (Ict≠L)`;
+    let msg = `✅ Sinkronisasi selesai · ${newRows.length} baris baru ditambahkan`;
+    if (skippedX > 0)        msg += ` · ${skippedX} diskip (Del/FIs=X)`;
+    if (skippedIct > 0)      msg += ` · ${skippedIct} diskip (Ict≠L)`;
+    if (skippedExisting > 0) msg += ` · ${skippedExisting} diskip (sudah ada)`;
     setSyncStatus('ok', msg + ` · ${new Date().toLocaleTimeString('id-ID')}`);
-    let toastMsg = `Sinkronisasi selesai! ${eligible.length} baris ditarik.`;
-    if (skippedX + skippedIct > 0) toastMsg += ` (${skippedX+skippedIct} baris diskip)`;
+    let toastMsg = `Sinkronisasi selesai! ${newRows.length} baris baru ditambahkan.`;
+    if (skippedExisting > 0) toastMsg += ` (${skippedExisting} sudah ada, dilewati)`;
+    if (skippedX + skippedIct > 0) toastMsg += ` (${skippedX+skippedIct} diskip aturan)`;
     toast(toastMsg, 'ok');
   } catch(e) {
     hideLoading();
@@ -3203,13 +3209,14 @@ function changePageSize(key, size) {
 }
 
 function renderPageByKey(key) {
-  if (key==='taex') fetchAndRenderTaex();
-  else if (key==='prisma') renderPrismaReservasi();
-  else if (key==='kk') renderKK();
-  else if (key==='sum') renderSummary();
-  else if (key==='ks') renderKumpulan();
-  else if (key==='sap') renderSAP();
+  if (key==='taex')   fetchAndRenderTaex();
+  else if (key==='prisma') fetchAndRenderPrisma();
+  else if (key==='kk')    renderKK();
+  else if (key==='sum')   renderSummary();
+  else if (key==='ks')    fetchAndRenderKumpulan();
+  else if (key==='sap')   fetchAndRenderSAP();
   else if (key==='order') renderOrder();
+  else if (key==='po')    fetchAndRenderPo();
 }
 
 // ============================================================
@@ -3222,6 +3229,10 @@ function debounceRender(app) {
     _taexDebounce = setTimeout(() => taexApplyFilter(), 350);
     return;
   }
+  if (app === 'prisma-reservasi') { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderPrisma(), 350); return; }
+  if (app === 'pr')  { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderSAP(), 350); return; }
+  if (app === 'po')  { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderPo(), 350); return; }
+  if (app === 'kumpulan') { clearTimeout(_debounceTimers[app]); _debounceTimers[app] = setTimeout(() => fetchAndRenderKumpulan(), 350); return; }
   clearTimeout(_debounceTimers[app]);
   _debounceTimers[app] = setTimeout(() => {
     resetPg(appToKey(app));
@@ -3243,19 +3254,21 @@ function clearSearch(inputId, app) {
 // TAB BADGE COUNTER
 // ============================================================
 function updateBadges() {
-  const set = (id, n) => { const el=document.getElementById(id); if(el) el.textContent=n; };
-  set('badge-taex',   taexServerMeta.total || 0);  // total dari server, bukan array lokal
-  set('badge-prisma', state.prismaReservasiData.length);
-  set('badge-kk',     state.kkData.length);
-  set('badge-sum',    state.summaryData.length);
-  set('badge-ks',     state.kumpulanData.length);
-  set('badge-pr',     state.prData.length);
-  set('badge-order',  state.orderData.length);
-  set('badge-po',     state.poData.length);
+  const set = (id, n) => { const el=document.getElementById(id); if(el) el.textContent=n||''; };
+  set('badge-taex',    taexServerMeta.total || 0);
+  set('badge-prisma',  state._totalPrisma   || state.prismaReservasiData.length);
+  set('badge-kk',      state.kkData.length);
+  set('badge-sum',     state.summaryData.length);
+  set('badge-ks',      state._totalKumpulan || state.kumpulanData.length);
+  set('badge-pr',      state._totalPR       || state.prData.length);
+  set('badge-order',   state.orderData.length);
+  set('badge-po',      state._totalPO       || state.poData.length);
   set('badge-tracking', taexServerMeta.total || 0);
-  // badge audit = jumlah baris yang berubah
-  const auditCount = new Set(buildAuditData().map(d => `${d.Order}||${d.Material}||${d.Itm}`)).size;
-  set('badge-audit', auditCount || '');
+  // badge audit — pakai taexFiltered (halaman saat ini)
+  try {
+    const auditCount = new Set(buildAuditData().map(d => `${d.Order}||${d.Material}||${d.Itm}`)).size;
+    set('badge-audit', auditCount || '');
+  } catch(e) { set('badge-audit', ''); }
 }
 
 // ============================================================
@@ -3287,26 +3300,25 @@ async function exportTaexExcel() {
     for (let p = 1; p <= pages; p++) {
       const q   = (document.getElementById('taex-search')?.value || '').trim();
       const pr  = document.getElementById('taex-filterPR')?.value || '';
-      const po  = document.getElementById('taex-filterPO')?.value || '';
       const params = new URLSearchParams({ page: p, limit: EXPORT_LIMIT, order_by: taexSortKey, order_dir: taexSortDir });
       if (q) params.set('q', q);
       if (pr) params.set('pr', pr);
-      if (po) params.set('po', po);
       const result = await apiFetch('/data/taex?' + params.toString());
       allRows = allRows.concat(result.data || []);
     }
     const ws = XLSX.utils.json_to_sheet(allRows.map(r=>({
-      ID:r.ID, Plant:r.Plant||'', Equipment:r.Equipment||'', Order:r.Order||'', Revision:r.Revision||'',
-      Material:r.Material||'', Itm:r.Itm||'', Material_Description:r.Material_Description||'',
-      Qty_Reqmts:r.Qty_Reqmts??'', Qty_Stock:r.Qty_Stock??'',
+      PlPl:r.Plant||'', Equipment:r.Equipment||'', Order:r.Order||'',
+      'Reserv.No.':r.Reservno||'', Revision:r.Revision||'',
+      Material:r.Material||'', Itm:r.Itm||'', 'Material Description':r.Material_Description||'',
+      'Reqmt Qty':r.Qty_Reqmts??'', Qty_Stock:r.Qty_Stock??'',
       PR:r.PR||'', Item:r.Item||'', Qty_PR:r.Qty_PR??'',
-      PO:r.PO||'', PO_Date:r.PO_Date||'', Qty_Deliv:r.Qty_Deliv??'', Delivery_Date:r.Delivery_Date||'',
-      SLoc:r.SLoc||'', Del:r.Del||'', FIs:r.FIs||'', Ict:r.Ict||'', PG:r.PG||'',
-      Recipient:r.Recipient||'', Unloading_point:r.Unloading_point||'',
-      Reqmts_Date:r.Reqmts_Date||'',
-      Qty_f_avail_check:r.Qty_f_avail_check??'', Qty_Withdrawn:r.Qty_Withdrawn??'',
-      UoM:r.UoM||'', GL_Acct:r.GL_Acct||'',
-      Res_Price:r.Res_Price??'', Res_per:r.Res_per??'', Res_Curr:r.Res_Curr||''
+      'Cost Ctrs':r.Cost_Ctrs||'', SLoc:r.SLoc||'',
+      Del:r.Del||'', FIs:r.FIs||'', ICt:r.Ict||'', PG:r.PG||'',
+      Recipient:r.Recipient||'', 'Unloading Point':r.Unloading_point||'',
+      'Reqmt Date':r.Reqmts_Date||'',
+      'Qty. f. avail.check':r.Qty_f_avail_check??'', 'Qty Withdrawn':r.Qty_Withdrawn??'',
+      BUn:r.UoM||'', 'G/L Acct':r.GL_Acct||'',
+      Price:r.Res_Price??'', per:r.Res_per??'', Crcy:r.Res_Curr||''
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'TA-ex Reservasi');
@@ -3344,13 +3356,13 @@ function exportPrismaExcel() {
 function exportSapExcel() {
   if (!state.prData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
   const ws = XLSX.utils.json_to_sheet(state.prData.map(r=>({
-    Plant:r.Plant||'',
-    Purchreq:r.PR||'', Item:r.Item||'',
-    Material:r.Material||'', Material_Description:r.Material_Description||'',
-    D:r.D||'', R:r.R||'', PGr:r.PGr||'', TrackingNo:r.TrackingNo||'',
-    Qty_Purchreq:r.Qty_PR??'', Un:r.Un||'', Reqdate:r.Req_Date||'',
-    Valn_price:r.Valn_price??'', PR_Curr:r.PR_Curr||'', PR_Per:r.PR_Per??'',
-    Release_Date:r.Release_Date||'', Tracking:r.Tracking||''
+    Plnt:r.Plant||'',
+    'Purch.Req.':r.PR||'', Item:r.Item||'',
+    Material:r.Material||'', 'Material Description':r.Material_Description||'',
+    D:r.D||'', Rel:r.R||'', PGr:r.PGr||'', S:r.S||'', TrackingNo:r.TrackingNo||'',
+    'Qty Requested':r.Qty_PR??'', Un:r.Un||'', 'Req.Date':r.Req_Date||'',
+    'Valn Price':r.Valn_price??'', Crcy:r.PR_Curr||'', Per:r.PR_Per??'',
+    'Release Dt':r.Release_Date||''
   })));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'SAP PR');
@@ -3428,11 +3440,94 @@ function openOrderUploadModal() {
   openModal('modal-order-upload');
 }
 
+// ── ORDER HEADER ALIAS MAP — toleransi penamaan kolom Excel ──
+const ORDER_HEADER_MAP = {
+  // Plant
+  'plant': 'Plant',
+  // Order
+  'order': 'Order',
+  // Superior order
+  'superior order': 'Superior_Order', 'superior_order': 'Superior_Order',
+  'superiororder': 'Superior_Order',
+  // Notification
+  'notification': 'Notification',
+  // Created on
+  'created on': 'Created_On', 'created_on': 'Created_On', 'createdon': 'Created_On',
+  // Description
+  'description': 'Description',
+  // Revision
+  'revision': 'Revision',
+  // Equipment
+  'equipment': 'Equipment',
+  // System status
+  'system status': 'System_Status', 'system_status': 'System_Status',
+  'systemstatus': 'System_Status',
+  // User status
+  'user status': 'User_Status', 'user_status': 'User_Status',
+  'userstatus': 'User_Status',
+  // Functional Loc.
+  'functional loc.': 'FunctLocation', 'functional loc': 'FunctLocation',
+  'functlocation': 'FunctLocation', 'funct. location': 'FunctLocation',
+  'funct location': 'FunctLocation', 'functional location': 'FunctLocation',
+  'funcloc': 'FunctLocation',
+  // Location
+  'location': 'Location',
+  // WBS ord. header
+  'wbs ord. header': 'WBS_Ord_header', 'wbs ord header': 'WBS_Ord_header',
+  'wbs_ord_header': 'WBS_Ord_header', 'wbs ord. header': 'WBS_Ord_header',
+  'wbsordheader': 'WBS_Ord_header',
+  // Cost Center
+  'cost center': 'CostCenter', 'costcenter': 'CostCenter', 'cost_center': 'CostCenter',
+  // TotalPlnndCosts
+  'totalplnndcosts': 'Total_Plan_Cost', 'total plan cost': 'Total_Plan_Cost',
+  'total_plan_cost': 'Total_Plan_Cost', 'totalplanned costs': 'Total_Plan_Cost',
+  'total plnd costs': 'Total_Plan_Cost',
+  // Total act.costs
+  'total act.costs': 'Total_Act_Cost', 'total act costs': 'Total_Act_Cost',
+  'total_act_cost': 'Total_Act_Cost', 'totalactcosts': 'Total_Act_Cost',
+  'total actual costs': 'Total_Act_Cost',
+  // Planner group
+  'planner group': 'Planner_Group', 'planner_group': 'Planner_Group',
+  'plannergroup': 'Planner_Group',
+  // Main WorkCtr
+  'main workctr': 'MainWorkCtr', 'main_workctr': 'MainWorkCtr',
+  'mainworkctr': 'MainWorkCtr', 'main work ctr': 'MainWorkCtr',
+  'main work center': 'MainWorkCtr',
+  // Entered by
+  'entered by': 'Entry_by', 'enteredby': 'Entry_by', 'entry_by': 'Entry_by',
+  'entry by': 'Entry_by',
+  // Changed by
+  'changed by': 'Changed_by', 'changedby': 'Changed_by', 'changed_by': 'Changed_by',
+  // Bas. start date
+  'bas. start date': 'Basic_start_date', 'bas start date': 'Basic_start_date',
+  'basic start date': 'Basic_start_date', 'basic_start_date': 'Basic_start_date',
+  'basicstartdate': 'Basic_start_date',
+  // Basic fin. date
+  'basic fin. date': 'Basic_finish_date', 'basic fin date': 'Basic_finish_date',
+  'basic finish date': 'Basic_finish_date', 'basic_finish_date': 'Basic_finish_date',
+  'basicfindate': 'Basic_finish_date',
+  // Actual release
+  'actual release': 'Actual_Release', 'actual_release': 'Actual_Release',
+  'actualrelease': 'Actual_Release',
+};
+
+function normalizeOrderRow(rawRow) {
+  const out = {};
+  for (const [rawKey, val] of Object.entries(rawRow)) {
+    const normalized = ORDER_HEADER_MAP[rawKey.trim().toLowerCase()];
+    if (normalized) out[normalized] = val;
+    else out[rawKey] = val;
+  }
+  return out;
+}
+
 function importOrderData() {
   if (!orderUploadBuffer.length) { toast('Tidak ada data untuk diimport', 'err'); return; }
   const replace = document.getElementById('order-replace-check').checked;
   const maxId = replace ? 0 : state.orderData.reduce((m,r)=>Math.max(m,r.ID||0),0);
-  const newRows = orderUploadBuffer.map((r, i) => ({
+  const newRows = orderUploadBuffer.map((rawR, i) => {
+    const r = normalizeOrderRow(rawR);
+    return {
     ID: maxId + i + 1,
     Plant: r.Plant||null,
     Order: String(r.Order||''),
@@ -3457,7 +3552,7 @@ function importOrderData() {
     Basic_start_date: r.Basic_start_date||null,
     Basic_finish_date: r.Basic_finish_date||null,
     Actual_Release: r.Actual_Release||null,
-  }));
+  };});
   if (replace) state.orderData = newRows;
   else state.orderData = [...state.orderData, ...newRows];
   closeModal('modal-order-upload');
@@ -3467,9 +3562,9 @@ function importOrderData() {
 }
 
 function downloadOrderTemplate() {
-  const headers = [['Plant','Order','Superior_Order','Notification','Created_On','Description','Revision','Equipment','System_Status','User_Status','FunctLocation','Location','WBS_Ord_header','CostCenter','Total_Plan_Cost','Total_Act_Cost','Planner_Group','MainWorkCtr','Entry_by','Changed_by','Basic_start_date','Basic_finish_date','Actual_Release']];
+  const headers = [['Plant','Order','Superior order','Notification','Created on','Description','Revision','Equipment','System status','User status','Functional Loc.','Location','WBS ord. header','Cost Center','TotalPlnndCosts','Total act.costs','Planner group','Main WorkCtr','Entered by','Changed by','Bas. start date','Basic fin. date','Actual release']];
   const ws = XLSX.utils.aoa_to_sheet(headers);
-  ws['!cols'] = [{wch:8},{wch:14},{wch:14},{wch:14},{wch:12},{wch:40},{wch:10},{wch:16},{wch:30},{wch:8},{wch:18},{wch:12},{wch:18},{wch:12},{wch:16},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:16},{wch:14},{wch:12},{wch:40},{wch:10},{wch:16},{wch:18},{wch:12},{wch:18},{wch:12},{wch:18},{wch:14},{wch:16},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:16},{wch:14}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template Order');
   XLSX.writeFile(wb, 'Template_Order.xlsx');
@@ -3479,19 +3574,19 @@ function downloadOrderTemplate() {
 function exportOrderExcel() {
   if (!state.orderData.length) { toast('Tidak ada data untuk diekspor', 'err'); return; }
   const ws = XLSX.utils.json_to_sheet(state.orderData.map(r=>({
-    Plant:r.Plant||'', Order:r.Order||'', Superior_Order:r.Superior_Order||'',
-    Notification:r.Notification||'', Created_On:r.Created_On||'', Description:r.Description||'',
+    Plant:r.Plant||'', Order:r.Order||'', 'Superior order':r.Superior_Order||'',
+    Notification:r.Notification||'', 'Created on':r.Created_On||'', Description:r.Description||'',
     Revision:r.Revision||'', Equipment:r.Equipment||'',
-    System_Status:r.System_Status||'', User_Status:r.User_Status||'',
-    FunctLocation:r.FunctLocation||'', Location:r.Location||'',
-    WBS_Ord_header:r.WBS_Ord_header||'', CostCenter:r.CostCenter||'',
-    Total_Plan_Cost:r.Total_Plan_Cost??'', Total_Act_Cost:r.Total_Act_Cost??'',
-    Planner_Group:r.Planner_Group||'', MainWorkCtr:r.MainWorkCtr||'',
-    Entry_by:r.Entry_by||'', Changed_by:r.Changed_by||'',
-    Basic_start_date:r.Basic_start_date||'', Basic_finish_date:r.Basic_finish_date||'',
-    Actual_Release:r.Actual_Release||''
+    'System status':r.System_Status||'', 'User status':r.User_Status||'',
+    'Functional Loc.':r.FunctLocation||'', Location:r.Location||'',
+    'WBS ord. header':r.WBS_Ord_header||'', 'Cost Center':r.CostCenter||'',
+    TotalPlnndCosts:r.Total_Plan_Cost??'', 'Total act.costs':r.Total_Act_Cost??'',
+    'Planner group':r.Planner_Group||'', 'Main WorkCtr':r.MainWorkCtr||'',
+    'Entered by':r.Entry_by||'', 'Changed by':r.Changed_by||'',
+    'Bas. start date':r.Basic_start_date||'', 'Basic fin. date':r.Basic_finish_date||'',
+    'Actual release':r.Actual_Release||''
   })));
-  ws['!cols'] = [{wch:8},{wch:14},{wch:14},{wch:14},{wch:12},{wch:40},{wch:10},{wch:16},{wch:30},{wch:8},{wch:18},{wch:12},{wch:18},{wch:12},{wch:16},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:16},{wch:14},{wch:12},{wch:40},{wch:10},{wch:16},{wch:18},{wch:12},{wch:18},{wch:12},{wch:18},{wch:14},{wch:16},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:16},{wch:14}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Order');
   const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
@@ -3499,32 +3594,39 @@ function exportOrderExcel() {
   toast('Export Order berhasil!', 'ok');
 }
 
-// ============================================================
-// PO (PURCHASE ORDER)
-// ============================================================
-let poFiltered = [];
+// ── PO — server-side ──
 let poUploadBuffer = [];
+let poFiltered = [], poServerMeta = { total:0, totalPages:1, page:1, limit:100 };
+function poSort(key) { resetPg('po'); fetchAndRenderPo(); }
+function poApplyFilter() { resetPg('po'); fetchAndRenderPo(); }
+function poResetFilter() { document.getElementById('po-search').value=''; fetchAndRenderPo(); }
 
-function poSort(key) { setSort('po',key); renderPo(); }
-function poApplyFilter() { resetPg('po'); renderPo(); }
-function poResetFilter() { document.getElementById('po-search').value=''; renderPo(); }
+async function fetchAndRenderPo() {
+  const q  = (document.getElementById('po-search')?.value||'').trim();
+  const pg = getPg('po');
+  const params = new URLSearchParams({ page:pg.page, limit:pg.size });
+  if(q) params.set('q', q);
+  const tbody = document.getElementById('po-tbody');
+  tbody.innerHTML='<tr class="loading-row"><td colspan="20">⏳ Memuat data...</td></tr>';
+  try {
+    const result = await apiFetch('/data/po?'+params.toString());
+    poFiltered = result.data||[];
+    poServerMeta = result.pagination||{ total:0,totalPages:1,page:pg.page,limit:pg.size };
+    state._totalPO = poServerMeta.total;
+    renderPo();
+  } catch(e) { tbody.innerHTML=`<tr class="loading-row"><td colspan="20">❌ ${e.message}</td></tr>`; }
+}
 
 function renderPo() {
-  const q = document.getElementById('po-search').value.toLowerCase();
-  let data = state.poData.filter(r => !q || Object.values(r).some(v=>v&&String(v).toLowerCase().includes(q)));
-  poFiltered = applySort(data,'po');
   const tbody = document.getElementById('po-tbody');
   if (!poFiltered.length) {
     tbody.innerHTML='<tr class="loading-row"><td colspan="20">Belum ada data PO. Upload Excel untuk memulai.</td></tr>';
     document.getElementById('po-rowCount').textContent='0 baris';
-    renderPagination('po-pagination','po',0,1,1,100,renderPo);
+    renderPagination('po-pagination','po',0,1,1,100,fetchAndRenderPo);
     return;
   }
-  const pg = paginate(poFiltered, 'po');
-  tbody.innerHTML = pg.rows.map(r => {
-    const origIdx = state.poData.indexOf(r);
-    return `<tr data-idx="${origIdx}">
-    <td class="td-check"><input type="checkbox" class="row-check" data-tab="po" data-idx="${origIdx}" onchange="onCheckChange('po')"></td>
+  tbody.innerHTML = poFiltered.map((r,i)=>`<tr data-idx="${i}">
+    <td class="td-check"><input type="checkbox" class="row-check" data-tab="po" data-idx="${i}" onchange="onCheckChange('po')"></td>
     <td class="mono">${D(r.Plnt)}</td>
     <td class="mono" style="color:#1a56db;font-weight:600">${D(r.Purchreq)}</td>
     <td class="mono">${D(r.Item)}</td>
@@ -3544,12 +3646,12 @@ function renderPo() {
     <td class="mono">${D(r.Crcy)}</td>
     <td class="num">${N(r.Per)}</td>
     <td class="td-actions">
-      <button class="btn-act btn-act-edit" onclick="openEditModal('po',${origIdx})">✏ Edit</button>
-      <button class="btn-act btn-act-del" onclick="deleteRow('po',${origIdx})">🗑</button>
+      <button class="btn-act btn-act-edit" onclick="openEditModal('po',${i})">✏ Edit</button>
+      <button class="btn-act btn-act-del" onclick="deleteRow('po',${i})">🗑</button>
     </td>
-  </tr>`;}).join('');
-  document.getElementById('po-rowCount').textContent = poFiltered.length+' dari '+state.poData.length+' baris';
-  renderPagination('po-pagination','po',pg.total,pg.page,pg.totalPages,pg.size,renderPo);
+  </tr>`).join('');
+  document.getElementById('po-rowCount').textContent = `${poServerMeta.total.toLocaleString()} baris`;
+  renderPagination('po-pagination','po',poServerMeta.total,poServerMeta.page,poServerMeta.totalPages,poServerMeta.limit,fetchAndRenderPo);
   updateBadges();
   reapplyColAfterRender('po');
 }
@@ -4490,34 +4592,46 @@ const editFields = {
     { key:'Qty_StockOnhand', label:'Qty Stock Onhand', type:'number' },
   ],
   taex: [
-    { key:'Plant', label:'Plant' }, { key:'Equipment', label:'Equipment' }, { key:'Order', label:'Order' },
-    { key:'Revision', label:'Revision' }, { key:'Material', label:'Material' }, { key:'Itm', label:'Itm' },
+    { key:'Plant', label:'PlPl' }, { key:'Equipment', label:'Equipment' }, { key:'Order', label:'Order' },
+    { key:'Reservno', label:'Reserv.No.' }, { key:'Revision', label:'Revision' },
+    { key:'Material', label:'Material' }, { key:'Itm', label:'Itm' },
     { key:'Material_Description', label:'Material Description', full:true },
-    { key:'Qty_Reqmts', label:'Qty Reqmts', type:'number' }, { key:'Qty_Stock', label:'Qty Stock', type:'number' },
-    { key:'PR', label:'PR' }, { key:'Item', label:'PR Item' }, { key:'Qty_PR', label:'Qty PR', type:'number' },
-    { key:'PO', label:'PO' }, { key:'PO_Date', label:'PO Date' }, { key:'Qty_Deliv', label:'Qty Deliv', type:'number' },
-    { key:'Delivery_Date', label:'Delivery Date' }, { key:'Del', label:'Del' }, { key:'FIs', label:'FIs' },
-    { key:'Ict', label:'Ict' }, { key:'PG', label:'PG' }, { key:'UoM', label:'UoM' },
+    { key:'Qty_Reqmts', label:'Reqmt Qty', type:'number' }, { key:'Qty_Stock', label:'Qty_Stock', type:'number' },
+    { key:'PR', label:'PR' }, { key:'Item', label:'Item' }, { key:'Qty_PR', label:'Qty_PR', type:'number' },
+    { key:'Cost_Ctrs', label:'Cost Ctrs' }, { key:'SLoc', label:'SLoc' },
+    { key:'Del', label:'Del' }, { key:'FIs', label:'FIs' }, { key:'Ict', label:'ICt' }, { key:'PG', label:'PG' },
+    { key:'Recipient', label:'Recipient' }, { key:'Unloading_point', label:'Unloading Point', full:true },
+    { key:'Reqmts_Date', label:'Reqmt Date' },
+    { key:'Qty_f_avail_check', label:'Qty. f. avail.check', type:'number' },
+    { key:'Qty_Withdrawn', label:'Qty Withdrawn', type:'number' },
+    { key:'UoM', label:'BUn' }, { key:'GL_Acct', label:'G/L Acct' },
+    { key:'Res_Price', label:'Price', type:'number' }, { key:'Res_per', label:'per', type:'number' },
+    { key:'Res_Curr', label:'Crcy' },
   ],
   sap: [
-    { key:'Plant', label:'Plant' }, { key:'PR', label:'PR' }, { key:'Item', label:'Item' },
+    { key:'Plant', label:'Plnt' }, { key:'PR', label:'Purch.Req.' }, { key:'Item', label:'Item' },
     { key:'Material', label:'Material' },
     { key:'Material_Description', label:'Material Description', full:true },
-    { key:'D', label:'D' }, { key:'R', label:'R' }, { key:'PGr', label:'PGr' },
-    { key:'TrackingNo', label:'TrackingNo' }, { key:'Qty_PR', label:'Qty PR', type:'number' },
-    { key:'Un', label:'Un' }, { key:'Req_Date', label:'Req Date' },
-    { key:'Valn_price', label:'Valn Price', type:'number' }, { key:'PR_Curr', label:'PR Curr' },
-    { key:'PR_Per', label:'PR Per', type:'number' }, { key:'Release_Date', label:'Release Date' },
-    { key:'Tracking', label:'Tracking' },
+    { key:'D', label:'D' }, { key:'R', label:'Rel' }, { key:'PGr', label:'PGr' },
+    { key:'S', label:'S' }, { key:'TrackingNo', label:'TrackingNo' },
+    { key:'Qty_PR', label:'Qty Requested', type:'number' },
+    { key:'Un', label:'Un' }, { key:'Req_Date', label:'Req.Date' },
+    { key:'Valn_price', label:'Valn Price', type:'number' }, { key:'PR_Curr', label:'Crcy' },
+    { key:'PR_Per', label:'Per', type:'number' }, { key:'Release_Date', label:'Release Dt' },
   ],
   order: [
-    { key:'Plant', label:'Plant' }, { key:'Order', label:'Order' }, { key:'Superior_Order', label:'Superior Order' },
-    { key:'Notification', label:'Notification' }, { key:'Description', label:'Description', full:true },
+    { key:'Plant', label:'Plant' }, { key:'Order', label:'Order' }, { key:'Superior_Order', label:'Superior order' },
+    { key:'Notification', label:'Notification' }, { key:'Created_On', label:'Created on' },
+    { key:'Description', label:'Description', full:true },
     { key:'Revision', label:'Revision' }, { key:'Equipment', label:'Equipment' },
-    { key:'System_Status', label:'System Status' }, { key:'User_Status', label:'User Status' },
-    { key:'Basic_start_date', label:'Basic Start Date' }, { key:'Basic_finish_date', label:'Basic Finish Date' },
-    { key:'Total_Plan_Cost', label:'Total Plan Cost', type:'number' }, { key:'Total_Act_Cost', label:'Total Act Cost', type:'number' },
-    { key:'Planner_Group', label:'Planner Group' }, { key:'MainWorkCtr', label:'Main WorkCtr' },
+    { key:'System_Status', label:'System status' }, { key:'User_Status', label:'User status' },
+    { key:'FunctLocation', label:'Functional Loc.' }, { key:'Location', label:'Location' },
+    { key:'WBS_Ord_header', label:'WBS ord. header' }, { key:'CostCenter', label:'Cost Center' },
+    { key:'Total_Plan_Cost', label:'TotalPlnndCosts', type:'number' }, { key:'Total_Act_Cost', label:'Total act.costs', type:'number' },
+    { key:'Planner_Group', label:'Planner group' }, { key:'MainWorkCtr', label:'Main WorkCtr' },
+    { key:'Entry_by', label:'Entered by' }, { key:'Changed_by', label:'Changed by' },
+    { key:'Basic_start_date', label:'Bas. start date' }, { key:'Basic_finish_date', label:'Basic fin. date' },
+    { key:'Actual_Release', label:'Actual release' },
   ],
   po: [
     { key:'Plnt', label:'Plant' }, { key:'Purchreq', label:'Purchreq' }, { key:'Item', label:'Item' },
@@ -4534,7 +4648,9 @@ const editFields = {
 
 function getEditData(tab, idx) {
   if (tab === 'taex')   return taexFiltered[idx];
-  if (tab === 'prisma') return state.prismaReservasiData[idx];
+  if (tab === 'prisma') return prFiltered[idx];
+  if (tab === 'sap')    return sapFiltered[idx];
+  if (tab === 'po')     return poFiltered[idx];
   return state[tabStateMap[tab]]?.[idx];
 }
 
@@ -4617,25 +4733,32 @@ async function saveEdit() {
   // Simpan ke backend
   if (tab === 'taex') {
     try {
-      // Update single row via PUT /taex (row sudah dimodifikasi via changes.forEach di atas)
       await apiFetch(`/taex`, { method: 'PUT', body: taexFiltered });
       await fetchAndRenderTaex();
       setSyncStatus('ok', `✅ TA-ex disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
       toast('Perubahan TA-ex berhasil disimpan!', 'ok');
-    } catch(e) {
-      setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
-      toast('Gagal simpan ke server!', 'err');
-    }
+    } catch(e) { setSyncStatus('err','❌ Gagal simpan: '+e.message); toast('Gagal simpan ke server!','err'); }
   } else if (tab === 'prisma') {
     try {
       await apiPut('/prisma', state.prismaReservasiData);
-      renderPrismaReservasi();
+      await fetchAndRenderPrisma();
       setSyncStatus('ok', `✅ PRISMA disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
       toast('Perubahan PRISMA berhasil disimpan!', 'ok');
-    } catch(e) {
-      setSyncStatus('err', '❌ Gagal simpan: ' + e.message);
-      toast('Gagal simpan ke server!', 'err');
-    }
+    } catch(e) { setSyncStatus('err','❌ Gagal simpan: '+e.message); toast('Gagal simpan ke server!','err'); }
+  } else if (tab === 'sap') {
+    try {
+      await apiPut('/pr', sapFiltered);
+      await fetchAndRenderSAP();
+      setSyncStatus('ok', `✅ SAP PR disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
+      toast('Perubahan SAP PR berhasil disimpan!', 'ok');
+    } catch(e) { setSyncStatus('err','❌ Gagal simpan: '+e.message); toast('Gagal simpan ke server!','err'); }
+  } else if (tab === 'po') {
+    try {
+      await apiPut('/po', poFiltered);
+      await fetchAndRenderPo();
+      setSyncStatus('ok', `✅ PO disimpan · ${new Date().toLocaleTimeString('id-ID')}`);
+      toast('Perubahan PO berhasil disimpan!', 'ok');
+    } catch(e) { setSyncStatus('err','❌ Gagal simpan: '+e.message); toast('Gagal simpan ke server!','err'); }
   } else {
     await saveTabData(tab);
   }
@@ -4648,14 +4771,18 @@ async function saveEdit() {
 // Kolom yang dibandingkan beserta label
 const AUDIT_COLS = [
   { key: 'Equipment',            label: 'Equipment' },
+  { key: 'Reservno',             label: 'Reserv.No.' },
   { key: 'Revision',             label: 'Revision' },
   { key: 'Material_Description', label: 'Material Description' },
-  { key: 'Qty_Reqmts',           label: 'Qty Reqmts' },
+  { key: 'Qty_Reqmts',           label: 'Reqmt Qty' },
   { key: 'Del',                  label: 'Del' },
   { key: 'FIs',                  label: 'FIs' },
-  { key: 'Ict',                  label: 'Ict' },
+  { key: 'Ict',                  label: 'ICt' },
   { key: 'PG',                   label: 'PG' },
-  { key: 'UoM',                  label: 'UoM' },
+  { key: 'UoM',                  label: 'BUn' },
+  { key: 'Recipient',            label: 'Recipient' },
+  { key: 'Unloading_point',      label: 'Unloading Point' },
+  { key: 'Reqmts_Date',          label: 'Reqmt Date' },
 ];
 
 let auditFiltered = [];

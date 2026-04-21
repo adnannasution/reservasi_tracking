@@ -89,6 +89,8 @@ async function migrate() {
       res_price            NUMERIC,
       res_per              NUMERIC,
       res_curr             TEXT,
+      reservno             TEXT,
+      cost_ctrs            TEXT,
       created_at           TIMESTAMPTZ DEFAULT NOW(),
       updated_at           TIMESTAMPTZ DEFAULT NOW()
     )
@@ -97,6 +99,8 @@ async function migrate() {
   // ALTER TABLE untuk migrasi DB yang sudah ada (aman jika kolom sudah ada)
   const newCols = [
     `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS plant TEXT`,
+    `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS reservno TEXT`,
+    `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS cost_ctrs TEXT`,
     `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS sloc TEXT`,
     `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS del TEXT`,
     `ALTER TABLE taex_reservasi ADD COLUMN IF NOT EXISTS fis TEXT`,
@@ -212,6 +216,7 @@ async function migrate() {
       pr_per               NUMERIC,
       release_date         TEXT,
       tracking             TEXT,
+      s                    TEXT,
       created_at           TIMESTAMPTZ DEFAULT NOW(),
       updated_at           TIMESTAMPTZ DEFAULT NOW()
     )
@@ -220,6 +225,7 @@ async function migrate() {
   // ALTER TABLE sap_pr - migrasi untuk DB yang sudah ada
   const sapCols = [
     `ALTER TABLE sap_pr ADD COLUMN IF NOT EXISTS plant TEXT`,
+    `ALTER TABLE sap_pr ADD COLUMN IF NOT EXISTS s TEXT`,
     `ALTER TABLE sap_pr ADD COLUMN IF NOT EXISTS d TEXT`,
     `ALTER TABLE sap_pr ADD COLUMN IF NOT EXISTS r TEXT`,
     `ALTER TABLE sap_pr ADD COLUMN IF NOT EXISTS pgr TEXT`,
@@ -327,11 +333,96 @@ async function migrate() {
 // ROW MAPPERS
 // ─────────────────────────────────────────────
 const n = v => v !== null && v !== undefined ? Number(v) : null;
+// ── HEADER ALIAS MAP untuk normalisasi kolom Excel (format baru → field internal) ──
+const TAEX_HEADER_MAP = {
+  // Plant
+  'plpl': 'Plant', 'pl': 'Plant', 'plant': 'Plant',
+  // Equipment
+  'equipment': 'Equipment',
+  // Order
+  'order': 'Order',
+  // Reservasi No
+  'reserv.no.': 'Reservno', 'reserv no': 'Reservno', 'reservno': 'Reservno',
+  'reserv_no': 'Reservno', 'reservation no': 'Reservno',
+  // Revision
+  'revision': 'Revision',
+  // Material
+  'material': 'Material',
+  // Itm
+  'itm': 'Itm', 'item no': 'Itm',
+  // Material Description
+  'material description': 'Material_Description',
+  'material_description': 'Material_Description',
+  // Qty Reqmts
+  'reqmt qty': 'Qty_Reqmts', 'qty_reqmts': 'Qty_Reqmts',
+  'reqmts qty': 'Qty_Reqmts', 'qty reqmts': 'Qty_Reqmts',
+  // Qty Stock
+  'qty_stock': 'Qty_Stock', 'qty stock': 'Qty_Stock', 'qty_stock_onhand': 'Qty_Stock',
+  // PR
+  'pr': 'PR', 'purchase req.no.': 'PR', 'purchreq': 'PR',
+  // Item (PR Item)
+  'item': 'Item', 'it': 'Item',
+  // Qty PR
+  'qty_pr': 'Qty_PR', 'qty pr': 'Qty_PR',
+  // Cost Ctrs
+  'cost ctrs': 'Cost_Ctrs', 'cost_ctrs': 'Cost_Ctrs', 'costctrs': 'Cost_Ctrs',
+  'cost center': 'Cost_Ctrs', 'cost ctr': 'Cost_Ctrs',
+  // SLoc
+  'sloc': 'SLoc', 'storage location': 'SLoc',
+  // Del
+  'del': 'Del', 'deletion indicator': 'Del',
+  // FIs
+  'fis': 'FIs', 'fi': 'FIs',
+  // Ict / ICt
+  'ict': 'Ict', 'ic': 'Ict', 'ict.': 'Ict',
+  // PG
+  'pg': 'PG',
+  // Recipient
+  'recipient': 'Recipient',
+  // Unloading Point
+  'unloading point': 'Unloading_point', 'unloading_point': 'Unloading_point',
+  // Reqmt Date
+  'reqmt date': 'Reqmts_Date', 'reqmts date': 'Reqmts_Date',
+  'reqmts_date': 'Reqmts_Date', 'requirements date': 'Reqmts_Date',
+  // Qty f. avail.check
+  'qty. f. avail.check': 'Qty_f_avail_check', 'qty_f_avail_check': 'Qty_f_avail_check',
+  'qty f avail check': 'Qty_f_avail_check', 'qty avail': 'Qty_f_avail_check',
+  // Qty Withdrawn
+  'qty withdrawn': 'Qty_Withdrawn', 'qty_withdrawn': 'Qty_Withdrawn',
+  // BUn / UoM
+  'bun': 'UoM', 'uom': 'UoM', 'un': 'UoM', 'base unit': 'UoM',
+  // G/L Acct
+  'g/l acct': 'GL_Acct', 'gl_acct': 'GL_Acct', 'gl acct': 'GL_Acct',
+  // Price / Res_Price
+  'price': 'Res_Price', 'res_price': 'Res_Price', 'res price': 'Res_Price',
+  // per / Res_per
+  'per': 'Res_per', 'res_per': 'Res_per', 'res per': 'Res_per',
+  // Crcy / Res_Curr
+  'crcy': 'Res_Curr', 'res_curr': 'Res_Curr', 'currency': 'Res_Curr',
+  // Legacy PO fields (tetap diterima, disimpan ke kolom yg ada)
+  'po': 'PO', 'purchase order': 'PO',
+  'po_date': 'PO_Date', 'po date': 'PO_Date',
+  'qty_deliv': 'Qty_Deliv', 'qty deliv': 'Qty_Deliv',
+  'delivery_date': 'Delivery_Date', 'delivery date': 'Delivery_Date',
+};
+
+function normalizeTaexRow(rawRow) {
+  const out = {};
+  for (const [rawKey, val] of Object.entries(rawRow)) {
+    const normalized = TAEX_HEADER_MAP[rawKey.trim().toLowerCase()];
+    if (normalized) out[normalized] = val;
+    else out[rawKey] = val; // passthrough kolom yang tidak dikenal
+  }
+  return out;
+}
+
 const mapTaex = r => ({
   ID: r.id, Plant: r.plant, Equipment: r.equipment, Order: r.order, Revision: r.revision,
+  Reservno: r.reservno,
   Material: r.material, Itm: r.itm, Material_Description: r.material_description,
   Qty_Reqmts: n(r.qty_reqmts), Qty_Stock: n(r.qty_stock),
   PR: r.pr, Item: r.item, Qty_PR: n(r.qty_pr),
+  Cost_Ctrs: r.cost_ctrs,
   PO: r.po, PO_Date: r.po_date, Qty_Deliv: n(r.qty_deliv), Delivery_Date: r.delivery_date,
   SLoc: r.sloc, Del: r.del, FIs: r.fis, Ict: r.ict, PG: r.pg,
   Recipient: r.recipient, Unloading_point: r.unloading_point, Reqmts_Date: r.reqmts_date,
@@ -357,11 +448,66 @@ const mapKumpulan = r => ({
   Qty_Req: n(r.qty_req), Qty_Stock: n(r.qty_stock),
   Qty_PR: n(r.qty_pr), Qty_To_PR: n(r.qty_to_pr), CodeTracking: r.code_tracking,
 });
+// ── SAP PR HEADER ALIAS MAP ──
+const SAP_HEADER_MAP = {
+  // Plant / Plnt
+  'plnt': 'Plant', 'plant': 'Plant',
+  // Purch.Req. / PR
+  'purch.req.': 'PR', 'purch req': 'PR', 'purchreq': 'PR', 'pr': 'PR',
+  'purchase req.no.': 'PR', 'purchase request': 'PR',
+  // Item
+  'item': 'Item',
+  // Material
+  'material': 'Material',
+  // Material Description
+  'material description': 'Material_Description',
+  'material_description': 'Material_Description', 'short text': 'Material_Description',
+  // D
+  'd': 'D',
+  // Rel / R
+  'rel': 'R', 'r': 'R',
+  // PGr
+  'pgr': 'PGr', 'purch. group': 'PGr', 'purch group': 'PGr',
+  // S
+  's': 'S',
+  // TrackingNo
+  'trackingno': 'TrackingNo', 'tracking_no': 'TrackingNo', 'tracking no': 'TrackingNo',
+  // Qty Requested
+  'qty requested': 'Qty_PR', 'qty_pr': 'Qty_PR', 'qty_purchreq': 'Qty_PR',
+  'qty purchreq': 'Qty_PR', 'quantity': 'Qty_PR',
+  // Un
+  'un': 'Un', 'uom': 'Un', 'unit': 'Un',
+  // Req.Date
+  'req.date': 'Req_Date', 'req date': 'Req_Date', 'req_date': 'Req_Date',
+  'reqdate': 'Req_Date', 'requirements date': 'Req_Date',
+  // Valn Price
+  'valn price': 'Valn_price', 'valn_price': 'Valn_price', 'valuation price': 'Valn_price',
+  // Crcy / PR_Curr
+  'crcy': 'PR_Curr', 'pr_curr': 'PR_Curr', 'currency': 'PR_Curr', 'pr curr': 'PR_Curr',
+  // Per / PR_Per
+  'per': 'PR_Per', 'pr_per': 'PR_Per', 'pr per': 'PR_Per',
+  // Release Dt
+  'release dt': 'Release_Date', 'release_date': 'Release_Date', 'release date': 'Release_Date',
+  'release dt.': 'Release_Date',
+  // Tracking (legacy, tetap diterima)
+  'tracking': 'Tracking',
+};
+
+function normalizeSapRow(rawRow) {
+  const out = {};
+  for (const [rawKey, val] of Object.entries(rawRow)) {
+    const normalized = SAP_HEADER_MAP[rawKey.trim().toLowerCase()];
+    if (normalized) out[normalized] = val;
+    else out[rawKey] = val;
+  }
+  return out;
+}
+
 const mapSAP = r => ({
   ID: r.id, Plant: r.plant,
   PR: r.pr, Item: r.item,
   Material: r.material, Material_Description: r.material_description,
-  D: r.d, R: r.r, PGr: r.pgr, TrackingNo: r.tracking_no,
+  D: r.d, R: r.r, PGr: r.pgr, S: r.s, TrackingNo: r.tracking_no,
   Qty_PR: n(r.qty_pr), Un: r.un, Req_Date: r.req_date,
   Valn_price: n(r.valn_price), PR_Curr: r.pr_curr, PR_Per: n(r.pr_per),
   Release_Date: r.release_date,
@@ -410,18 +556,20 @@ async function bulkReplaceTaex(client, rows) {
     const batch = rows.slice(i, i + CHUNK);
     const vals = [], params = [];
     batch.forEach((r, idx) => {
-      const b = idx * 31;
-      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31})`);
+      const b = idx * 33;
+      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31},$${b+32},$${b+33})`);
       params.push(r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
         r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-        r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+        r.PR||null,r.Item||null,r.Qty_PR??null,r.Cost_Ctrs||null,
+        r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
         r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
         r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
         r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-        r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null);
+        r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
+        r.Reservno||null);
     });
     await client.query(
-      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr) VALUES ${vals.join(',')}`,
+      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,cost_ctrs,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr,reservno) VALUES ${vals.join(',')}`,
       params
     );
   }
@@ -471,17 +619,18 @@ async function bulkReplacePR(client, rows) {
   for (let i = 0; i < rows.length; i += CHUNK) {
     const batch = rows.slice(i, i + CHUNK);
     const vals = [], params = [];
-    batch.forEach((r, idx) => {
-      const b = idx * 17;
-      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17})`);
+    batch.forEach((rawR, idx) => {
+      const r = normalizeSapRow(rawR);
+      const b = idx * 18;
+      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18})`);
       params.push(r.Plant||null,r.PR||null,r.Item||null,r.Material||null,r.Material_Description||null,
-        r.D||null,r.R||null,r.PGr||null,r.TrackingNo||null,
+        r.D||null,r.R||null,r.PGr||null,r.S||null,r.TrackingNo||null,
         r.Qty_PR??null,r.Un||null,r.Req_Date||null,
         r.Valn_price??null,r.PR_Curr||null,r.PR_Per??null,r.Release_Date||null,
         r.Tracking||null);
     });
     await client.query(
-      `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking) VALUES ${vals.join(',')}`,
+      `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,s,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking) VALUES ${vals.join(',')}`,
       params
     );
   }
@@ -621,19 +770,22 @@ app.post('/api/upload/:type', requireApiKey, upload.single('file'), (req, res) =
           const vals = [], params = [];
 
           if (type === 'taex') {
-            batch.forEach((r, idx) => {
-              const b = idx * 31;
-              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31})`);
+            batch.forEach((rawR, idx) => {
+              const r = normalizeTaexRow(rawR);
+              const b = idx * 33;
+              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31},$${b+32},$${b+33})`);
               params.push(r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
                 r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-                r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+                r.PR||null,r.Item||null,r.Qty_PR??null,r.Cost_Ctrs||null,
+                r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
                 r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
                 r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
                 r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-                r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null);
+                r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
+                r.Reservno||null);
             });
             await client.query(
-              `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr) VALUES ${vals.join(',')}`,
+              `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,cost_ctrs,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr,reservno) VALUES ${vals.join(',')}`,
               params
             );
           }
@@ -657,17 +809,18 @@ app.post('/api/upload/:type', requireApiKey, upload.single('file'), (req, res) =
           }
 
           if (type === 'pr') {
-            batch.forEach((r, idx) => {
-              const b = idx * 17;
-              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17})`);
-              params.push(r.Plant||null,r.PR||r.Purchreq||null,r.Item||null,r.Material||null,r.Material_Description||r.Material_description||null,
-                r.D||null,r.R||null,r.PGr||null,r.TrackingNo||null,
-                r.Qty_PR??r.Qty_Purchreq??null,r.Un||null,r.Req_Date||r.Reqdate||null,
+            batch.forEach((rawR, idx) => {
+              const r = normalizeSapRow(rawR);
+              const b = idx * 18;
+              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18})`);
+              params.push(r.Plant||null,r.PR||null,r.Item||null,r.Material||null,r.Material_Description||null,
+                r.D||null,r.R||null,r.PGr||null,r.S||null,r.TrackingNo||null,
+                r.Qty_PR??null,r.Un||null,r.Req_Date||null,
                 r.Valn_price??null,r.PR_Curr||null,r.PR_Per??null,r.Release_Date||null,
-                r.Tracking||r.TrackingNo||null);
+                r.Tracking||null);
             });
             await client.query(
-              `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking) VALUES ${vals.join(',')}`,
+              `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,s,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking) VALUES ${vals.join(',')}`,
               params
             );
           }
@@ -722,18 +875,21 @@ async function processExcelBatch(buffer, type) {
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE);
-      for (const r of batch) {
+      for (const rawR of batch) {
+        const r = (type === 'taex') ? normalizeTaexRow(rawR) : rawR;
         if (type === 'taex') {
           await client.query(
-            `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
+            `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,cost_ctrs,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr,reservno)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)`,
             [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
              r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-             r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+             r.PR||null,r.Item||null,r.Qty_PR??null,r.Cost_Ctrs||null,
+             r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
              r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
              r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
              r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-             r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null]
+             r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
+             r.Reservno||null]
           );
         }
         if (type === 'prisma') {
@@ -761,14 +917,15 @@ async function processExcelBatch(buffer, type) {
           );
         }
         if (type === 'pr') {
+          const nr = normalizeSapRow(r);
           await client.query(
-            `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
-            [r.Plant||null,r.PR||r.Purchreq||null,r.Item||null,r.Material||null,r.Material_Description||r.Material_description||null,
-             r.D||null,r.R||null,r.PGr||null,r.TrackingNo||r.TrackingNo||null,
-             r.Qty_PR??r.Qty_Purchreq??null,r.Un||null,r.Req_Date||r.Reqdate||null,
-             r.Valn_price??null,r.PR_Curr||null,r.PR_Per??null,r.Release_Date||null,
-             r.Tracking||r.TrackingNo||null]
+            `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,s,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+            [nr.Plant||null,nr.PR||null,nr.Item||null,nr.Material||null,nr.Material_Description||null,
+             nr.D||null,nr.R||null,nr.PGr||null,nr.S||null,nr.TrackingNo||null,
+             nr.Qty_PR??null,nr.Un||null,nr.Req_Date||null,
+             nr.Valn_price??null,nr.PR_Curr||null,nr.PR_Per??null,nr.Release_Date||null,
+             nr.Tracking||null]
           );
         }
       }
@@ -888,29 +1045,89 @@ app.get('/api/data', requireApiKey, async (req, res) => {
 // Endpoint tambahan: load satu tabel secara paginated (lebih efisien)
 // GET /api/data/taex?page=1&limit=2000
 const TABLE_CONFIG = {
-  taex:     { table: 'taex_reservasi',   mapper: mapTaex },
-  prisma:   { table: 'prisma_reservasi', mapper: mapPrisma },
-  kumpulan: { table: 'kumpulan_summary', mapper: mapKumpulan },
-  pr:       { table: 'sap_pr',           mapper: mapSAP },
-  po:       { table: 'sap_po',           mapper: mapPO },
+  taex: {
+    table: 'taex_reservasi', mapper: mapTaex,
+    searchCols: ['material','material_description','"order"','equipment','pr','po','plant','itm','reservno','cost_ctrs'],
+    filterMap: {
+      pr: (v) => v ? { col: 'pr', val: v } : null,
+      po: (v) => v==='with'    ? { col:"po IS NOT NULL AND po <> ''", raw:true }
+               : v==='without' ? { col:"po IS NULL OR po = ''",      raw:true } : null,
+    },
+    sortableCols: new Set(['id','plant','equipment','"order"','revision','material','itm','material_description','qty_reqmts','qty_stock','pr','item','qty_pr','reservno','cost_ctrs','delivery_date','qty_f_avail_check','qty_withdrawn','res_price','res_per']),
+  },
+  prisma: {
+    table: 'prisma_reservasi', mapper: mapPrisma,
+    searchCols: ['material','material_description','"order"','equipment','plant','reservno','pr_prisma'],
+    filterMap: {
+      order: (v) => v ? { col: '"order"', val: v } : null,
+    },
+    sortableCols: new Set(['id','plant','equipment','"order"','material','qty_reqmts','pr_prisma','code_kertas_kerja']),
+  },
+  kumpulan: {
+    table: 'kumpulan_summary', mapper: mapKumpulan,
+    searchCols: ['material','material_description','"order"','equipment','code_tracking'],
+    filterMap: {
+      code_tracking: (v) => v ? { col: 'code_tracking', val: v } : null,
+    },
+    sortableCols: new Set(['id','plant','"order"','material','qty_req','qty_stock','code_tracking']),
+  },
+  pr: {
+    table: 'sap_pr', mapper: mapSAP,
+    searchCols: ['pr','material','material_description','plant','tracking','tracking_no'],
+    filterMap: {},
+    sortableCols: new Set(['id','plant','pr','material','qty_pr','req_date','release_date']),
+  },
+  po: {
+    table: 'sap_po', mapper: mapPO,
+    searchCols: ['po','purchreq','material','short_text','plnt'],
+    filterMap: {},
+    sortableCols: new Set(['id','plnt','po','purchreq','material','po_quantity','deliv_date','doc_date']),
+  },
 };
+
 app.get('/api/data/:tabel', requireApiKey, async (req, res) => {
   const cfg = TABLE_CONFIG[req.params.tabel];
   if (!cfg) return res.status(404).json({ error: 'Tabel tidak ditemukan' });
   try {
-    const page   = Math.max(1, parseInt(req.query.page)  || 1);
-    const limit  = Math.min(5000, Math.max(1, parseInt(req.query.limit) || 2000));
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));
     const offset = (page - 1) * limit;
+    const q = (req.query.q || '').trim();
+
+    const conditions = [], params = [];
+
+    if (q) {
+      params.push(`%${q}%`);
+      const idx = params.length;
+      conditions.push(`(${cfg.searchCols.map(c=>`${c}::text ILIKE $${idx}`).join(' OR ')})`);
+    }
+
+    for (const [key, buildFilter] of Object.entries(cfg.filterMap)) {
+      const val = req.query[key];
+      if (!val) continue;
+      const f = buildFilter(val);
+      if (!f) continue;
+      if (f.raw) { conditions.push(f.col); }
+      else { params.push(f.val); conditions.push(`${f.col} = $${params.length}`); }
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    let orderBy = 'id ASC';
+    const ob = (req.query.order_by || '').toLowerCase().replace(/[^a-z0-9_"]/g,'');
+    const od = req.query.order_dir === 'desc' ? 'DESC' : 'ASC';
+    if (ob && cfg.sortableCols.has(ob)) orderBy = `${ob} ${od}, id ASC`;
+
     const [data, count] = await Promise.all([
-      query(`SELECT * FROM ${cfg.table} ORDER BY id LIMIT $1 OFFSET $2`, [limit, offset]),
-      query(`SELECT COUNT(*) AS c FROM ${cfg.table}`),
+      query(`SELECT * FROM ${cfg.table} ${where} ORDER BY ${orderBy} LIMIT $${params.length+1} OFFSET $${params.length+2}`, [...params, limit, offset]),
+      query(`SELECT COUNT(*) AS c FROM ${cfg.table} ${where}`, params),
     ]);
     const total = parseInt(count.rows[0].c);
     res.json({
       data: data.rows.map(cfg.mapper),
-      pagination: { page, limit, total, hasMore: offset + limit < total },
+      pagination: { page, limit, total, totalPages: Math.ceil(total/limit)||1, hasMore: offset+limit < total },
     });
-  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal memuat data' }); }
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal memuat data: ' + e.message }); }
 });
 
 // ── TAEX ──
@@ -922,15 +1139,17 @@ app.post('/api/taex', requireApiKey, async (req, res) => {
   try {
     const r = req.body;
     const { rows } = await query(
-      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31) RETURNING id`,
+      `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,cost_ctrs,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr,reservno)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33) RETURNING id`,
       [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
        r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-       r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+       r.PR||null,r.Item||null,r.Qty_PR??null,r.Cost_Ctrs||null,
+       r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
        r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
        r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
        r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-       r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null]
+       r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
+       r.Reservno||null]
     );
     res.json({ ok: true, id: rows[0].id });
   } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal menyimpan data' }); }
@@ -950,15 +1169,17 @@ app.post('/api/taex/append', requireApiKey, async (req, res) => {
     await withTransaction(async (client) => {
       for (const r of rows) {
         await client.query(
-          `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)`,
+          `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,cost_ctrs,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr,reservno)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)`,
           [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
            r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-           r.PR||null,r.Item||null,r.Qty_PR??null,r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+           r.PR||null,r.Item||null,r.Qty_PR??null,r.Cost_Ctrs||null,
+           r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
            r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
            r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
            r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-           r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null]
+           r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
+           r.Reservno||null]
         );
       }
     });
@@ -1048,10 +1269,10 @@ app.post('/api/pr/append', requireApiKey, async (req, res) => {
     await withTransaction(async (client) => {
       for (const r of rows) {
         await client.query(
-          `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+          `INSERT INTO sap_pr (plant,pr,item,material,material_description,d,r,pgr,s,tracking_no,qty_pr,un,req_date,valn_price,pr_curr,pr_per,release_date,tracking)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
           [r.Plant||null,r.PR||null,r.Item||null,r.Material||null,r.Material_Description||null,
-           r.D||null,r.R||null,r.PGr||null,r.TrackingNo||null,
+           r.D||null,r.R||null,r.PGr||null,r.S||null,r.TrackingNo||null,
            r.Qty_PR??null,r.Un||null,r.Req_Date||null,
            r.Valn_price??null,r.PR_Curr||null,r.PR_Per??null,r.Release_Date||null,
            r.Tracking||null]
