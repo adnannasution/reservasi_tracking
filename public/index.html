@@ -2019,7 +2019,7 @@ function renderPage(app) {
   else if (app==='prisma-reservasi') { if (!prFiltered.length) fetchAndRenderPrisma(); }
   else if (app==='kertas-kerja') renderKK();
   else if (app==='summary') renderSummary();
-  else if (app==='kumpulan') fetchAndRenderKumpulan();
+  else if (app==='kumpulan') { if (!ksFiltered.length) fetchAndRenderKumpulan(); }
   else if (app==='pr') renderSAP();
   else if (app==='order') renderOrder();
   else if (app==='po') renderPo();
