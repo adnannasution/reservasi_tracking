@@ -353,6 +353,8 @@ async function migrate() {
   // Indexes
   await query(`CREATE INDEX IF NOT EXISTS idx_taex_material   ON taex_reservasi(material)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_taex_order      ON taex_reservasi("order")`);
+  // UNIQUE constraint untuk UPSERT mode Tambahkan — ON CONFLICT ("order", material, itm)
+  await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_taex_upsert_key ON taex_reservasi("order", material, itm)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_prisma_material ON prisma_reservasi(material)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_prisma_order    ON prisma_reservasi("order")`);
   await query(`CREATE INDEX IF NOT EXISTS idx_sap_pr          ON sap_pr(pr)`);
@@ -889,9 +891,9 @@ app.post('/api/upload/:type', requireApiKey, upload.single('file'), (req, res) =
       let inserted = 0;
 
       // DELETE dulu di luar transaction batch supaya tidak lock lama
-      // Untuk taex: cek mode dari req.body/formData — 'append' berarti tidak hapus data lama
+      // Untuk taex: cek mode dari req.body/formData — 'append' berarti UPSERT (tidak hapus data lama)
       const tableMap = { taex:'taex_reservasi', prisma:'prisma_reservasi', pr:'sap_pr', po:'sap_po' };
-      const uploadMode = (req.body && req.body.mode === 'append') ? 'append' : 'replace';
+      const uploadMode = (type === 'taex' && req.body && req.body.mode === 'append') ? 'append' : 'replace';
       if (uploadMode !== 'append') {
         await query(`DELETE FROM ${tableMap[type]}`);
       }
@@ -903,24 +905,64 @@ app.post('/api/upload/:type', requireApiKey, upload.single('file'), (req, res) =
           const vals = [], params = [];
 
           if (type === 'taex') {
-            batch.forEach((rawR, idx) => {
-              const r = normalizeTaexRow(rawR);
-              const b = idx * 33;
-              vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31},$${b+32},$${b+33})`);
-              params.push(r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
-                r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
-                r.PR||null,r.Item||null,r.Qty_PR??null,r.Cost_Ctrs||null,
-                r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
-                r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
-                r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
-                r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
-                r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
-                r.Reservno||null);
-            });
-            await client.query(
-              `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,cost_ctrs,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr,reservno) VALUES ${vals.join(',')}`,
-              params
-            );
+            if (uploadMode === 'append') {
+              // Mode Tambahkan: UPSERT berdasarkan (order, material, itm)
+              // Kolom yang di-update: semua data SAP kecuali PR/Item/Qty_PR/PO (diisi proses lain)
+              for (const rawR of batch) {
+                const r = normalizeTaexRow(rawR);
+                await client.query(
+                  `INSERT INTO taex_reservasi
+                     (plant,equipment,"order",revision,material,itm,material_description,
+                      qty_reqmts,qty_stock,cost_ctrs,sloc,del,fis,ict,pg,
+                      recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,
+                      uom,gl_acct,res_price,res_per,res_curr,reservno,updated_at)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,NOW())
+                   ON CONFLICT ("order", material, itm) DO UPDATE SET
+                     plant=EXCLUDED.plant, equipment=EXCLUDED.equipment,
+                     revision=EXCLUDED.revision, material_description=EXCLUDED.material_description,
+                     qty_reqmts=EXCLUDED.qty_reqmts, qty_stock=EXCLUDED.qty_stock,
+                     cost_ctrs=EXCLUDED.cost_ctrs, sloc=EXCLUDED.sloc,
+                     del=EXCLUDED.del, fis=EXCLUDED.fis, ict=EXCLUDED.ict, pg=EXCLUDED.pg,
+                     recipient=EXCLUDED.recipient, unloading_point=EXCLUDED.unloading_point,
+                     reqmts_date=EXCLUDED.reqmts_date,
+                     qty_f_avail_check=EXCLUDED.qty_f_avail_check,
+                     qty_withdrawn=EXCLUDED.qty_withdrawn,
+                     uom=EXCLUDED.uom, gl_acct=EXCLUDED.gl_acct,
+                     res_price=EXCLUDED.res_price, res_per=EXCLUDED.res_per,
+                     res_curr=EXCLUDED.res_curr, reservno=EXCLUDED.reservno,
+                     updated_at=NOW()
+                   -- PR, item, qty_pr, po, po_date, qty_deliv, delivery_date TIDAK diupdate
+                   -- karena diisi dari proses sinkron SAP PR / PO`,
+                  [r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+                   r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
+                   r.Cost_Ctrs||null,r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
+                   r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
+                   r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
+                   r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
+                   r.Reservno||null]
+                );
+              }
+            } else {
+              // Mode Ganti Semua: INSERT biasa (tabel sudah dikosongkan di atas)
+              batch.forEach((rawR, idx) => {
+                const r = normalizeTaexRow(rawR);
+                const b = idx * 33;
+                vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22},$${b+23},$${b+24},$${b+25},$${b+26},$${b+27},$${b+28},$${b+29},$${b+30},$${b+31},$${b+32},$${b+33})`);
+                params.push(r.Plant||null,r.Equipment||null,r.Order||null,r.Revision||null,r.Material||null,r.Itm||null,
+                  r.Material_Description||null,r.Qty_Reqmts||0,r.Qty_Stock||0,
+                  r.PR||null,r.Item||null,r.Qty_PR??null,r.Cost_Ctrs||null,
+                  r.PO||null,r.PO_Date||null,r.Qty_Deliv??null,r.Delivery_Date||null,
+                  r.SLoc||null,r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
+                  r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
+                  r.Qty_f_avail_check??null,r.Qty_Withdrawn??null,
+                  r.UoM||null,r.GL_Acct||null,r.Res_Price??null,r.Res_per??null,r.Res_Curr||null,
+                  r.Reservno||null);
+              });
+              await client.query(
+                `INSERT INTO taex_reservasi (plant,equipment,"order",revision,material,itm,material_description,qty_reqmts,qty_stock,pr,item,qty_pr,cost_ctrs,po,po_date,qty_deliv,delivery_date,sloc,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_f_avail_check,qty_withdrawn,uom,gl_acct,res_price,res_per,res_curr,reservno) VALUES ${vals.join(',')}`,
+                params
+              );
+            }
           }
 
           if (type === 'prisma') {
