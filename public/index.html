@@ -18,21 +18,6 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #f5f5f5; dis
 .header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
 .header-right { font-size: 12px; color: rgba(255,255,255,0.8); }
 
-/* SYNC STATUS BAR */
-#sync-bar {
-  background: #fff7ed; border-bottom: 1px solid #fde68a;
-  padding: 5px 20px; font-size: 11px; color: #92400e;
-  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-  transition: all 0.3s;
-}
-#sync-bar.ok { background: #f0fdf4; border-color: #86efac; color: #14532d; }
-#sync-bar.err { background: #fef2f2; border-color: #fca5a5; color: #7f1d1d; }
-#sync-bar.loading { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
-.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #f97316; flex-shrink: 0; }
-#sync-bar.ok .sync-dot { background: #22c55e; }
-#sync-bar.err .sync-dot { background: #ef4444; }
-#sync-bar.loading .sync-dot { background: #3b82f6; animation: pulse 1s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 .nav-tabs {
   background: #1245b5; display: flex; align-items: flex-end; flex-wrap: wrap;
@@ -580,12 +565,6 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <div class="header-right" id="headerRight">Material Reservation & PR Management</div>
     <button onclick="confirmResetAll()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.35);color:white;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;" onmouseover="this.style.background='rgba(220,38,38,0.7)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">🗑 Reset Data</button>
   </div>
-</div>
-
-<!-- SYNC STATUS BAR -->
-<div id="sync-bar" class="loading">
-  <div class="sync-dot"></div>
-  <span id="sync-msg">Menghubungkan ke server...</span>
 </div>
 
 <!-- NAV TABS -->
@@ -1905,12 +1884,7 @@ async function apiPut(path, rows) {
 }
 
 
-function setSyncStatus(type, msg) {
-  const bar = document.getElementById('sync-bar');
-  const msgEl = document.getElementById('sync-msg');
-  bar.className = type;
-  msgEl.textContent = msg;
-}
+function setSyncStatus(type, msg) { /* removed status bar */ }
 
 // ============================================================
 // STATE
@@ -2964,7 +2938,9 @@ async function syncWithTaex() {
   const skippedExisting = eligible.length - newOnly.length;
 
   if (!newOnly.length && !delFisUpdated) {
-    toast(`Semua data sudah ada di Prisma dan tidak ada update Del/FIs (${skippedExisting} baris diskip).`, 'err');
+    await fetchAndRenderPrisma();
+    populateFilters();
+    toast(`Data sudah sinkron · ${skippedExisting} baris sudah ada di PRISMA.`, 'ok');
     return;
   }
 
