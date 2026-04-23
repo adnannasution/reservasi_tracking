@@ -2041,6 +2041,16 @@ async function _backgroundLoad() {
   } catch(e) {
     console.warn('Background load gagal:', e.message);
   }
+  // Jika PRISMA masih kosong setelah init (mis. /api/data/prisma gagal),
+  // load penuh via /api/prisma lalu render ulang
+  if (prServerMeta.total === 0) {
+    try {
+      await ensurePrismaLoaded();
+      if (state.prismaReservasiData.length > 0) {
+        await fetchAndRenderPrisma(); // akan pakai fallback state jika API masih gagal
+      }
+    } catch(e) { console.warn('Background PRISMA load gagal:', e.message); }
+  }
 }
 
 // ============================================================
@@ -2293,7 +2303,20 @@ async function fetchAndRenderPrisma() {
     prServerMeta = result.pagination||{ total:0,totalPages:1,page:pg.page,limit:pg.size };
     state._totalPrisma = prServerMeta.total;
     renderPrismaReservasi();
-  } catch(e) { tbody.innerHTML=`<tr class="loading-row"><td colspan="23">❌ ${e.message}</td></tr>`; }
+  } catch(e) {
+    // Fallback: jika API gagal tapi state sudah ada data (mis. setelah ensurePrismaLoaded),
+    // render langsung dari state tanpa filter/sort server-side
+    if (state.prismaReservasiData.length > 0) {
+      const start = (pg.page - 1) * pg.size;
+      prFiltered = state.prismaReservasiData.slice(start, start + pg.size);
+      prServerMeta = { total: state.prismaReservasiData.length, totalPages: Math.ceil(state.prismaReservasiData.length / pg.size), page: pg.page, limit: pg.size };
+      state._totalPrisma = prServerMeta.total;
+      renderPrismaReservasi();
+      updateBadges();
+    } else {
+      tbody.innerHTML=`<tr class="loading-row"><td colspan="23">❌ ${e.message}</td></tr>`;
+    }
+  }
 }
 
 function renderPrismaReservasi() {
