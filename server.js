@@ -685,25 +685,44 @@ async function bulkReplaceTaex(client, rows) {
   }
 }
 async function bulkReplacePrisma(client, rows) {
-  await client.query('DELETE FROM prisma_reservasi');
+  // Gunakan UPSERT per ID jika ada, INSERT baru jika tidak ada ID
+  // Ini mencegah data PRISMA terhapus saat frontend hanya kirim sebagian data
   for (let i = 0; i < rows.length; i += CHUNK) {
     const batch = rows.slice(i, i + CHUNK);
-    const vals = [], params = [];
-    batch.forEach((r, idx) => {
-      const b = idx * 22;
-      vals.push(`($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},$${b+12},$${b+13},$${b+14},$${b+15},$${b+16},$${b+17},$${b+18},$${b+19},$${b+20},$${b+21},$${b+22})`);
-      params.push(r.Plant||null,r.Equipment||null,r.Revision||null,r.Order||null,r.Reservno||null,r.Itm||null,
-        r.Material||null,r.Material_Description||null,
-        r.Del||null,r.FIs||null,r.Ict||null,r.PG||null,
-        r.Recipient||null,r.Unloading_point||null,r.Reqmts_Date||null,
-        r.Qty_Reqmts||0,r.UoM||null,
-        r.PR_Prisma||null,r.Item_Prisma||null,r.Qty_PR_Prisma??null,
-        r.Qty_StockOnhand??null,r.CodeKertasKerja||null);
-    });
-    await client.query(
-      `INSERT INTO prisma_reservasi (plant,equipment,revision,"order",reservno,itm,material,material_description,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_reqmts,uom,pr_prisma,item_prisma,qty_pr_prisma,qty_stock_onhand,code_kertas_kerja) VALUES ${vals.join(',')}`,
-      params
-    );
+    for (const r of batch) {
+      if (r.ID) {
+        // Baris sudah ada di DB — UPDATE kolom yang relevan saja
+        await client.query(
+          `UPDATE prisma_reservasi SET
+            plant=$1, equipment=$2, revision=$3, "order"=$4, reservno=$5, itm=$6,
+            material=$7, material_description=$8, del=$9, fis=$10, ict=$11, pg=$12,
+            recipient=$13, unloading_point=$14, reqmts_date=$15, qty_reqmts=$16, uom=$17,
+            pr_prisma=$18, item_prisma=$19, qty_pr_prisma=$20, qty_stock_onhand=$21, code_kertas_kerja=$22
+          WHERE id=$23`,
+          [r.Plant||null, r.Equipment||null, r.Revision||null, r.Order||null, r.Reservno||null, r.Itm||null,
+           r.Material||null, r.Material_Description||null,
+           r.Del||null, r.FIs||null, r.Ict||null, r.PG||null,
+           r.Recipient||null, r.Unloading_point||null, r.Reqmts_Date||null,
+           r.Qty_Reqmts||0, r.UoM||null,
+           r.PR_Prisma||null, r.Item_Prisma||null, r.Qty_PR_Prisma??null,
+           r.Qty_StockOnhand??null, r.CodeKertasKerja||null,
+           r.ID]
+        );
+      } else {
+        // Baris baru — INSERT
+        await client.query(
+          `INSERT INTO prisma_reservasi (plant,equipment,revision,"order",reservno,itm,material,material_description,del,fis,ict,pg,recipient,unloading_point,reqmts_date,qty_reqmts,uom,pr_prisma,item_prisma,qty_pr_prisma,qty_stock_onhand,code_kertas_kerja)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+          [r.Plant||null, r.Equipment||null, r.Revision||null, r.Order||null, r.Reservno||null, r.Itm||null,
+           r.Material||null, r.Material_Description||null,
+           r.Del||null, r.FIs||null, r.Ict||null, r.PG||null,
+           r.Recipient||null, r.Unloading_point||null, r.Reqmts_Date||null,
+           r.Qty_Reqmts||0, r.UoM||null,
+           r.PR_Prisma||null, r.Item_Prisma||null, r.Qty_PR_Prisma??null,
+           r.Qty_StockOnhand??null, r.CodeKertasKerja||null]
+        );
+      }
+    }
   }
 }
 async function bulkReplaceKumpulan(client, rows) {
@@ -870,8 +889,12 @@ app.post('/api/upload/:type', requireApiKey, upload.single('file'), (req, res) =
       let inserted = 0;
 
       // DELETE dulu di luar transaction batch supaya tidak lock lama
+      // Untuk taex: cek mode dari req.body/formData — 'append' berarti tidak hapus data lama
       const tableMap = { taex:'taex_reservasi', prisma:'prisma_reservasi', pr:'sap_pr', po:'sap_po' };
-      await query(`DELETE FROM ${tableMap[type]}`);
+      const uploadMode = (req.body && req.body.mode === 'append') ? 'append' : 'replace';
+      if (uploadMode !== 'append') {
+        await query(`DELETE FROM ${tableMap[type]}`);
+      }
 
       for (let i = 0; i < total; i += BATCH) {
         const batch = rows.slice(i, i + BATCH);

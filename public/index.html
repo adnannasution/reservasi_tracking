@@ -1488,6 +1488,20 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         <b>Kolom yang didukung (format baru):</b> PlPl, Equipment, Order, Reserv.No., Revision, Material, Itm, Material Description, Reqmt Qty, Qty_Stock, PR, Item, Qty_PR, Cost Ctrs, SLoc, Del, FIs, ICt, PG, Recipient, Unloading Point, Reqmt Date, Qty. f. avail.check, Qty Withdrawn, BUn, G/L Acct, Price, per, Crcy<br>
         <span style="color:#6b7280;margin-top:4px;display:block"><b>Format lama juga diterima</b> — header lama seperti Plant, Qty_Reqmts, UoM, GL_Acct, dll otomatis dipetakan.</span>
       </div>
+      <!-- MODE UPLOAD: Ganti Semua vs Tambahkan -->
+      <div style="background:#fefce8;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px;">
+        <b style="color:#92400e;">⚙ Mode Upload:</b>
+        <label style="margin-left:12px;cursor:pointer;">
+          <input type="radio" name="taex-upload-mode" id="taex-mode-replace" value="replace" checked>
+          <span style="margin-left:4px;color:#b45309;font-weight:600;">Ganti Semua</span>
+          <span style="color:#6b7280;margin-left:4px;">(hapus data lama, masukkan file baru)</span>
+        </label>
+        <label style="margin-left:16px;cursor:pointer;">
+          <input type="radio" name="taex-upload-mode" id="taex-mode-append" value="append">
+          <span style="margin-left:4px;color:#065f46;font-weight:600;">Tambahkan</span>
+          <span style="color:#6b7280;margin-left:4px;">(data lama tetap ada, file baru ditambah)</span>
+        </label>
+      </div>
       <div class="upload-zone" id="taex-upload-zone" onclick="document.getElementById('taex-file-input').click()" ondragover="handleDrag(event,'taex-upload-zone')" ondragleave="handleDragLeave(event,'taex-upload-zone')" ondrop="handleDrop(event,'taex')">
         <input type="file" id="taex-file-input" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event,'taex')">
         <div class="upload-icon">📊</div>
@@ -2650,6 +2664,12 @@ async function processUploadFile(file, type) {
     const formData = new FormData();
     formData.append('file', file);
 
+    // Untuk taex: baca pilihan mode upload (replace / append)
+    if (type === 'taex') {
+      const modeEl = document.querySelector('input[name="taex-upload-mode"]:checked');
+      formData.append('mode', modeEl ? modeEl.value : 'replace');
+    }
+
     const uploadRes = await fetch(`${API}/upload/${backendType}`, {
       method: 'POST',
       headers: { 'x-api-key': 'Xz5jX1R1bqheB0AcVuM8W7jJlUzJGAIK' },
@@ -2752,6 +2772,8 @@ async function pollUploadProgress(jobId, type, meta) {
           setSyncStatus('loading', '⏳ Memuat data terbaru...');
           if (type === 'taex') {
             // Taex: server-side, cukup fetch halaman 1
+            // Invalidate prisma cache supaya syncWithTaex() berikutnya fetch ulang data prisma terbaru
+            invalidatePrismaCache();
             resetPg('taex');
             await fetchAndRenderTaex();
           } else {
@@ -2950,7 +2972,7 @@ async function syncWithTaex() {
     const needFIs = t.FIs && !pr.FIs;
     if (!needDel && !needFIs) return pr;
     delFisUpdated++;
-    return { ...pr, Del: needDel ? t.Del : pr.Del, FIs: needFIs ? t.FIs : pr.FIs };
+    return { ...pr, Del: needDel ? t.Del : pr.Del, FIs: needFIs ? t.FIs : pr.FIs, _delFisUpdated: true };
   });
 
   const existingMap = {};
@@ -2979,13 +3001,23 @@ async function syncWithTaex() {
     Qty_StockOnhand: null, CodeKertasKerja: null,
   }));
 
-  // Gabungkan data existing (sudah ter-update Del/FIs) + data baru
-  const syncedData = [...state.prismaReservasiData, ...newRows];
-  state.prismaReservasiData = syncedData;
+  // Hanya kirim ke server: baris baru + baris yang Del/FIs-nya diupdate
+  // JANGAN kirim syncedData (seluruh state) karena PUT /api/prisma sekarang UPSERT per ID
+  // — kirim semua tidak akan menghapus data lain, tapi lebih hemat bandwidth kirim yang berubah saja
+  const toSend = [
+    ...state.prismaReservasiData.filter(r => r._delFisUpdated), // baris existing yang berubah
+    ...newRows,                                                  // baris baru (belum punya ID)
+  ];
+  // Tandai _delFisUpdated sementara — bersihkan sebelum kirim
+  const payload = toSend.map(r => { const c = {...r}; delete c._delFisUpdated; return c; });
+
+  // Update state lokal dengan gabungan lengkap
+  state.prismaReservasiData = [...state.prismaReservasiData.map(r => { const c={...r}; delete c._delFisUpdated; return c; }), ...newRows];
+
   showLoading('Sinkronisasi data...', true);
   setSyncStatus('loading', '⏳ Sinkronisasi ke server...');
   try {
-    await apiPut('/prisma', syncedData);
+    await apiPut('/prisma', payload);
     hideLoading();
     // Invalidate cache lalu fetch ulang dari server supaya ID ter-assign
     invalidatePrismaCache();
