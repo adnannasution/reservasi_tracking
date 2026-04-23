@@ -35,13 +35,13 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #f5f5f5; dis
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 .nav-tabs {
-  background: #1245b5; display: flex; align-items: center;
-  padding: 0 20px; gap: 2px; flex-shrink: 0; border-bottom: 1px solid #0e3a9a;
+  background: #1245b5; display: flex; align-items: flex-end; flex-wrap: wrap;
+  padding: 4px 20px 0; gap: 0 2px; flex-shrink: 0; border-bottom: 1px solid #0e3a9a;
 }
 .tab {
-  padding: 10px 16px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  padding: 8px 14px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
   cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap;
-  transition: all 0.15s;
+  transition: all 0.15s; margin-bottom: -1px;
 }
 .tab:hover { color: white; background: rgba(255,255,255,0.08); }
 .tab.active { color: white; border-bottom-color: #60a5fa; background: rgba(255,255,255,0.1); }
@@ -879,28 +879,18 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
   <div class="col-panel" id="col-panel-sum">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('sum')">Reset</span></div>
     <label><input type="checkbox" data-tab="sum" data-col="0" onchange="applyColVisibility('sum')" checked> Plant</label>
-    <label><input type="checkbox" data-tab="sum" data-col="1" onchange="applyColVisibility('sum')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="sum" data-col="2" onchange="applyColVisibility('sum')"> Revision</label>
-    <label><input type="checkbox" data-tab="sum" data-col="3" onchange="applyColVisibility('sum')" checked> Order</label>
-    <label><input type="checkbox" data-tab="sum" data-col="4" onchange="applyColVisibility('sum')"> Reservno</label>
-    <label><input type="checkbox" data-tab="sum" data-col="5" onchange="applyColVisibility('sum')"> Itm</label>
-    <label><input type="checkbox" data-tab="sum" data-col="6" onchange="applyColVisibility('sum')" checked> Material</label>
-    <label><input type="checkbox" data-tab="sum" data-col="7" onchange="applyColVisibility('sum')" checked> Material Description</label>
-    <label><input type="checkbox" data-tab="sum" data-col="8" onchange="applyColVisibility('sum')" checked> Qty Req</label>
-    <label><input type="checkbox" data-tab="sum" data-col="9" onchange="applyColVisibility('sum')" checked> Qty Stock</label>
-    <label><input type="checkbox" data-tab="sum" data-col="10" onchange="applyColVisibility('sum')" checked> Qty to PR</label>
-    <label><input type="checkbox" data-tab="sum" data-col="11" onchange="applyColVisibility('sum')" checked> Code Tracking</label>
+    <label><input type="checkbox" data-tab="sum" data-col="1" onchange="applyColVisibility('sum')" checked> Material</label>
+    <label><input type="checkbox" data-tab="sum" data-col="2" onchange="applyColVisibility('sum')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="sum" data-col="3" onchange="applyColVisibility('sum')" checked> Qty Req</label>
+    <label><input type="checkbox" data-tab="sum" data-col="4" onchange="applyColVisibility('sum')" checked> Qty Stock</label>
+    <label><input type="checkbox" data-tab="sum" data-col="5" onchange="applyColVisibility('sum')" checked> Qty to PR</label>
+    <label><input type="checkbox" data-tab="sum" data-col="6" onchange="applyColVisibility('sum')" checked> Code Tracking</label>
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
         <th class="no-sort">Plant</th>
-        <th onclick="summarySort('Equipment')">Equipment</th>
-        <th onclick="summarySort('Revision')">Revision</th>
-        <th onclick="summarySort('Order')">Order</th>
-        <th onclick="summarySort('Reservno')">Reservno</th>
-        <th onclick="summarySort('Itm')">Itm</th>
         <th onclick="summarySort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
         <th onclick="summarySort('Qty_Req')">Qty Req</th>
@@ -908,7 +898,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         <th class="no-sort">Qty to PR</th>
         <th onclick="summarySort('CodeTracking')">Code Tracking</th>
       </tr></thead>
-      <tbody id="sum-tbody"><tr class="loading-row"><td colspan="12">Submit Kertas Kerja terlebih dahulu</td></tr></tbody>
+      <tbody id="sum-tbody"><tr class="loading-row"><td colspan="7">Submit Kertas Kerja terlebih dahulu</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="sum-pagination"></div>
@@ -933,29 +923,19 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
   <div class="col-panel" id="col-panel-ks">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('ks')">Reset</span></div>
     <label><input type="checkbox" data-tab="ks" data-col="0" onchange="applyColVisibility('ks')" checked> Plant</label>
-    <label><input type="checkbox" data-tab="ks" data-col="1" onchange="applyColVisibility('ks')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="ks" data-col="2" onchange="applyColVisibility('ks')"> Revision</label>
-    <label><input type="checkbox" data-tab="ks" data-col="3" onchange="applyColVisibility('ks')" checked> Order</label>
-    <label><input type="checkbox" data-tab="ks" data-col="4" onchange="applyColVisibility('ks')"> Reservno</label>
-    <label><input type="checkbox" data-tab="ks" data-col="5" onchange="applyColVisibility('ks')"> Itm</label>
-    <label><input type="checkbox" data-tab="ks" data-col="6" onchange="applyColVisibility('ks')" checked> Material</label>
-    <label><input type="checkbox" data-tab="ks" data-col="7" onchange="applyColVisibility('ks')" checked> Material Description</label>
-    <label><input type="checkbox" data-tab="ks" data-col="8" onchange="applyColVisibility('ks')" checked> Qty Req</label>
-    <label><input type="checkbox" data-tab="ks" data-col="9" onchange="applyColVisibility('ks')" checked> Qty Stock</label>
-    <label><input type="checkbox" data-tab="ks" data-col="10" onchange="applyColVisibility('ks')" checked> Qty PR</label>
-    <label><input type="checkbox" data-tab="ks" data-col="11" onchange="applyColVisibility('ks')" checked> Qty to PR</label>
-    <label><input type="checkbox" data-tab="ks" data-col="12" onchange="applyColVisibility('ks')" checked> Code Tracking</label>
+    <label><input type="checkbox" data-tab="ks" data-col="1" onchange="applyColVisibility('ks')" checked> Material</label>
+    <label><input type="checkbox" data-tab="ks" data-col="2" onchange="applyColVisibility('ks')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="ks" data-col="3" onchange="applyColVisibility('ks')" checked> Qty Req</label>
+    <label><input type="checkbox" data-tab="ks" data-col="4" onchange="applyColVisibility('ks')" checked> Qty Stock</label>
+    <label><input type="checkbox" data-tab="ks" data-col="5" onchange="applyColVisibility('ks')" checked> Qty PR</label>
+    <label><input type="checkbox" data-tab="ks" data-col="6" onchange="applyColVisibility('ks')" checked> Qty to PR</label>
+    <label><input type="checkbox" data-tab="ks" data-col="7" onchange="applyColVisibility('ks')" checked> Code Tracking</label>
   </div>
   <div class="table-container">
   <div class="table-wrap">
     <table>
       <thead><tr>
         <th class="no-sort">Plant</th>
-        <th onclick="ksSort('Equipment')">Equipment</th>
-        <th onclick="ksSort('Revision')">Revision</th>
-        <th onclick="ksSort('Order')">Order</th>
-        <th onclick="ksSort('Reservno')">Reservno</th>
-        <th onclick="ksSort('Itm')">Itm</th>
         <th onclick="ksSort('Material')">Material</th>
         <th class="no-sort">Material Description</th>
         <th onclick="ksSort('Qty_Req')">Qty Req</th>
@@ -964,7 +944,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
         <th class="no-sort"><span class="th-wrap">Qty to PR<span class="tooltip-icon" data-tip="Qty yang masih perlu di-PR">ⓘ</span></span></th>
         <th onclick="ksSort('CodeTracking')">Code Tracking</th>
       </tr></thead>
-      <tbody id="ks-tbody"><tr class="loading-row"><td colspan="13">Belum ada data summary</td></tr></tbody>
+      <tbody id="ks-tbody"><tr class="loading-row"><td colspan="8">Belum ada data summary</td></tr></tbody>
     </table>
   </div>
   <div class="pagination" id="ks-pagination"></div>
@@ -1269,25 +1249,67 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
   <!-- Panel pilih kolom Tracking -->
   <div class="col-panel" id="col-panel-trk">
     <div class="col-panel-title">Tampilkan Kolom <span onclick="resetColVisibility('trk')">Reset</span></div>
-    <label><input type="checkbox" data-tab="trk" data-col="0" onchange="applyColVisibility('trk')" checked> Order</label>
-    <label><input type="checkbox" data-tab="trk" data-col="1" onchange="applyColVisibility('trk')" checked> Equipment</label>
-    <label><input type="checkbox" data-tab="trk" data-col="2" onchange="applyColVisibility('trk')" checked> Description</label>
-    <label><input type="checkbox" data-tab="trk" data-col="3" onchange="applyColVisibility('trk')" checked> Plant</label>
-    <label><input type="checkbox" data-tab="trk" data-col="4" onchange="applyColVisibility('trk')" checked> Material</label>
-    <label><input type="checkbox" data-tab="trk" data-col="5" onchange="applyColVisibility('trk')" checked> Material Description</label>
-    <label><input type="checkbox" data-tab="trk" data-col="6" onchange="applyColVisibility('trk')" checked> Qty Reqmts</label>
-    <label><input type="checkbox" data-tab="trk" data-col="7" onchange="applyColVisibility('trk')" checked> PR</label>
-    <label><input type="checkbox" data-tab="trk" data-col="8" onchange="applyColVisibility('trk')"> PR Item</label>
-    <label><input type="checkbox" data-tab="trk" data-col="9" onchange="applyColVisibility('trk')" checked> Qty PR</label>
-    <label><input type="checkbox" data-tab="trk" data-col="10" onchange="applyColVisibility('trk')"> Req Date</label>
-    <label><input type="checkbox" data-tab="trk" data-col="11" onchange="applyColVisibility('trk')" checked> PO</label>
-    <label><input type="checkbox" data-tab="trk" data-col="12" onchange="applyColVisibility('trk')"> PO Item</label>
-    <label><input type="checkbox" data-tab="trk" data-col="13" onchange="applyColVisibility('trk')" checked> PO Quantity</label>
-    <label><input type="checkbox" data-tab="trk" data-col="14" onchange="applyColVisibility('trk')" checked> Qty Delivered</label>
-    <label><input type="checkbox" data-tab="trk" data-col="15" onchange="applyColVisibility('trk')"> Deliv Date</label>
-    <label><input type="checkbox" data-tab="trk" data-col="16" onchange="applyColVisibility('trk')" checked> Net Price</label>
-    <label><input type="checkbox" data-tab="trk" data-col="17" onchange="applyColVisibility('trk')"> Crcy</label>
-    <label><input type="checkbox" data-tab="trk" data-col="18" onchange="applyColVisibility('trk')" checked> Status</label>
+    <b style="font-size:11px;color:#6b7280;display:block;margin:2px 0 4px">— TA-ex —</b>
+    <label><input type="checkbox" data-tab="trk" data-col="0"  onchange="applyColVisibility('trk')" checked> Plant</label>
+    <label><input type="checkbox" data-tab="trk" data-col="1"  onchange="applyColVisibility('trk')" checked> Equipment</label>
+    <label><input type="checkbox" data-tab="trk" data-col="2"  onchange="applyColVisibility('trk')" checked> Order</label>
+    <label><input type="checkbox" data-tab="trk" data-col="3"  onchange="applyColVisibility('trk')" checked> Reserv.No.</label>
+    <label><input type="checkbox" data-tab="trk" data-col="4"  onchange="applyColVisibility('trk')"> Revision</label>
+    <label><input type="checkbox" data-tab="trk" data-col="5"  onchange="applyColVisibility('trk')" checked> Material</label>
+    <label><input type="checkbox" data-tab="trk" data-col="6"  onchange="applyColVisibility('trk')" checked> Itm</label>
+    <label><input type="checkbox" data-tab="trk" data-col="7"  onchange="applyColVisibility('trk')" checked> Material Description</label>
+    <label><input type="checkbox" data-tab="trk" data-col="8"  onchange="applyColVisibility('trk')" checked> Qty Reqmts</label>
+    <label><input type="checkbox" data-tab="trk" data-col="9"  onchange="applyColVisibility('trk')" checked> Qty Stock</label>
+    <label><input type="checkbox" data-tab="trk" data-col="10" onchange="applyColVisibility('trk')" checked> PR</label>
+    <label><input type="checkbox" data-tab="trk" data-col="11" onchange="applyColVisibility('trk')" checked> PR Item</label>
+    <label><input type="checkbox" data-tab="trk" data-col="12" onchange="applyColVisibility('trk')" checked> Qty PR</label>
+    <label><input type="checkbox" data-tab="trk" data-col="13" onchange="applyColVisibility('trk')"> Cost Ctrs</label>
+    <label><input type="checkbox" data-tab="trk" data-col="14" onchange="applyColVisibility('trk')"> SLoc</label>
+    <label><input type="checkbox" data-tab="trk" data-col="15" onchange="applyColVisibility('trk')" checked> Del</label>
+    <label><input type="checkbox" data-tab="trk" data-col="16" onchange="applyColVisibility('trk')" checked> FIs</label>
+    <label><input type="checkbox" data-tab="trk" data-col="17" onchange="applyColVisibility('trk')" checked> Ict</label>
+    <label><input type="checkbox" data-tab="trk" data-col="18" onchange="applyColVisibility('trk')" checked> PG</label>
+    <label><input type="checkbox" data-tab="trk" data-col="19" onchange="applyColVisibility('trk')"> Recipient</label>
+    <label><input type="checkbox" data-tab="trk" data-col="20" onchange="applyColVisibility('trk')"> Unloading Point</label>
+    <label><input type="checkbox" data-tab="trk" data-col="21" onchange="applyColVisibility('trk')"> Reqmts Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="22" onchange="applyColVisibility('trk')"> Qty f.avail.check</label>
+    <label><input type="checkbox" data-tab="trk" data-col="23" onchange="applyColVisibility('trk')"> Qty Withdrawn</label>
+    <label><input type="checkbox" data-tab="trk" data-col="24" onchange="applyColVisibility('trk')"> UoM</label>
+    <label><input type="checkbox" data-tab="trk" data-col="25" onchange="applyColVisibility('trk')"> G/L Acct</label>
+    <label><input type="checkbox" data-tab="trk" data-col="26" onchange="applyColVisibility('trk')"> Res Price</label>
+    <label><input type="checkbox" data-tab="trk" data-col="27" onchange="applyColVisibility('trk')"> Res per</label>
+    <label><input type="checkbox" data-tab="trk" data-col="28" onchange="applyColVisibility('trk')"> Res Curr</label>
+    <b style="font-size:11px;color:#6b7280;display:block;margin:6px 0 4px">— Order —</b>
+    <label><input type="checkbox" data-tab="trk" data-col="29" onchange="applyColVisibility('trk')" checked> Description</label>
+    <label><input type="checkbox" data-tab="trk" data-col="30" onchange="applyColVisibility('trk')"> Superior Order</label>
+    <label><input type="checkbox" data-tab="trk" data-col="31" onchange="applyColVisibility('trk')"> Notification</label>
+    <label><input type="checkbox" data-tab="trk" data-col="32" onchange="applyColVisibility('trk')"> Created On</label>
+    <label><input type="checkbox" data-tab="trk" data-col="33" onchange="applyColVisibility('trk')" checked> System Status</label>
+    <label><input type="checkbox" data-tab="trk" data-col="34" onchange="applyColVisibility('trk')"> User Status</label>
+    <label><input type="checkbox" data-tab="trk" data-col="35" onchange="applyColVisibility('trk')"> Functional Loc.</label>
+    <label><input type="checkbox" data-tab="trk" data-col="36" onchange="applyColVisibility('trk')"> Location</label>
+    <label><input type="checkbox" data-tab="trk" data-col="37" onchange="applyColVisibility('trk')"> WBS Ord. Header</label>
+    <label><input type="checkbox" data-tab="trk" data-col="38" onchange="applyColVisibility('trk')"> Cost Center</label>
+    <label><input type="checkbox" data-tab="trk" data-col="39" onchange="applyColVisibility('trk')"> Total Plnd Costs</label>
+    <label><input type="checkbox" data-tab="trk" data-col="40" onchange="applyColVisibility('trk')"> Total Act. Costs</label>
+    <label><input type="checkbox" data-tab="trk" data-col="41" onchange="applyColVisibility('trk')" checked> Planner Group</label>
+    <label><input type="checkbox" data-tab="trk" data-col="42" onchange="applyColVisibility('trk')"> Main WorkCtr</label>
+    <label><input type="checkbox" data-tab="trk" data-col="43" onchange="applyColVisibility('trk')"> Entered By</label>
+    <label><input type="checkbox" data-tab="trk" data-col="44" onchange="applyColVisibility('trk')"> Changed By</label>
+    <label><input type="checkbox" data-tab="trk" data-col="45" onchange="applyColVisibility('trk')" checked> Bas. Start Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="46" onchange="applyColVisibility('trk')" checked> Basic Fin. Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="47" onchange="applyColVisibility('trk')"> Actual Release</label>
+    <b style="font-size:11px;color:#6b7280;display:block;margin:6px 0 4px">— PR / PO —</b>
+    <label><input type="checkbox" data-tab="trk" data-col="48" onchange="applyColVisibility('trk')" checked> Req Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="49" onchange="applyColVisibility('trk')" checked> PO</label>
+    <label><input type="checkbox" data-tab="trk" data-col="50" onchange="applyColVisibility('trk')"> PO Item</label>
+    <label><input type="checkbox" data-tab="trk" data-col="51" onchange="applyColVisibility('trk')" checked> PO Quantity</label>
+    <label><input type="checkbox" data-tab="trk" data-col="52" onchange="applyColVisibility('trk')" checked> Qty Delivered</label>
+    <label><input type="checkbox" data-tab="trk" data-col="53" onchange="applyColVisibility('trk')" checked> Deliv Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="54" onchange="applyColVisibility('trk')" checked> Net Price</label>
+    <label><input type="checkbox" data-tab="trk" data-col="55" onchange="applyColVisibility('trk')"> Crcy</label>
+    <label><input type="checkbox" data-tab="trk" data-col="56" onchange="applyColVisibility('trk')"> Doc Date</label>
+    <label><input type="checkbox" data-tab="trk" data-col="57" onchange="applyColVisibility('trk')" checked> Status</label>
   </div>
 
   <!-- TABLE -->
@@ -1295,28 +1317,67 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
     <div class="table-wrap">
       <table id="trk-table">
         <thead><tr>
-          <th onclick="trkSort('Order')">Order</th>
-          <th class="no-sort">Equipment</th>
-          <th class="no-sort">Description</th>
           <th class="no-sort">Plant</th>
+          <th class="no-sort">Equipment</th>
+          <th onclick="trkSort('Order')">Order</th>
+          <th class="no-sort">Reserv.No.</th>
+          <th class="no-sort">Revision</th>
           <th onclick="trkSort('Material')">Material</th>
+          <th class="no-sort">Itm</th>
           <th class="no-sort">Material Description</th>
           <th class="no-sort" style="text-align:right">Qty Reqmts</th>
+          <th class="no-sort" style="text-align:right">Qty Stock</th>
           <th onclick="trkSort('PR')">PR</th>
           <th class="no-sort">PR Item</th>
           <th class="no-sort" style="text-align:right">Qty PR</th>
+          <th class="no-sort">Cost Ctrs</th>
+          <th class="no-sort">SLoc</th>
+          <th class="no-sort">Del</th>
+          <th class="no-sort">FIs</th>
+          <th class="no-sort">Ict</th>
+          <th class="no-sort">PG</th>
+          <th class="no-sort">Recipient</th>
+          <th class="no-sort">Unloading Point</th>
+          <th class="no-sort">Reqmts Date</th>
+          <th class="no-sort" style="text-align:right">Qty f.avail.check</th>
+          <th class="no-sort" style="text-align:right">Qty Withdrawn</th>
+          <th class="no-sort">UoM</th>
+          <th class="no-sort">G/L Acct</th>
+          <th class="no-sort" style="text-align:right">Res Price</th>
+          <th class="no-sort" style="text-align:right">Res per</th>
+          <th class="no-sort">Res Curr</th>
+          <th class="no-sort">Description</th>
+          <th class="no-sort">Superior Order</th>
+          <th class="no-sort">Notification</th>
+          <th class="no-sort">Created On</th>
+          <th class="no-sort">System Status</th>
+          <th class="no-sort">User Status</th>
+          <th class="no-sort">Functional Loc.</th>
+          <th class="no-sort">Location</th>
+          <th class="no-sort">WBS Ord. Header</th>
+          <th class="no-sort">Cost Center</th>
+          <th class="no-sort" style="text-align:right">Total Plnd Costs</th>
+          <th class="no-sort" style="text-align:right">Total Act. Costs</th>
+          <th class="no-sort">Planner Group</th>
+          <th class="no-sort">Main WorkCtr</th>
+          <th class="no-sort">Entered By</th>
+          <th class="no-sort">Changed By</th>
+          <th class="no-sort">Bas. Start Date</th>
+          <th class="no-sort">Basic Fin. Date</th>
+          <th class="no-sort">Actual Release</th>
           <th class="no-sort">Req Date</th>
-          <th onclick="trkSort('PO')">PO</th>
+          <th onclick="trkSort('PO_num')">PO</th>
           <th class="no-sort">PO Item</th>
           <th class="no-sort" style="text-align:right">PO Quantity</th>
           <th class="no-sort" style="text-align:right">Qty Delivered</th>
           <th class="no-sort">Deliv Date</th>
           <th class="no-sort" style="text-align:right">Net Price</th>
           <th class="no-sort">Crcy</th>
+          <th class="no-sort">Doc Date</th>
           <th class="no-sort">Status</th>
         </tr></thead>
         <tbody id="trk-tbody">
-          <tr class="loading-row"><td colspan="19">Memuat data tracking...</td></tr>
+          <tr class="loading-row"><td colspan="58">Memuat data tracking...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1596,7 +1657,7 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
 
 <!-- MODAL: BUAT KERTAS KERJA -->
 <div class="modal-overlay" id="modal-kk">
-  <div class="modal">
+  <div class="modal" style="width:520px;max-width:95vw">
     <div class="modal-header">
       <h3>📝 Buat Kertas Kerja</h3>
       <button class="modal-close" onclick="closeModal('modal-kk')">✕</button>
@@ -1608,11 +1669,29 @@ input.row-check { cursor: pointer; accent-color: #1a56db; width: 14px; height: 1
           <input type="text" id="kk-input-code" readonly style="font-weight:700; color:#7c3aed;">
         </div>
         <div class="form-group">
-          <label>PG (Planner Group) Filter (opsional)</label>
-          <select id="kk-input-order"><option value="">Semua PG</option></select>
+          <label>Planner Group</label>
+          <select id="kk-pg-type" onchange="kkOnPGTypeChange()">
+            <option value="">-- Pilih Planner Group --</option>
+            <option value="TA">TA &nbsp;(PG akhiran T)</option>
+            <option value="OH">OH &nbsp;(PG akhiran O)</option>
+            <option value="Rutin">Rutin &nbsp;(PG akhiran R)</option>
+            <option value="All">All &nbsp;(Semua PG)</option>
+          </select>
         </div>
       </div>
-      <p style="font-size:12px; color:#6b7280; margin-top:4px;">Kertas kerja akan dibuat dari data PRISMA Reservasi, difilter berdasarkan <b>Planner Group (PG)</b>.</p>
+
+      <div id="kk-wo-section" style="display:none;margin-top:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label style="font-size:12px;font-weight:600;margin:0">Work Order <span id="kk-wo-count" style="color:#6b7280;font-weight:400"></span></label>
+          <div style="display:flex;gap:6px">
+            <button type="button" onclick="kkSelectAllWO()" style="font-size:11px;padding:2px 10px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer">Pilih Semua</button>
+            <button type="button" onclick="kkDeselectAllWO()" style="font-size:11px;padding:2px 10px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer">Hapus Semua</button>
+          </div>
+        </div>
+        <div id="kk-wo-list" style="max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:6px 4px;background:#fafafa"></div>
+      </div>
+
+      <p style="font-size:12px;color:#6b7280;margin-top:10px;margin-bottom:0">Kertas kerja dibuat dari PRISMA Reservasi sesuai WO yang dipilih. WO yang sudah pernah dipakai tidak ditampilkan.</p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-reset" onclick="closeModal('modal-kk')">Batal</button>
@@ -1929,30 +2008,29 @@ async function init() {
   setSyncStatus('loading', '⏳ Memuat data dari server...');
   try {
     setInitProgress(30, 'Mengambil data dari server...');
-    // Hanya load halaman 1 — cukup untuk semua tabel
-    // Tidak ada loop halaman — semua tabel lazy load saat dibutuhkan
-    const data = await apiFetch(`/data?page=1&limit=${PAGE_LIMIT}`);
+    // Hanya fetch meta (COUNT + state) — ringan, tanpa baris data tabel
+    const data = await apiFetch('/meta');
 
-    setInitProgress(60, 'Memproses data...');
+    setInitProgress(55, 'Memproses data...');
     state.taexData            = [];
-    state.prismaReservasiData = data.prismaReservasiData || [];
-    state.kkData              = data.kkData              || [];
-    state.kkCode              = data.kkCode              || null;
-    state.summaryData         = data.summaryData         || [];
-    state.kumpulanData        = data.kumpulanData        || [];
-    state.prData              = data.prData              || [];
-    state.kkCounter           = data.kkCounter           || 0;
-    state.prCounter           = data.prCounter           || 0;
-    state.orderData           = data.orderData           || [];
-    state.poData              = data.poData              || [];
+    state.prismaReservasiData = [];
+    state.kkData              = data.kkData      || [];
+    state.kkCode              = data.kkCode      || null;
+    state.summaryData         = data.summaryData || [];
+    state.kumpulanData        = [];
+    state.prData              = [];
+    state.kkCounter           = data.kkCounter   || 0;
+    state.prCounter           = data.prCounter   || 0;
+    state.orderData           = [];
+    state.poData              = [];
     // Simpan info total untuk badge
     const pg = data.pagination || {};
-    state._totalPrisma   = pg.totalPrisma   || state.prismaReservasiData.length;
-    state._totalKumpulan = pg.totalKumpulan || state.kumpulanData.length;
-    state._totalPR       = pg.totalPR       || state.prData.length;
-    state._totalPO       = pg.totalPO       || state.poData.length;
+    state._totalPrisma   = pg.totalPrisma   || 0;
+    state._totalKumpulan = pg.totalKumpulan || 0;
+    state._totalPR       = pg.totalPR       || 0;
+    state._totalPO       = pg.totalPO       || 0;
 
-    setInitProgress(82, 'Memuat tabel TA-ex...');
+    setInitProgress(75, 'Memuat tabel TA-ex...');
     await fetchAndRenderTaex();
 
     setInitProgress(95, 'Menyiapkan tampilan...');
@@ -1963,11 +2041,31 @@ async function init() {
 
     setInitProgress(100, 'Selesai!');
     setTimeout(() => hideInitLoading(), 400);
+
+    // Load data tambahan di background setelah app tampil
+    // (dibutuhkan untuk fitur PR matching dan tab lain)
+    setTimeout(() => _backgroundLoad(), 500);
   } catch(e) {
     setInitProgress(100, '❌ Gagal terhubung ke server');
     document.getElementById('init-msg').style.color = '#fca5a5';
     setTimeout(() => hideInitLoading(), 1500);
     setSyncStatus('err', '❌ Tidak dapat konek ke server. Pastikan Railway app berjalan.');
+  }
+}
+
+async function _backgroundLoad() {
+  try {
+    const [pr, kumpulan] = await Promise.all([
+      apiFetch('/data/pr?page=1&limit=500'),
+      apiFetch('/data/kumpulan?page=1&limit=500'),
+    ]);
+    state.prData       = pr.data       || [];
+    state.kumpulanData = kumpulan.data || [];
+    state._totalPR       = pr.pagination?.total       || state.prData.length;
+    state._totalKumpulan = kumpulan.pagination?.total || state.kumpulanData.length;
+    updateBadges();
+  } catch(e) {
+    console.warn('Background load gagal:', e.message);
   }
 }
 
@@ -2052,6 +2150,23 @@ function populateFilters() {
 const D = v => (v===null||v===undefined||v==='')?'<span style="color:#d1d5db">—</span>':v;
 const N = v => (v===null||v===undefined)?'<span style="color:#d1d5db">—</span>':v;
 const badge = (v,cls) => v?`<span class="badge badge-${cls}">${v}</span>`:'<span style="color:#d1d5db">—</span>';
+function fmtDate(val) {
+  if (val===null||val===undefined||val==='') return '<span style="color:#d1d5db">—</span>';
+  const s = String(val).trim();
+  // DD.MM.YYYY → dd-mm-yyyy
+  let m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (m) return `${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}-${m[3]}`;
+  // YYYY-MM-DD → dd-mm-yyyy
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  // MM/DD/YYYY → dd-mm-yyyy
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}-${m[3]}`;
+  // Fallback: coba parse Date object
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+  return s;
+}
 
 // ============================================================
 // TA-EX — SERVER-SIDE SEARCH, FILTER, SORT, PAGINATION
@@ -2318,15 +2433,10 @@ function renderSummary() {
   document.getElementById('sum-uniq').textContent = state.summaryData.length;
   document.getElementById('sum-qty-req').textContent = state.summaryData.reduce((a,r)=>a+(r.Qty_Req||0),0);
   document.getElementById('sum-qty-stock').textContent = state.summaryData.reduce((a,r)=>a+(r.Qty_Stock||0),0);
-  if (!sumFiltered.length) { document.getElementById('sum-tbody').innerHTML='<tr class="loading-row"><td colspan="12">Belum ada data summary</td></tr>'; renderPagination('sum-pagination','sum',0,1,1,100,renderSummary); return; }
+  if (!sumFiltered.length) { document.getElementById('sum-tbody').innerHTML='<tr class="loading-row"><td colspan="7">Belum ada data summary</td></tr>'; renderPagination('sum-pagination','sum',0,1,1,100,renderSummary); return; }
   const pgSum = paginate(sumFiltered, 'sum');
   document.getElementById('sum-tbody').innerHTML = pgSum.rows.map(r => `<tr>
     <td class="mono">${D(r.Plant)}</td>
-    <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
-    <td class="mono">${D(r.Revision)}</td>
-    <td class="mono">${D(r.Order)}</td>
-    <td class="mono">${D(r.Reservno)}</td>
-    <td class="center mono">${D(r.Itm)}</td>
     <td class="mono">${D(r.Material)}</td>
     <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
     <td class="num">${N(r.Qty_Req)}</td>
@@ -2354,7 +2464,7 @@ async function fetchAndRenderKumpulan() {
   if(q)    params.set('q', q);
   if(code) params.set('code_tracking', code);
   const tbody = document.getElementById('ks-tbody');
-  tbody.innerHTML='<tr class="loading-row"><td colspan="13">⏳ Memuat data...</td></tr>';
+  tbody.innerHTML='<tr class="loading-row"><td colspan="8">⏳ Memuat data...</td></tr>';
   try {
     const result = await apiFetch('/data/kumpulan?'+params.toString());
     ksFiltered = result.data||[];
@@ -2366,16 +2476,11 @@ async function fetchAndRenderKumpulan() {
 
 function renderKumpulan() {
   const tbody = document.getElementById('ks-tbody');
-  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="13">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,fetchAndRenderKumpulan); return; }
+  if (!ksFiltered.length) { tbody.innerHTML='<tr class="loading-row"><td colspan="8">Belum ada data summary</td></tr>'; renderPagination('ks-pagination','ks',0,1,1,100,fetchAndRenderKumpulan); return; }
   tbody.innerHTML = ksFiltered.map(r => {
     const rowCls = (r.Qty_PR&&r.Qty_PR>0)?'has-pr':'';
     return `<tr class="${rowCls}">
     <td class="mono">${D(r.Plant)}</td>
-    <td class="mono" style="color:#1a56db">${D(r.Equipment)}</td>
-    <td class="mono">${D(r.Revision)}</td>
-    <td class="mono">${D(r.Order)}</td>
-    <td class="mono">${D(r.Reservno)}</td>
-    <td class="center mono">${D(r.Itm)}</td>
     <td class="mono">${D(r.Material)}</td>
     <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Material_Description)}</td>
     <td class="num">${N(r.Qty_Req)}</td>
@@ -2789,10 +2894,30 @@ async function submitAddTaex() {
 // SINKRON KE PRISMA RESERVASI
 // ============================================================
 async function syncWithTaex() {
-  const taex = state.taexCurrentPage || [];
-  if (!taex.length) { toast('Data TA-ex kosong! Pastikan halaman TA-ex sudah dimuat.', 'err'); return; }
+  // Ambil SEMUA data TA-ex dari server (semua halaman, tanpa filter)
+  showLoading('Mengambil semua data TA-ex...', true);
+  let allTaex = [];
+  try {
+    const SYNC_LIMIT = 5000; // server max per request
+    const first = await apiFetch(`/data/taex?page=1&limit=${SYNC_LIMIT}`);
+    allTaex = first.data || [];
+    const total = first.pagination?.total || allTaex.length;
+    const totalPages = Math.ceil(total / SYNC_LIMIT);
+    for (let p = 2; p <= totalPages; p++) {
+      const r = await apiFetch(`/data/taex?page=${p}&limit=${SYNC_LIMIT}`);
+      allTaex = allTaex.concat(r.data || []);
+    }
+  } catch(e) {
+    hideLoading();
+    setSyncStatus('err', '❌ Gagal mengambil data TA-ex: ' + e.message);
+    toast('Gagal mengambil data TA-ex dari server!', 'err');
+    return;
+  }
+
+  if (!allTaex.length) { hideLoading(); toast('Data TA-ex kosong!', 'err'); return; }
+
   // Pastikan semua data PRISMA dimuat untuk cek duplikat
-  showLoading('Memuat data PRISMA...', true);
+  showLoading(`Memuat data PRISMA... (${allTaex.length} baris TA-ex ditemukan)`, true);
   try { await ensurePrismaLoaded(); } catch(e) { hideLoading(); return; }
   hideLoading();
 
@@ -2801,19 +2926,35 @@ async function syncWithTaex() {
   const hasX = v => v && String(v).trim().toUpperCase() === 'X';
   const isIctL = v => v && String(v).trim() === 'L';
 
-  const eligible = taex.filter(r => {
+  const eligible = allTaex.filter(r => {
     if (hasX(r.Del) || hasX(r.FIs)) return false; // rule 1: Del atau FIs ada X → skip
     if (!isIctL(r.Ict)) return false;              // rule 2: Ict bukan 'L' → skip
     return true;
   });
 
-  const skippedX   = taex.filter(r => hasX(r.Del) || hasX(r.FIs)).length;
-  const skippedIct = taex.filter(r => !hasX(r.Del) && !hasX(r.FIs) && !isIctL(r.Ict)).length;
+  const skippedX   = allTaex.filter(r => hasX(r.Del) || hasX(r.FIs)).length;
+  const skippedIct = allTaex.filter(r => !hasX(r.Del) && !hasX(r.FIs) && !isIctL(r.Ict)).length;
 
   if (!eligible.length) {
     toast(`Tidak ada data yang memenuhi syarat (Del/FIs bukan X dan Ict=L)`, 'err');
     return;
   }
+
+  // Buat lookup TA-ex untuk update Del/FIs (pakai SEMUA baris, bukan hanya eligible)
+  const taexMap = {};
+  allTaex.forEach(t => { taexMap[`${t.Order}-${t.Material}-${t.Itm}`] = t; });
+
+  // Update Del/FIs pada baris PRISMA yang sudah ada jika TA-ex punya nilai tapi PRISMA kosong
+  let delFisUpdated = 0;
+  state.prismaReservasiData = state.prismaReservasiData.map(pr => {
+    const t = taexMap[`${pr.Order}-${pr.Material}-${pr.Itm}`];
+    if (!t) return pr;
+    const needDel = t.Del && !pr.Del;
+    const needFIs = t.FIs && !pr.FIs;
+    if (!needDel && !needFIs) return pr;
+    delFisUpdated++;
+    return { ...pr, Del: needDel ? t.Del : pr.Del, FIs: needFIs ? t.FIs : pr.FIs };
+  });
 
   const existingMap = {};
   state.prismaReservasiData.forEach(r => { existingMap[`${r.Order}-${r.Material}-${r.Itm}`] = r; });
@@ -2822,8 +2963,8 @@ async function syncWithTaex() {
   const newOnly = eligible.filter(r => !existingMap[`${r.Order}-${r.Material}-${r.Itm}`]);
   const skippedExisting = eligible.length - newOnly.length;
 
-  if (!newOnly.length) {
-    toast(`Semua data sudah ada di Prisma (${skippedExisting} baris diskip).`, 'err');
+  if (!newOnly.length && !delFisUpdated) {
+    toast(`Semua data sudah ada di Prisma dan tidak ada update Del/FIs (${skippedExisting} baris diskip).`, 'err');
     return;
   }
 
@@ -2839,7 +2980,7 @@ async function syncWithTaex() {
     Qty_StockOnhand: null, CodeKertasKerja: null,
   }));
 
-  // Gabungkan data existing + data baru
+  // Gabungkan data existing (sudah ter-update Del/FIs) + data baru
   const syncedData = [...state.prismaReservasiData, ...newRows];
   state.prismaReservasiData = syncedData;
   showLoading('Sinkronisasi data...', true);
@@ -2852,14 +2993,16 @@ async function syncWithTaex() {
     await fetchAndRenderPrisma();
     populateFilters();
     let msg = `✅ Sinkronisasi selesai · ${newRows.length} baris baru ditambahkan`;
+    if (delFisUpdated > 0)   msg += ` · ${delFisUpdated} Del/FIs diupdate`;
     if (skippedX > 0)        msg += ` · ${skippedX} diskip (Del/FIs=X)`;
     if (skippedIct > 0)      msg += ` · ${skippedIct} diskip (Ict≠L)`;
     if (skippedExisting > 0) msg += ` · ${skippedExisting} diskip (sudah ada)`;
     setSyncStatus('ok', msg + ` · ${new Date().toLocaleTimeString('id-ID')}`);
-    let toastMsg = `Sinkronisasi selesai! ${newRows.length} baris baru ditambahkan.`;
-    if (skippedExisting > 0) toastMsg += ` (${skippedExisting} sudah ada, dilewati)`;
-    if (skippedX + skippedIct > 0) toastMsg += ` (${skippedX+skippedIct} diskip aturan)`;
-    toast(toastMsg, 'ok');
+    let toastMsg = `Sinkronisasi selesai! ${newRows.length} baris baru ditambahkan`;
+    if (delFisUpdated > 0)   toastMsg += `, ${delFisUpdated} Del/FIs diupdate`;
+    if (skippedExisting > 0) toastMsg += `, ${skippedExisting} sudah ada dilewati`;
+    if (skippedX + skippedIct > 0) toastMsg += `, ${skippedX+skippedIct} diskip aturan`;
+    toast(toastMsg + '.', 'ok');
   } catch(e) {
     hideLoading();
     setSyncStatus('err', '❌ Gagal sinkronisasi: ' + e.message);
@@ -2888,28 +3031,84 @@ async function openKertasKerjaModal() {
     ...state.summaryData.map(r => r.CodeTracking),
   ].filter(Boolean));
   let code = generateKKCode();
-  while (existingCodes.has(code)) code = generateKKCode(); // regenerate jika tabrakan
+  while (existingCodes.has(code)) code = generateKKCode();
   document.getElementById('kk-input-code').value = code;
-
-  // Fetch PG list dari server (lengkap, bukan hanya data di memori)
-  const sel = document.getElementById('kk-input-order');
-  sel.innerHTML = '<option value="">Semua PG</option>';
-  try {
-    const meta = await apiFetch('/prisma/meta');
-    (meta.pgs || []).forEach(pg => sel.innerHTML += `<option value="${pg}">${pg}</option>`);
-  } catch {
-    // fallback ke state
-    [...new Set(state.prismaReservasiData.map(r=>r.PG).filter(Boolean))].sort()
-      .forEach(pg => sel.innerHTML += `<option value="${pg}">${pg}</option>`);
-  }
+  // Reset pilihan PG dan sembunyikan WO list
+  document.getElementById('kk-pg-type').value = '';
+  document.getElementById('kk-wo-section').style.display = 'none';
+  document.getElementById('kk-wo-list').innerHTML = '';
   openModal('modal-kk');
+}
+
+function kkGetPGFilter(pgType) {
+  if (pgType === 'TA')    return r => r.PG && r.PG.trim().toUpperCase().endsWith('T');
+  if (pgType === 'OH')    return r => r.PG && r.PG.trim().toUpperCase().endsWith('O');
+  if (pgType === 'Rutin') return r => r.PG && r.PG.trim().toUpperCase().endsWith('R');
+  return () => true; // All
+}
+
+function kkOnPGTypeChange() {
+  const pgType = document.getElementById('kk-pg-type').value;
+  const section = document.getElementById('kk-wo-section');
+  if (!pgType) { section.style.display = 'none'; return; }
+
+  const pgFilter = kkGetPGFilter(pgType);
+
+  // WO sudah dipakai = ada CodeKertasKerja di prisma ATAU sedang di kkData aktif
+  const usedOrders = new Set([
+    ...state.prismaReservasiData.filter(r => r.CodeKertasKerja).map(r => r.Order),
+    ...(state.kkData || []).map(r => r.Order),
+  ].filter(Boolean));
+
+  // Ambil WO unik yang tersedia untuk PG terpilih
+  const available = [...new Set(
+    state.prismaReservasiData
+      .filter(pgFilter)
+      .filter(r => r.Order && !usedOrders.has(r.Order))
+      .map(r => r.Order)
+  )].sort();
+
+  const list = document.getElementById('kk-wo-list');
+  document.getElementById('kk-wo-count').textContent = `(${available.length} tersedia)`;
+
+  if (!available.length) {
+    list.innerHTML = '<p style="font-size:12px;color:#9ca3af;padding:6px 8px;margin:0">Tidak ada WO tersedia untuk Planner Group ini</p>';
+    section.style.display = 'block';
+    return;
+  }
+
+  list.innerHTML = available.map(wo => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-radius:4px;font-size:12px;transition:background .1s"
+           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''">
+      <input type="checkbox" class="kk-wo-check" value="${wo}" style="cursor:pointer;accent-color:#7c3aed">
+      <span>${wo}</span>
+    </label>
+  `).join('');
+  section.style.display = 'block';
+}
+
+function kkSelectAllWO() {
+  document.querySelectorAll('.kk-wo-check').forEach(cb => cb.checked = true);
+}
+
+function kkDeselectAllWO() {
+  document.querySelectorAll('.kk-wo-check').forEach(cb => cb.checked = false);
 }
 
 async function createKertasKerja() {
   const code = document.getElementById('kk-input-code').value;
-  const pgFilter = document.getElementById('kk-input-order').value; // filter by PG
-  let sourceData = state.prismaReservasiData.filter(r => !pgFilter || r.PG === pgFilter);
-  if (!sourceData.length) { toast('Tidak ada data reservasi yang bisa dijadikan Kertas Kerja', 'err'); return; }
+  const pgType = document.getElementById('kk-pg-type').value;
+  if (!pgType) { toast('Pilih Planner Group terlebih dahulu!', 'err'); return; }
+
+  const selectedWOs = [...document.querySelectorAll('.kk-wo-check:checked')].map(cb => cb.value);
+  if (!selectedWOs.length) { toast('Pilih minimal satu Work Order!', 'err'); return; }
+
+  const selectedSet = new Set(selectedWOs);
+  const isX = v => v && String(v).trim().toUpperCase() === 'X';
+  let sourceData = state.prismaReservasiData.filter(r =>
+    selectedSet.has(r.Order) && !isX(r.Del) && !isX(r.FIs)
+  );
+  if (!sourceData.length) { toast('Tidak ada data reservasi untuk WO yang dipilih (atau semua baris diskip karena Del/FIs=X)', 'err'); return; }
   state.kkData = sourceData.map(r => ({...r, CodeKertasKerja: code, Qty_StockOnhand: r.Qty_StockOnhand ?? null}));
   state.kkCode = code;
   showLoading('Membuat Kertas Kerja...');
@@ -3361,7 +3560,7 @@ async function exportTaexExcel() {
   toast('Mengambil data untuk export...', 'info');
   setSyncStatus('loading', '⏳ Menyiapkan export...');
   try {
-    // Fetch semua data dari server dengan limit besar
+    // Fetch semua data dari server — limit max server = 5000
     const EXPORT_LIMIT = 5000;
     const total = taexServerMeta.total;
     const pages = Math.ceil(total / EXPORT_LIMIT);
@@ -3474,7 +3673,7 @@ function renderOrder() {
     <td class="mono" style="color:#1a56db;font-weight:600">${D(r.Order)}</td>
     <td class="mono">${D(r.Superior_Order)}</td>
     <td class="mono">${D(r.Notification)}</td>
-    <td class="mono">${D(r.Created_On)}</td>
+    <td class="mono">${fmtDate(r.Created_On)}</td>
     <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(r.Description)}</td>
     <td class="mono">${D(r.Revision)}</td>
     <td class="mono">${D(r.Equipment)}</td>
@@ -3490,9 +3689,9 @@ function renderOrder() {
     <td class="mono">${D(r.MainWorkCtr)}</td>
     <td class="mono">${D(r.Entry_by)}</td>
     <td class="mono">${D(r.Changed_by)}</td>
-    <td class="mono">${D(r.Basic_start_date)}</td>
-    <td class="mono">${D(r.Basic_finish_date)}</td>
-    <td class="mono">${D(r.Actual_Release)}</td>
+    <td class="mono">${fmtDate(r.Basic_start_date)}</td>
+    <td class="mono">${fmtDate(r.Basic_finish_date)}</td>
+    <td class="mono">${fmtDate(r.Actual_Release)}</td>
     <td class="td-actions">
       <button class="btn-act btn-act-edit" onclick="openEditModal('order',${origIdx})">✏ Edit</button>
       <button class="btn-act btn-act-del" onclick="deleteRow('order',${origIdx})">🗑</button>
@@ -3919,7 +4118,7 @@ function calcItemStatus(item) {
   const qtyDeliv = item.Qty_Delivered ?? 0;
   const qtyPO    = item.PO_Quantity   ?? 0;
   const hasPR    = !!(item.PR);
-  const hasPO    = !!(item.PO);
+  const hasPO    = !!(item.PO || item.PO_num);
   if (!hasPR)              return 'no-pr';
   if (!hasPO)              return 'pr-created';
   if (qtyDeliv <= 0)       return 'po-created';
@@ -3952,17 +4151,15 @@ function fmtRp(v) {
 }
 
 // ── BUILD TRACKING DATA ──
-// Join: taexData (base) → orderData (by Order) → prData (by PR=Purchreq) → poData (by Purchreq)
+// Join: taexFiltered (base) → orderData → prData → poData
+// Filter: hanya tampilkan baris di mana kolom D pada PR dan PO kosong
 function buildTrackingData() {
-  // Map: Order → orderData row
   const orderMap = {};
   state.orderData.forEach(o => { if (o.Order) orderMap[String(o.Order)] = o; });
 
-  // Map: Purchreq → prData row
   const prMap = {};
   state.prData.forEach(p => { if (p.PR) prMap[String(p.PR)] = p; });
 
-  // Map: Purchreq → poData row(s) — bisa 1 PR punya banyak PO item
   const poMap = {};
   state.poData.forEach(p => {
     if (p.Purchreq) {
@@ -3972,52 +4169,95 @@ function buildTrackingData() {
     }
   });
 
-  // Build per-taex-row enriched record — pakai taexFiltered (halaman saat ini)
-  // Untuk export semua tracking, gunakan tombol Export di tab TA-ex
-  const rows = taexFiltered.filter(t => t.Material && String(t.Material).trim() !== '').map(t => {
-    const orderKey = String(t.Order || '');
-    const prKey    = String(t.PR    || '');
-    const ord = orderMap[orderKey] || {};
-    const pr  = prMap[prKey]       || {};
-    const pos = poMap[prKey]       || [];
-    const po  = pos[0]             || {}; // main PO row (first match)
+  const hasVal = v => v !== null && v !== undefined && String(v).trim() !== '';
 
-    // Aggregate qty_delivered across all PO items for this PR
-    const totalDelivered = pos.reduce((s, p) => s + (p.Qty_Delivered || 0), 0);
-    const totalPOQty     = pos.reduce((s, p) => s + (p.PO_Quantity   || 0), 0);
-    const totalNetPrice  = pos.reduce((s, p) => s + (p.Net_Price     || 0), 0);
+  const rows = taexFiltered
+    .filter(t => t.Material && String(t.Material).trim() !== '')
+    .map(t => {
+      const orderKey = String(t.Order || '');
+      const prKey    = String(t.PR    || '');
+      const ord = orderMap[orderKey] || {};
+      const pr  = prMap[prKey]       || {};
+      const pos = poMap[prKey]       || [];
+      const po  = pos[0]             || {};
 
-    const enriched = {
-      // from TA-ex
-      Plant:               t.Plant || ord.Plant || '',
-      Order:               orderKey,
-      Equipment:           t.Equipment || ord.Equipment || '',
-      Description:         ord.Description || '',
-      Material:            t.Material || '',
-      Material_Description: t.Material_Description || '',
-      Qty_Reqmts:          t.Qty_Reqmts,
-      // from PR
-      PR:                  t.PR || '',
-      Qty_PR:              pr.Qty_PR ?? t.Qty_PR ?? null,
-      PR_Item:             t.Item || '',
-      Req_Date:            pr.Req_Date || '',
-      // from PO
-      PO:                  po.PO || '',
-      PO_Item:             po.PO_Item || '',
-      PO_Quantity:         totalPOQty || po.PO_Quantity || null,
-      Qty_Delivered:       totalDelivered || null,
-      Deliv_Date:          po.Deliv_Date || '',
-      Net_Price:           totalNetPrice || po.Net_Price || null,
-      Crcy:                po.Crcy || '',
-      Doc_Date:            po.Doc_Date || '',
-      // raw PO rows for L3 drill-down
-      _poRows: pos,
-      // computed
-      _status: null,
-    };
-    enriched._status = calcItemStatus(enriched);
-    return enriched;
-  });
+      // Filter: D pada PR atau PO tidak boleh ada isian
+      if (hasVal(pr.D)) return null;
+      if (pos.some(p => hasVal(p.D))) return null;
+
+      const totalDelivered = pos.reduce((s, p) => s + (p.Qty_Delivered || 0), 0);
+      const totalPOQty     = pos.reduce((s, p) => s + (p.PO_Quantity   || 0), 0);
+      const totalNetPrice  = pos.reduce((s, p) => s + (p.Net_Price     || 0), 0);
+
+      const enriched = {
+        // ── TA-ex (semua kolom, preferensi TA-ex untuk overlap) ──
+        Plant:              t.Plant || ord.Plant || '',
+        Equipment:          t.Equipment || '',
+        Order:              orderKey,
+        Reservno:           t.Reservno || '',
+        Revision:           t.Revision || '',
+        Material:           t.Material || '',
+        Itm:                t.Itm || '',
+        Material_Description: t.Material_Description || '',
+        Qty_Reqmts:         t.Qty_Reqmts,
+        Qty_Stock:          t.Qty_Stock,
+        PR:                 t.PR || '',
+        PR_Item:            t.Item || '',
+        Qty_PR:             pr.Qty_PR ?? t.Qty_PR ?? null,
+        Cost_Ctrs:          t.Cost_Ctrs || '',
+        SLoc:               t.SLoc || '',
+        Del:                t.Del || '',
+        FIs:                t.FIs || '',
+        Ict:                t.Ict || '',
+        PG:                 t.PG || '',
+        Recipient:          t.Recipient || '',
+        Unloading_point:    t.Unloading_point || '',
+        Reqmts_Date:        t.Reqmts_Date || '',
+        Qty_f_avail_check:  t.Qty_f_avail_check,
+        Qty_Withdrawn:      t.Qty_Withdrawn,
+        UoM:                t.UoM || '',
+        GL_Acct:            t.GL_Acct || '',
+        Res_Price:          t.Res_Price,
+        Res_per:            t.Res_per,
+        Res_Curr:           t.Res_Curr || '',
+        // ── Order (non-duplikat) ──
+        Description:        ord.Description || '',
+        Superior_Order:     ord.Superior_Order || '',
+        Notification:       ord.Notification || '',
+        Created_On:         ord.Created_On || '',
+        System_Status:      ord.System_Status || '',
+        User_Status:        ord.User_Status || '',
+        FunctLocation:      ord.FunctLocation || '',
+        Location:           ord.Location || '',
+        WBS_Ord_header:     ord.WBS_Ord_header || '',
+        CostCenter:         ord.CostCenter || '',
+        Total_Plan_Cost:    ord.Total_Plan_Cost,
+        Total_Act_Cost:     ord.Total_Act_Cost,
+        Planner_Group:      ord.Planner_Group || '',
+        MainWorkCtr:        ord.MainWorkCtr || '',
+        Entry_by:           ord.Entry_by || '',
+        Changed_by:         ord.Changed_by || '',
+        Basic_start_date:   ord.Basic_start_date || '',
+        Basic_finish_date:  ord.Basic_finish_date || '',
+        Actual_Release:     ord.Actual_Release || '',
+        // ── PR enrichment ──
+        Req_Date:           pr.Req_Date || '',
+        // ── PO enrichment ──
+        PO_num:             po.PO || '',
+        PO_Item:            po.PO_Item || '',
+        PO_Quantity:        totalPOQty || null,
+        Qty_Delivered:      totalDelivered || null,
+        Deliv_Date:         po.Deliv_Date || '',
+        Net_Price:          totalNetPrice || null,
+        Crcy:               po.Crcy || '',
+        Doc_Date:           po.Doc_Date || '',
+        _poRows:            pos,
+        _status:            null,
+      };
+      enriched._status = calcItemStatus({ PR: enriched.PR, PO: enriched.PO_num, PO_Quantity: enriched.PO_Quantity, Qty_Delivered: enriched.Qty_Delivered });
+      return enriched;
+    })
+    .filter(Boolean); // buang baris yang difilter (D tidak kosong)
 
   return rows;
 }
@@ -4091,7 +4331,7 @@ function renderTracking() {
 
   const tbody = document.getElementById('trk-tbody');
   if (!trkFiltered.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="19">Tidak ada data tracking. Pastikan data TA-ex, Order, PR, dan PO sudah diupload.</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="58">Tidak ada data tracking. Pastikan data TA-ex, Order, PR, dan PO sudah diupload.</td></tr>';
     document.getElementById('trk-rowCount').textContent = '0 item';
     renderPagination('trk-pagination','trk',0,1,1,100,renderTracking);
     return;
@@ -4102,26 +4342,65 @@ function renderTracking() {
   const html = [];
 
   rows.forEach(item => {
-    const rowCls = item.Qty_Delivered > 0 ? 'has-po' : item.PO ? 'has-po' : item.PR ? 'has-pr' : '';
+    const rowCls = (item.Qty_Delivered||0) > 0 ? 'has-po' : item.PO_num ? 'has-po' : item.PR ? 'has-pr' : '';
     html.push(`<tr class="${rowCls}">
-      <td class="mono" style="color:#1a56db;font-weight:700">${D(item.Order)}</td>
-      <td class="mono">${D(item.Equipment)}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${D(item.Description)}</td>
       <td class="mono">${D(item.Plant)}</td>
+      <td class="mono" style="color:#1a56db">${D(item.Equipment)}</td>
+      <td class="mono" style="font-weight:700">${D(item.Order)}</td>
+      <td class="mono">${D(item.Reservno)}</td>
+      <td class="mono">${D(item.Revision)}</td>
       <td class="mono">${D(item.Material)}</td>
-      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${D(item.Material_Description)}</td>
+      <td class="center mono">${D(item.Itm)}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${D(item.Material_Description)}</td>
       <td class="num">${N(item.Qty_Reqmts)}</td>
+      <td class="num" style="color:#059669">${N(item.Qty_Stock)}</td>
       <td class="mono">${item.PR ? `<span class="badge badge-blue">${item.PR}</span>` : D(null)}</td>
-      <td class="mono" style="font-size:11px">${D(item.PR_Item)}</td>
+      <td class="center mono">${D(item.PR_Item)}</td>
       <td class="num">${item.Qty_PR != null ? N(item.Qty_PR) : D(null)}</td>
-      <td class="mono" style="font-size:11px">${D(item.Req_Date)}</td>
-      <td class="mono">${item.PO ? `<span class="badge badge-green">${item.PO}</span>` : D(null)}</td>
-      <td class="mono" style="font-size:11px">${D(item.PO_Item)}</td>
+      <td class="mono">${D(item.Cost_Ctrs)}</td>
+      <td class="mono">${D(item.SLoc)}</td>
+      <td class="center mono">${D(item.Del)}</td>
+      <td class="center mono">${D(item.FIs)}</td>
+      <td class="center mono">${D(item.Ict)}</td>
+      <td class="mono">${D(item.PG)}</td>
+      <td class="mono">${D(item.Recipient)}</td>
+      <td class="mono">${D(item.Unloading_point)}</td>
+      <td class="mono">${D(item.Reqmts_Date)}</td>
+      <td class="num">${N(item.Qty_f_avail_check)}</td>
+      <td class="num">${N(item.Qty_Withdrawn)}</td>
+      <td class="mono">${D(item.UoM)}</td>
+      <td class="mono">${D(item.GL_Acct)}</td>
+      <td class="num">${N(item.Res_Price)}</td>
+      <td class="num">${N(item.Res_per)}</td>
+      <td class="mono">${D(item.Res_Curr)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${D(item.Description)}</td>
+      <td class="mono">${D(item.Superior_Order)}</td>
+      <td class="mono">${D(item.Notification)}</td>
+      <td class="mono">${fmtDate(item.Created_On)}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${D(item.System_Status)}</td>
+      <td class="mono">${D(item.User_Status)}</td>
+      <td class="mono">${D(item.FunctLocation)}</td>
+      <td class="mono">${D(item.Location)}</td>
+      <td class="mono">${D(item.WBS_Ord_header)}</td>
+      <td class="mono">${D(item.CostCenter)}</td>
+      <td class="num">${N(item.Total_Plan_Cost)}</td>
+      <td class="num">${N(item.Total_Act_Cost)}</td>
+      <td class="mono">${D(item.Planner_Group)}</td>
+      <td class="mono">${D(item.MainWorkCtr)}</td>
+      <td class="mono">${D(item.Entry_by)}</td>
+      <td class="mono">${D(item.Changed_by)}</td>
+      <td class="mono">${fmtDate(item.Basic_start_date)}</td>
+      <td class="mono">${fmtDate(item.Basic_finish_date)}</td>
+      <td class="mono">${fmtDate(item.Actual_Release)}</td>
+      <td class="mono">${D(item.Req_Date)}</td>
+      <td class="mono">${item.PO_num ? `<span class="badge badge-green">${item.PO_num}</span>` : D(null)}</td>
+      <td class="mono">${D(item.PO_Item)}</td>
       <td class="num">${item.PO_Quantity != null ? N(item.PO_Quantity) : D(null)}</td>
       <td class="num" style="color:${(item.Qty_Delivered||0)>0?'#059669':'inherit'}">${item.Qty_Delivered != null ? N(item.Qty_Delivered) : D(null)}</td>
-      <td class="mono" style="font-size:11px">${D(item.Deliv_Date)}</td>
-      <td class="num" style="font-size:11px">${item.Net_Price ? fmtRp(item.Net_Price) : '—'}</td>
-      <td class="mono" style="font-size:11px">${D(item.Crcy)}</td>
+      <td class="mono">${D(item.Deliv_Date)}</td>
+      <td class="num">${item.Net_Price ? fmtRp(item.Net_Price) : '—'}</td>
+      <td class="mono">${D(item.Crcy)}</td>
+      <td class="mono">${fmtDate(item.Doc_Date)}</td>
       <td>${statusLabel(item._status)}</td>
     </tr>`);
   });

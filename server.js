@@ -1089,6 +1089,39 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Lightweight meta endpoint — hanya COUNT + state, tanpa baris data
+// Dipakai saat init agar splash screen cepat hilang
+app.get('/api/meta', requireApiKey, async (req, res) => {
+  try {
+    const [taexCount, prismaCount, kumpulanCount, prCount, poCount,
+           kkCurrent, kkCounter, prCounter, summaryData] = await Promise.all([
+      query('SELECT COUNT(*) AS c FROM taex_reservasi'),
+      query('SELECT COUNT(*) AS c FROM prisma_reservasi'),
+      query('SELECT COUNT(*) AS c FROM kumpulan_summary'),
+      query('SELECT COUNT(*) AS c FROM sap_pr'),
+      query('SELECT COUNT(*) AS c FROM sap_po'),
+      getState('kk_current'),
+      getState('kk_counter'),
+      getState('pr_counter'),
+      getState('summary_current'),
+    ]);
+    res.json({
+      kkData:      kkCurrent ? kkCurrent.data : [],
+      kkCode:      kkCurrent ? kkCurrent.code : null,
+      summaryData: summaryData || [],
+      kkCounter:   kkCounter || 0,
+      prCounter:   prCounter || 0,
+      pagination: {
+        totalTaex:     parseInt(taexCount.rows[0].c),
+        totalPrisma:   parseInt(prismaCount.rows[0].c),
+        totalKumpulan: parseInt(kumpulanCount.rows[0].c),
+        totalPR:       parseInt(prCount.rows[0].c),
+        totalPO:       parseInt(poCount.rows[0].c),
+      },
+    });
+  } catch(e) { console.error(e); res.status(500).json({ error: 'Gagal memuat meta' }); }
+});
+
 // Load all data — paginated per tabel supaya tidak OOM
 // Query params: page (default 1), limit (default 2000)
 // Contoh: GET /api/data?page=1&limit=2000
@@ -1330,7 +1363,7 @@ app.get('/api/data/:tabel', requireApiKey, async (req, res) => {
   if (!cfg) return res.status(404).json({ error: 'Tabel tidak ditemukan' });
   try {
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
-    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 100));
+    const limit = Math.min(5000, Math.max(1, parseInt(req.query.limit) || 100));
     const offset = (page - 1) * limit;
     const q = (req.query.q || '').trim();
 
